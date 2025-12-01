@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1764458445247,
+    "fullName": "Axelle Fahy",
+    "email": "axellefahy@gmail.com",
+    "phone": "",
+    "animalType": "chien",
+    "animalName": "Etoile",
+    "role": "gestionnaire"
+  },
+  {
+    "id": 1764464960093,
+    "fullName": "Gérald Laronche",
+    "email": "jllsla@free.fr",
+    "phone": "0777800740",
+    "animalType": "chien",
+    "animalName": "Hachi",
+    "role": "client"
+  }
+]

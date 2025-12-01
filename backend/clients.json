@@ -1,0 +1,20 @@
+[
+  {
+    "fullName": "Axelle Fahy",
+    "email": "axellefahy@canidog.fr",
+    "phone": "",
+    "animalType": "chien",
+    "animalName": "Hachi",
+    "role": "admin",
+    "id": 1764495119222
+  },
+  {
+    "fullName": "Gérald Laronche",
+    "email": "jllsla@free.fr",
+    "phone": "0777800740",
+    "animalType": "chat",
+    "animalName": "Kin",
+    "role": "client",
+    "id": 1764464960093
+  }
+]
