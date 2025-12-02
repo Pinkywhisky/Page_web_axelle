@@ -28,6 +28,11 @@ def save_db(data):
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
+@app.route("/favicon.ico")
+def favicon():
+#    return send_from_directory("frontend", "favicon.ico")
+    return "", 204
+
 # 👉 Route qui sert index.html depuis le dossier frontend
 @app.route("/frontend")
 def index():
