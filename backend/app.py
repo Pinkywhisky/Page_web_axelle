@@ -1,129 +1,185 @@
-from flask import Flask, request, jsonify, send_from_directory
 import json
 import os
+from flask import Flask, jsonify, request, send_from_directory
 
+# --------------------------------------------------------------------
+# CONFIGURATION GÉNÉRALE
+# --------------------------------------------------------------------
+
+# Chemin absolu vers le dossier frontend (HTML / CSS / JS)
+FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+
+# Fichier JSON où sont stockés les comptes
+CLIENTS_FILE = os.path.join(os.path.dirname(__file__), "clients.json")
+
+# On crée l'application Flask
 app = Flask(__name__)
 
-# Emplacement du JSON (dans backend)
-DB_PATH = os.path.join(os.path.dirname(__file__), "clients.json")
 
-# Emplacement du frontend (dossier frère de backend)
-FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
+# --------------------------------------------------------------------
+# OUTILS : CHARGER & SAUVEGARDER LE FICHIER JSON
+# --------------------------------------------------------------------
 
-
-def load_db():
-    """Charge le fichier JSON des clients."""
-    if not os.path.exists(DB_PATH):
+def load_clients():
+    """Charge le fichier clients.json.
+       Si le fichier n'existe pas, retourne une liste vide."""
+    if not os.path.exists(CLIENTS_FILE):
         return []
-    with open(DB_PATH, "r", encoding="utf-8") as f:
-        try:
-            return json.load(f)
-        except Exception:
-            return []
+
+    try:
+        with open(CLIENTS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data
+    except Exception as e:
+        print("ERREUR lecture JSON :", e)
+        return []
 
 
-def save_db(data):
-    """Sauvegarde la liste des clients dans clients.json."""
-    with open(DB_PATH, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+def save_clients(clients):
+    """Écrit la liste des clients dans clients.json."""
+    try:
+        with open(CLIENTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(clients, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        print("ERREUR écriture JSON :", e)
+
+
+# --------------------------------------------------------------------
+# ROUTES POUR LE FRONTEND (site web)
+# --------------------------------------------------------------------
+
+@app.route("/")
+def index():
+    """Envoie la page d'accueil du site."""
+    return send_from_directory(FRONTEND_DIR, "index.html")
+
+
+@app.route("/style.css")
+def css():
+    """Envoie le fichier CSS."""
+    return send_from_directory(FRONTEND_DIR, "style.css")
 
 
 @app.route("/favicon.ico")
 def favicon():
-#    return send_from_directory("frontend", "favicon.ico")
-    return "", 204
-
-# 👉 Route qui sert index.html depuis le dossier frontend
-@app.route("/frontend")
-def index():
-    return send_from_directory(FRONTEND_DIR, "index.html")
+    """Envoie la favicon (l'icône du site)."""
+    return send_from_directory(FRONTEND_DIR, "favicon.ico")
 
 
-# (facultatif mais pratique) : route / qui redirige vers /frontend
-@app.route("/")
-def root():
-    return send_from_directory(FRONTEND_DIR, "index.html")
-
-@app.route("/api/login", methods=["POST"])
-def login():
-    """Login très simple par email : renvoie l'utilisateur + son rôle."""
-    data = request.json or {}
-    email = (data.get("email") or "").strip().lower()
-
-    if not email:
-        return jsonify({"error": "missing email"}), 400
-
-    clients = load_db()
-    for c in clients:
-        if (c.get("email") or "").strip().lower() == email:
-            # trouvée -> on renvoie l'utilisateur complet
-            return jsonify({"status": "ok", "user": c}), 200
-
-    return jsonify({"error": "not found"}), 404
-
-
-
-# -------- API JSON --------
-
+# --------------------------------------------------------------------
+# API : GET /api/clients
+# --------------------------------------------------------------------
 @app.route("/api/clients", methods=["GET"])
-def get_clients():
-    """Retourne la liste complète des clients."""
-    return jsonify(load_db())
+def api_get_clients():
+    """Renvoie la liste complète des clients sous forme de JSON."""
+    clients = load_clients()
+    return jsonify(clients), 200
 
 
+# --------------------------------------------------------------------
+# API : POST /api/clients
+# Inscription d'un utilisateur
+# --------------------------------------------------------------------
 @app.route("/api/clients", methods=["POST"])
-def add_client():
-    """Ajoute un nouveau client."""
-    clients = load_db()
-    new_client = request.json
+def api_add_client():
+    """Ajoute un nouvel utilisateur dans clients.json."""
 
-    if not isinstance(new_client, dict):
-        return jsonify({"error": "bad payload"}), 400
+    clients = load_clients()
+    data = request.json  # JSON envoyé par fetch()
 
-    if "id" not in new_client:
-        return jsonify({"error": "missing id"}), 400
+    # On récupère les champs obligatoires
+    fullName = data.get("fullName", "").strip()
+    email = data.get("email", "").strip().lower()
+    password = data.get("password")
 
-    clients.append(new_client)
-    save_db(clients)
-    return jsonify({"status": "ok"}), 201
+    # Vérification minimale
+    if not fullName or not email or not password:
+        return jsonify({"error": "missing fields"}), 400
+
+    # Vérifier que l'e-mail n'est pas déjà utilisé
+    for c in clients:
+        if c.get("email", "").strip().lower() == email:
+            return jsonify({"error": "email already exists"}), 409
+
+    # Si tout est OK → on ajoute l'utilisateur
+    clients.append(data)
+    save_clients(clients)
+
+    return jsonify({"message": "client added"}), 201
 
 
+# --------------------------------------------------------------------
+# API : DELETE /api/clients/<id>
+# Suppression d'un client (admin)
+# --------------------------------------------------------------------
 @app.route("/api/clients/<int:client_id>", methods=["DELETE"])
-def delete_client(client_id):
-    """Supprime un client par ID."""
-    clients = load_db()
-    new_clients = [c for c in clients if c.get("id") != client_id]
+def api_delete_client(client_id):
+    """Supprime un utilisateur en fonction de son id."""
 
-    if len(new_clients) == len(clients):
-        return jsonify({"error": "not found"}), 404
+    clients = load_clients()
+    updated = [c for c in clients if c.get("id") != client_id]
 
-    save_db(new_clients)
-    return jsonify({"status": "deleted"}), 200
+    # Vérifier si quelque chose a été supprimé
+    if len(updated) == len(clients):
+        return jsonify({"error": "client not found"}), 404
+
+    save_clients(updated)
+    return jsonify({"message": "client deleted"}), 200
 
 
+# --------------------------------------------------------------------
+# API : PUT /api/clients/<id>
+# Mise à jour d'un client (changement de rôle par admin)
+# --------------------------------------------------------------------
 @app.route("/api/clients/<int:client_id>", methods=["PUT"])
-def update_client(client_id):
-    """Met à jour un client par ID."""
-    clients = load_db()
-    updated = request.json
+def api_update_client(client_id):
+    """Met à jour les informations d'un client (ex : rôle)."""
 
-    if not isinstance(updated, dict):
-        return jsonify({"error": "bad payload"}), 400
+    clients = load_clients()
+    data = request.json
 
-    found = False
+    updated = False
+
     for i, c in enumerate(clients):
         if c.get("id") == client_id:
-            # On garde l'id original, même si le client envoie autre chose
-            updated["id"] = client_id
-            clients[i] = updated
-            found = True
+            clients[i] = data
+            updated = True
             break
 
-    if not found:
-        return jsonify({"error": "not found"}), 404
+    if not updated:
+        return jsonify({"error": "client not found"}), 404
 
-    save_db(clients)
-    return jsonify({"status": "updated"}), 200
+    save_clients(clients)
+    return jsonify({"message": "client updated"}), 200
 
+
+# --------------------------------------------------------------------
+# API : POST /api/login
+# Vérification email + mot de passe
+# --------------------------------------------------------------------
+@app.route("/api/login", methods=["POST"])
+def api_login():
+    """Vérifie les identifiants et renvoie l'utilisateur s'ils sont corrects."""
+
+    clients = load_clients()
+    data = request.json
+
+    email = data.get("email", "").strip().lower()
+    password = data.get("password")
+
+    # Recherche du compte correspondant
+    for c in clients:
+        if c.get("email", "").strip().lower() == email and c.get("password") == password:
+            return jsonify({"user": c}), 200
+
+    # Si aucune correspondance
+    return jsonify({"error": "invalid credentials"}), 401
+
+
+# --------------------------------------------------------------------
+# Lancement du serveur Flask
+# --------------------------------------------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # host="0.0.0.0" → accessible sur le réseau local
+    # debug=False → plus stable
+    app.run(host="0.0.0.0", port=5000, debug=False)
