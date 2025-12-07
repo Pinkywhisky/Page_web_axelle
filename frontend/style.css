@@ -1,5 +1,5 @@
 /* =========================================================
-   Variables globales & reset de base
+   Variables globales & reset
    ========================================================= */
 
 :root {
@@ -12,7 +12,6 @@
     --border-radius: 16px;
 
     --border-soft: #e2e8f0;
-    --border-strong: #cbd5e1;
     --text-muted: #6f7a82;
 }
 
@@ -76,7 +75,7 @@ header {
     opacity: 0.8;
 }
 
-/* ---- Zone d'authentification (en haut à droite) ---- */
+/* Zone d'authentification en haut à droite */
 
 .auth-area {
     display: flex;
@@ -91,7 +90,7 @@ header {
     font-size: 0.85rem;
 }
 
-/* ---- Main & grille principale ---- */
+/* ---- Main & wrapper ---- */
 
 main {
     flex: 1;
@@ -100,25 +99,14 @@ main {
     padding: 24px 16px 40px;
 }
 
-/* Mobile par défaut : une seule colonne */
 .layout {
     max-width: 1100px;
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 24px;
-}
-
-/* À partir de ~900px : 2 colonnes */
-@media (min-width: 900px) {
-    .layout {
-        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    }
 }
 
 
 /* =========================================================
-   Cartes & blocs génériques
+   Cartes / blocs génériques
    ========================================================= */
 
 .card {
@@ -128,7 +116,8 @@ main {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
 
-.card h2 {
+.card h2,
+.card h1 {
     margin-top: 0;
 }
 
@@ -136,8 +125,6 @@ main {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
-
-/* Message global (info / erreur) */
 
 .info-message {
     display: none;
@@ -183,21 +170,9 @@ main {
     background: var(--primary-dark);
 }
 
-.btn-link {
-    color: #d33;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
-.btn-link:hover {
-    text-decoration: underline;
-}
-
 
 /* =========================================================
-   Accueil / Hero (colonne de gauche)
+   Accueil / Hero
    ========================================================= */
 
 .home-card {
@@ -248,7 +223,7 @@ main {
     color: #b45309;
 }
 
-/* Deux colonnes explicatives */
+/* Deux blocs expliquant le site */
 
 .home-columns {
     display: grid;
@@ -280,66 +255,6 @@ main {
     font-size: 0.8rem;
     color: var(--text-muted);
     margin-top: 6px;
-}
-
-
-/* =========================================================
-   Vue client & vue admin (colonne de droite)
-   ========================================================= */
-
-.profile-box {
-    padding: 10px;
-    border-radius: 10px;
-    background: #fdfefe;
-    border: 1px solid #e0e5ea;
-    font-size: 0.9rem;
-}
-
-.role-label {
-    display: inline-block;
-    margin-top: 6px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    background: #e3f4ff;
-    color: #246ca8;
-}
-
-.role-label.admin {
-    background: #ffe3f1;
-    color: #a3126a;
-}
-
-
-/* =========================================================
-   Tableau admin (liste des inscrits)
-   ========================================================= */
-
-.table-wrap {
-    margin-top: 10px;
-    border-radius: 12px;
-    border: 1px solid #e0e5ea;
-    max-height: 380px;
-    overflow-y: auto;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.85rem;
-}
-
-th,
-td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eef1f5;
-}
-
-th {
-    position: sticky;
-    top: 0;
-    background: #f7fafc;
-    z-index: 1;
 }
 
 
@@ -394,28 +309,171 @@ th {
     margin-top: 14px;
 }
 
-/* Bloc de succès dans le modal */
-
 #registerSuccess {
     text-align: center;
     padding: 10px 0;
 }
+
+/* =========================================================
+   Modal Profil Utilisateur
+   ========================================================= */
+
+.profile-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1100;
+}
+
+.profile-modal {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 20px 18px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+}
+
+.profile-modal h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+}
+
+.profile-modal form label {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.profile-modal form input,
+.profile-modal form select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #d4dde3;
+    margin-top: 3px;
+    font-size: 0.9rem;
+}
+
+.profile-modal-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+#profileModalMessage {
+    font-size: 0.8rem;
+    margin-top: 6px;
+}
+
+/* =========================================================
+   Modal d'information Admin
+   ========================================================= */
+
+.admin-info-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200; /* au-dessus des autres modals si besoin */
+}
+
+.admin-info-modal {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 20px 18px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+}
+
+.admin-info-modal h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
+.admin-info-modal ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 0.85rem;
+}
+
+.admin-info-modal-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+
+/* =========================================================
+   Cadre profil utilisateur
+   ========================================================= */
+
+.profile-panel {
+    margin-top: 16px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid var(--border-soft);
+    padding: 12px 14px;
+}
+
+.profile-panel h3 {
+    margin-top: 0;
+    margin-bottom: 6px;
+    font-size: 1rem;
+}
+
+.profile-panel form label {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.9rem;
+}
+
+.profile-panel form input,
+.profile-panel form select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #d4dde3;
+    margin-top: 3px;
+    font-size: 0.9rem;
+}
+
+.profile-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+#profileMessage {
+    font-size: 0.8rem;
+    margin-top: 6px;
+}
+
 
 
 /* =========================================================
    Responsive
    ========================================================= */
 
+/* Tablette / petit écran : une seule colonne pour les blocs d'accueil */
+
 @media (max-width: 880px) {
-
-    .layout {
-        grid-template-columns: 1fr;
-    }
-
     .home-columns {
         grid-template-columns: 1fr;
     }
 }
+
+/* Smartphone : auth plus confortable */
+
 @media (max-width: 600px) {
     .auth-area {
         flex-wrap: wrap;
@@ -425,5 +483,17 @@ th {
 
     .auth-area input {
         width: 100%;
+    }
+
+    main {
+        padding: 16px 10px 30px;
+    }
+
+    .card {
+        padding: 16px 14px;
+    }
+
+    .home-title {
+        font-size: 1.2rem;
     }
 }

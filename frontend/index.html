@@ -3,20 +3,24 @@
 
 <head>
     <meta charset="UTF-8" />
+    <!-- Permet d’avoir un rendu adapté sur mobile (important pour le responsive) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
     <title>Club des Pattes – Espace membres</title>
 
+    <!-- Icône de l’onglet (favicon) -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- Fichier CSS externe qui contient tout le style -->
     <link rel="stylesheet" href="/style.css">
-
 </head>
 
 <body>
+    <!-- Conteneur global de la page -->
     <div class="page">
-        <!-- ========= HEADER ========= -->
+        <!-- ================== HEADER (bandeau en haut) ================== -->
         <header>
             <div class="header-inner">
-                <!-- Logo + titre -->
+                <!-- Bloc de gauche : logo + titre -->
                 <div class="logo-block">
                     <span class="logo-icon">🐾</span>
                     <div>
@@ -25,115 +29,168 @@
                     </div>
                 </div>
 
-                <!-- Zone authentification (en haut à droite) -->
+                <!-- Bloc de droite : zone de connexion (quand personne n'est connecté) -->
                 <div class="auth-area" id="authArea">
-                    <!-- Affiché quand personne n'est connecté -->
+                    <!-- Champ e-mail pour se connecter -->
                     <input type="email" id="loginEmail" placeholder="E-mail" />
+                    <!-- Champ mot de passe -->
                     <input type="password" id="loginPassword" placeholder="Mot de passe" />
+                    <!-- Bouton de connexion -->
                     <button class="btn-small btn-primary" id="loginBtn">Se connecter</button>
+                    <!-- Bouton pour ouvrir le modal d’inscription -->
                     <button class="btn-small btn-outline" id="openRegisterBtn">S'inscrire</button>
                 </div>
 
-                <!-- Zone "utilisateur connecté" (remplace authArea) -->
+                <!-- Bloc de droite : zone affichée quand l’utilisateur est connecté -->
                 <div class="auth-area" id="userArea" style="display:none;">
+                    <!-- Texte avec le nom + rôle (Client ou Admin) -->
                     <span id="userInfoText"></span>
+
+                    <!-- Bouton pour ouvrir le modal "Mon profil" -->
+                    <button class="btn-small btn-primary" id="profileBtn">Mon profil</button>
+
+                    <!-- Bouton réservé aux admins : Gérer les membres -->
+                    <button class="btn-small btn-outline" id="manageMembersBtn" style="display:none;">
+                        Gérer les membres
+                    </button>
+
+                    <!-- Bouton de déconnexion -->
                     <button class="btn-small btn-outline" id="logoutBtn">Se déconnecter</button>
                 </div>
             </div>
         </header>
 
-        <!-- ========= MAIN ========= -->
+        <!-- ================== CONTENU PRINCIPAL ================== -->
         <main>
             <div class="layout">
-                <!-- Colonne gauche : accueil -->
-                <section class="card home-card">
+                <!-- Une seule carte centrale : la page d’accueil -->
+                <section class="card home-card" id="homeView">
+
+                    <!-- Message global pour info / succès / erreur -->
+                    <div id="globalMessage" class="info-message"></div>
+
+                    <!-- Bloc de présentation “hero” -->
                     <div class="home-header">
                         <div class="home-emoji">🐶🐱</div>
                         <div>
                             <h1 class="home-title">Bienvenue au Club des Pattes</h1>
                             <p class="home-subtitle">
-                                Un espace pour suivre vos inscriptions, les profils de vos animaux
-                                et la gestion du club.
+                                Un espace pour gérer les membres du club, les profils de vos animaux
+                                et les accès administrateurs.
                             </p>
                             <div class="pills-row">
                                 <span class="pill highlight">Suivi des membres</span>
                                 <span class="pill">Profils animaux</span>
-                                <span class="pill">Vue admin dédiée</span>
+                                <span class="pill">Rôles client / admin</span>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Deux colonnes explicatives (membres / équipe) -->
                     <div class="home-columns">
                         <div class="home-block">
                             <h3>Pour les membres 🐾</h3>
                             <ul class="home-list">
                                 <li>Créez votre compte via le bouton <strong>“S'inscrire”</strong> en haut à droite.
                                 </li>
-                                <li>Connectez-vous pour retrouver votre profil et les informations de votre animal.</li>
-                                <li>Vos données restent côté club et ne sont pas partagées.</li>
+                                <li>Connectez-vous avec votre e-mail et votre mot de passe.</li>
+                                <li>Votre rôle par défaut est <strong>client</strong>.</li>
                             </ul>
                         </div>
 
                         <div class="home-block">
                             <h3>Pour l'équipe du club 🐕‍🦺</h3>
                             <ul class="home-list">
-                                <li>Connectez-vous avec un compte <strong>admin</strong> pour accéder à la vue de
-                                    gestion.</li>
-                                <li>Consultez la liste des inscrits, gérez les rôles et supprimez des fiches si
-                                    nécessaire.</li>
-                                <li>Les données sont stockées dans un fichier JSON côté serveur.</li>
+                                <li>Les comptes <strong>admin</strong> peuvent être configurés dans le fichier
+                                    <code>clients.json</code>.
+                                </li>
+                                <li>L’API Flask permet de gérer les membres (création, modification, suppression).</li>
+                                <li>Les données sont stockées côté serveur dans un fichier JSON.</li>
                             </ul>
                         </div>
                     </div>
 
                     <p class="home-footer-note">
-                        💡 Astuce : si vous n'avez pas encore de compte, commencez par créer un profil via le bouton
-                        <strong>“S'inscrire”</strong>. Une fois connecté, votre vue s'adaptera automatiquement à votre
-                        rôle
-                        (<em>client</em> ou <em>admin</em>).
+                        💡 Astuce : créez d'abord un compte client, puis changez son rôle en
+                        <strong>admin</strong> dans <code>clients.json</code> pour vous donner les droits d’admin.
                     </p>
                 </section>
+                <section class="card" id="manageView" style="display:none;">
+                    <h2>Gestion des membres</h2>
+                    <!-- Bouton retour vers l'accueil -->
+                    <button id="backHomeBtn" class="btn-small btn-outline" style="margin-bottom: 15px;">
+                        ⬅ Retour à l’accueil
+                    </button>
+                    <p class="helper-text">
+                        Vue d’administration : modifiez les comptes, les rôles, et les animaux associés.
+                    </p>
 
-                <!-- Colonne droite : espace client / admin -->
-                <section class="card">
-                    <!-- Messages généraux -->
-                    <div id="globalMessage" class="info-message"></div>
-
-                    <!-- Vue client -->
-                    <div id="clientView" style="display:none;">
-                        <h2>Mon profil</h2>
-                        <div id="clientProfile" class="profile-box"></div>
+                    <!-- Barre de recherche -->
+                    <div style="margin:10px 0;">
+                        <input type="text" id="manageSearch" placeholder="Rechercher un membre..."
+                            style="width:100%; padding:8px; border-radius:8px; border:1px solid #d4dde3;">
                     </div>
 
-                    <!-- Vue admin -->
-                    <div id="adminView" style="display:none;">
-                        <h2>Gestion des inscrits</h2>
-                        <p class="helper-text">
-                            Espace réservé aux administrateurs du Club des Pattes.
-                        </p>
+                    <!-- Tableau des membres -->
+                    <div class="admin-manage-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Animal</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manageTableBody">
+                                <!-- Rempli par JS -->
+                            </tbody>
+                        </table>
+                    </div>
 
-                        <div class="table-wrap">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Nom</th>
-                                        <th>Rôle</th>
-                                        <th>Animal</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clientsTableBody">
-                                    <!-- rempli en JS -->
-                                </tbody>
-                            </table>
-                        </div>
+                    <!-- Formulaire d’édition -->
+                    <div class="admin-manage-edit">
+                        <h4 id="manageEditTitle">Sélectionnez un membre</h4>
+
+                        <form id="manageEditForm" style="display:none;">
+                            <input type="hidden" id="manageId">
+
+                            <label>Nom</label>
+                            <input id="manageFullName">
+
+                            <label>Email</label>
+                            <input id="manageEmail">
+
+                            <label>Rôle</label>
+                            <select id="manageRole">
+                                <option value="client">Client</option>
+                                <option value="admin">Admin</option>
+                            </select>
+
+                            <label>Animal</label>
+                            <input id="manageAnimalName">
+
+                            <label>Type d'animal</label>
+                            <select id="manageAnimalType">
+                                <option value="">—</option>
+                                <option value="chien">Chien</option>
+                                <option value="chat">Chat</option>
+                                <option value="nac">NAC</option>
+                                <option value="oiseau">Oiseau</option>
+                                <option value="autre">Autre</option>
+                            </select>
+
+                            <p id="manageEditMessage"></p>
+
+                            <button class="btn-small btn-primary" type="submit">Enregistrer</button>
+                        </form>
                     </div>
                 </section>
             </div>
         </main>
 
-        <!-- ========= MODAL INSCRIPTION ========= -->
+        <!-- ================== MODAL INSCRIPTION ================== -->
         <div class="modal-backdrop" id="registerModal">
             <div class="modal">
                 <h3>Créer un compte</h3>
@@ -141,7 +198,7 @@
                     Inscription au Club des Pattes. Vous serez créé avec le rôle <strong>client</strong> par défaut.
                 </p>
 
-                <!-- Formulaire d'inscription -->
+                <!-- Formulaire d’inscription -->
                 <form id="registerForm">
                     <label for="regFullName">Nom complet</label>
                     <input id="regFullName" type="text" required placeholder="Ex : Marie Dupont" />
@@ -177,11 +234,9 @@
                     </div>
                 </form>
 
-                <!-- Message d'erreur sous le formulaire -->
                 <p class="helper-text" id="registerMessage"></p>
 
-                <!-- Écran de succès -->
-                <div id="registerSuccess" style="display:none; text-align:center; padding:10px 0;">
+                <div id="registerSuccess" style="display:none;">
                     <h3>Compte créé avec succès 🎉</h3>
                     <p class="helper-text">Vous pouvez maintenant vous connecter.</p>
 
@@ -192,48 +247,190 @@
                 </div>
             </div>
         </div>
+
+        <!-- ================== MODAL PROFIL UTILISATEUR ================== -->
+        <div class="profile-modal-backdrop" id="profileModal">
+            <div class="profile-modal">
+                <h3>Mon profil</h3>
+                <p class="helper-text">
+                    Modifiez vos informations personnelles puis cliquez sur
+                    <strong>Enregistrer</strong>.
+                </p>
+
+                <form id="profileForm">
+                    <label for="profFullName">Nom complet</label>
+                    <input id="profFullName" type="text" />
+
+                    <label for="profEmail">Adresse e-mail</label>
+                    <input id="profEmail" type="email" disabled />
+
+                    <label for="profPhone">Téléphone</label>
+                    <input id="profPhone" type="tel" />
+
+                    <label for="profAnimalType">Type d'animal</label>
+                    <select id="profAnimalType">
+                        <option value="">Sélectionnez…</option>
+                        <option value="chien">Chien</option>
+                        <option value="chat">Chat</option>
+                        <option value="nac">NAC</option>
+                        <option value="oiseau">Oiseau</option>
+                        <option value="autre">Autre</option>
+                    </select>
+
+                    <label for="profAnimalName">Nom de l'animal</label>
+                    <input id="profAnimalName" type="text" />
+
+                    <p id="profileModalMessage"></p>
+
+                    <div class="profile-modal-actions">
+                        <button type="button" class="btn-small btn-outline" id="profileCloseBtn">Fermer</button>
+                        <button type="submit" class="btn-small btn-primary">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================== MODAL GESTION DES MEMBRES (ADMIN) ================== -->
+        <div class="admin-manage-modal-backdrop" id="manageModal" style="display:none;">
+            <div class="admin-manage-modal">
+                <h3>Gestion des membres</h3>
+                <p class="helper-text">
+                    Vous êtes connecté en tant qu'<strong>admin</strong>. Vous pouvez modifier tous les comptes clients
+                    et supprimer les utilisateurs <strong>clients</strong> (sauf votre propre compte).
+                </p>
+
+                <!-- Barre de recherche simple -->
+                <div style="margin:8px 0 10px;">
+                    <input type="text" id="manageSearch" placeholder="Rechercher (nom / email / animal)…"
+                        style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #d4dde3;font-size:0.85rem;">
+                </div>
+
+                <div class="admin-manage-layout">
+                    <!-- Tableau des membres -->
+                    <div class="admin-manage-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Animal</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manageTableBody">
+                                <!-- Lignes générées en JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Formulaire d’édition du membre sélectionné -->
+                    <div class="admin-manage-edit">
+                        <h4 id="manageEditTitle">Sélectionnez un membre à modifier</h4>
+
+                        <form id="manageEditForm" style="display:none;">
+                            <input type="hidden" id="manageId" />
+
+                            <label for="manageFullName">Nom complet</label>
+                            <input id="manageFullName" type="text" />
+
+                            <label for="manageEmail">Adresse e-mail</label>
+                            <input id="manageEmail" type="email" />
+
+                            <label for="managePhone">Téléphone</label>
+                            <input id="managePhone" type="tel" />
+
+                            <label for="manageRole">Rôle</label>
+                            <select id="manageRole">
+                                <option value="client">Client</option>
+                                <option value="admin">Admin</option>
+                            </select>
+
+                            <label for="manageAnimalType">Type d'animal</label>
+                            <select id="manageAnimalType">
+                                <option value="">Sélectionnez…</option>
+                                <option value="chien">Chien</option>
+                                <option value="chat">Chat</option>
+                                <option value="nac">NAC</option>
+                                <option value="oiseau">Oiseau</option>
+                                <option value="autre">Autre</option>
+                            </select>
+
+                            <label for="manageAnimalName">Nom de l'animal</label>
+                            <input id="manageAnimalName" type="text" />
+
+                            <p id="manageEditMessage"></p>
+
+                            <div class="profile-modal-actions">
+                                <button type="button" class="btn-small btn-outline" id="manageCloseBtn">Fermer</button>
+                                <button type="submit" class="btn-small btn-primary">Enregistrer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
-    <!-- ========= SCRIPT ========= -->
+    <!-- ================== SCRIPT : LOGIQUE FRONT ================== -->
     <script>
         const API_CLIENTS = "/api/clients";
         const API_LOGIN = "/api/login";
 
-        let clients = [];
         let currentUser = null;
         let isAdmin = false;
+        let allMembers = []; // liste brute de tous les comptes (pour l’admin)
 
-        // Références DOM
+        // --------- RÉFÉRENCES DOM ---------
         const authArea = document.getElementById("authArea");
         const userArea = document.getElementById("userArea");
         const userInfoText = document.getElementById("userInfoText");
-        const logoutBtn = document.getElementById("logoutBtn");
 
         const loginBtn = document.getElementById("loginBtn");
+        const logoutBtn = document.getElementById("logoutBtn");
+        const openRegisterBtn = document.getElementById("openRegisterBtn");
+        const profileBtn = document.getElementById("profileBtn");
+        const manageMembersBtn = document.getElementById("manageMembersBtn");
+
         const loginEmail = document.getElementById("loginEmail");
         const loginPassword = document.getElementById("loginPassword");
 
         const globalMessage = document.getElementById("globalMessage");
-        const clientView = document.getElementById("clientView");
-        const clientProfile = document.getElementById("clientProfile");
-        const adminView = document.getElementById("adminView");
-        const tableBody = document.getElementById("clientsTableBody");
 
+        // Modal inscription
         const registerModal = document.getElementById("registerModal");
-        const openRegisterBtn = document.getElementById("openRegisterBtn");
-        const closeRegisterBtn = document.getElementById("closeRegisterBtn");
         const registerForm = document.getElementById("registerForm");
         const registerMessage = document.getElementById("registerMessage");
         const registerSuccess = document.getElementById("registerSuccess");
+        const closeRegisterBtn = document.getElementById("closeRegisterBtn");
         const successLoginBtn = document.getElementById("successLoginBtn");
         const successCloseBtn = document.getElementById("successCloseBtn");
 
-        /* ========= Init ========= */
-        document.addEventListener("DOMContentLoaded", () => {
-            loadClients();
-        });
+        // Modal profil
+        const profileModal = document.getElementById("profileModal");
+        const profileForm = document.getElementById("profileForm");
+        const profileModalMessage = document.getElementById("profileModalMessage");
+        const profileCloseBtn = document.getElementById("profileCloseBtn");
 
-        /* ========= Helpers UI ========= */
+        // Modal gestion membres (admin)
+        const manageModal = document.getElementById("manageModal");
+        const manageSearch = document.getElementById("manageSearch");
+        const manageTableBody = document.getElementById("manageTableBody");
+        const manageEditForm = document.getElementById("manageEditForm");
+        const manageEditTitle = document.getElementById("manageEditTitle");
+        const manageId = document.getElementById("manageId");
+        const manageFullName = document.getElementById("manageFullName");
+        const manageEmail = document.getElementById("manageEmail");
+        const managePhone = document.getElementById("managePhone");
+        const manageRole = document.getElementById("manageRole");
+        const manageAnimalType = document.getElementById("manageAnimalType");
+        const manageAnimalName = document.getElementById("manageAnimalName");
+        const manageEditMessage = document.getElementById("manageEditMessage");
+        const manageCloseBtn = document.getElementById("manageCloseBtn");
+        const backHomeBtn = document.getElementById("backHomeBtn");
+
+        // ================== FONCTIONS UI ==================
         function showGlobalMessage(text, ok = true) {
             globalMessage.textContent = text;
             globalMessage.style.display = "block";
@@ -246,44 +443,27 @@
             globalMessage.textContent = "";
         }
 
-        function openRegisterModal() {
-            // reset pour nouvelle ouverture
-            registerForm.style.display = "block";
-            registerForm.reset();
-            registerMessage.textContent = "";
-            registerSuccess.style.display = "none";
-            registerModal.style.display = "flex";
-        }
+        function updateHeaderAuth() {
+            if (currentUser) {
+                authArea.style.display = "flex";
+                authArea.style.visibility = "hidden";
+                userArea.style.display = "flex";
 
-        function closeRegisterModal() {
-            registerModal.style.display = "none";
-            // on réinitialise pour la prochaine fois
-            registerForm.style.display = "block";
-            registerForm.reset();
-            registerMessage.textContent = "";
-            registerSuccess.style.display = "none";
-        }
+                const roleText = isAdmin ? "Admin" : "Client";
+                userInfoText.textContent = `${currentUser.fullName} (${roleText})`;
 
-        /* ========= Chargement de la base ========= */
-        async function loadClients() {
-            try {
-                const res = await fetch(API_CLIENTS);
-                clients = await res.json();
-                renderTable();
-                if (currentUser) {
-                    const updated = clients.find(c => c.id === currentUser.id);
-                    if (updated) currentUser = updated;
-                    updateViewForRole();
-                }
-            } catch (err) {
-                console.error("Erreur GET clients :", err);
+                // Bouton "Gérer les membres" visible seulement pour les admins
+                manageMembersBtn.style.display = isAdmin ? "inline-flex" : "none";
+            } else {
+                authArea.style.display = "flex";
+                authArea.style.visibility = "visible";
+                userArea.style.display = "none";
+                manageMembersBtn.style.display = "none";
             }
         }
 
-        /* ========= Connexion ========= */
-        if (loginBtn) {
-            loginBtn.addEventListener("click", login);
-        }
+        // ================== LOGIN / LOGOUT ==================
+        loginBtn.addEventListener("click", login);
 
         async function login() {
             clearGlobalMessage();
@@ -307,7 +487,6 @@
                     currentUser = null;
                     isAdmin = false;
                     updateHeaderAuth();
-                    updateViewForRole();
                     return;
                 }
 
@@ -323,85 +502,48 @@
                 );
 
                 updateHeaderAuth();
-                updateViewForRole();
-                if (isAdmin) {
-                    await loadClients();
-                }
+
             } catch (err) {
                 console.error("Erreur login :", err);
                 showGlobalMessage("Erreur lors de la connexion au serveur.", false);
             }
         }
 
-        /* ========= Déconnexion ========= */
-        if (logoutBtn) {
-            logoutBtn.addEventListener("click", () => {
-                currentUser = null;
-                isAdmin = false;
-                loginEmail.value = "";
-                loginPassword.value = "";
-                updateHeaderAuth();
-                updateViewForRole();
-                showGlobalMessage("Vous avez été déconnecté.", true);
-            });
+        logoutBtn.addEventListener("click", () => {
+            currentUser = null;
+            isAdmin = false;
+            loginEmail.value = "";
+            loginPassword.value = "";
+            updateHeaderAuth();
+            closeProfileModal();
+            closeManageModal();
+            showGlobalMessage("Vous avez été déconnecté.", true);
+        });
+
+        // ================== MODAL INSCRIPTION ==================
+        function openRegisterModal() {
+            registerForm.style.display = "block";
+            registerForm.reset();
+            registerMessage.textContent = "";
+            registerSuccess.style.display = "none";
+            registerModal.style.display = "flex";
         }
 
-        function updateHeaderAuth() {
-            if (currentUser) {
-                authArea.style.display = "flex";
-                authArea.style.visibility = "hidden"; /* évite de bouger le header, tout en le cachant */
-                userArea.style.display = "flex";
-                const roleText = isAdmin ? "Admin" : "Client";
-                userInfoText.textContent = `${currentUser.fullName} (${roleText})`;
-            } else {
-                authArea.style.display = "flex";
-                authArea.style.visibility = "visible";
-                userArea.style.display = "none";
-            }
+        function closeRegisterModal() {
+            registerModal.style.display = "none";
+            registerForm.style.display = "block";
+            registerForm.reset();
+            registerMessage.textContent = "";
+            registerSuccess.style.display = "none";
         }
 
-        /* ========= Vue selon le rôle ========= */
-        function updateViewForRole() {
-            if (!currentUser) {
-                clientView.style.display = "none";
-                adminView.style.display = "none";
-                return;
-            }
-
-            if (isAdmin) {
-                clientView.style.display = "none";
-                adminView.style.display = "block";
-            } else {
-                adminView.style.display = "none";
-                clientView.style.display = "block";
-
-                const animalLabel = currentUser.animalName
-                    ? `${currentUser.animalName} (${currentUser.animalType})`
-                    : (currentUser.animalType || "-");
-
-                const roleText = currentUser.role === "admin" ? "Admin" : "Client";
-
-                clientProfile.innerHTML = `
-                    <p><strong>Nom :</strong> ${currentUser.fullName}</p>
-                    <p><strong>Email :</strong> ${currentUser.email}</p>
-                    <p><strong>Téléphone :</strong> ${currentUser.phone || "-"}</p>
-                    <p><strong>Animal :</strong> ${animalLabel}</p>
-                    <p><strong>Statut :</strong> ${roleText}</p>
-                `;
-            }
-        }
-
-        /* ========= Modal inscription ========= */
         openRegisterBtn.addEventListener("click", openRegisterModal);
         closeRegisterBtn.addEventListener("click", closeRegisterModal);
 
         registerModal.addEventListener("click", (e) => {
-            if (e.target === registerModal) {
-                closeRegisterModal();
-            }
+            if (e.target === registerModal) closeRegisterModal();
         });
 
-        // Gestion de l'inscription
         registerForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             registerMessage.style.color = "#6f7a82";
@@ -459,14 +601,10 @@
                     return;
                 }
 
-                await loadClients();
-
-                // ✅ Succès : on masque le formulaire et on affiche l'écran de succès
                 registerForm.style.display = "none";
                 registerMessage.textContent = "";
                 registerSuccess.style.display = "block";
 
-                // Pré-remplir le champ login avec l'e-mail utilisé
                 loginEmail.value = email;
 
             } catch (err) {
@@ -476,116 +614,303 @@
             }
         });
 
-        // Bouton "Se connecter" après succès
+
         successLoginBtn.addEventListener("click", () => {
             closeRegisterModal();
             loginPassword.focus();
         });
 
-        // Bouton "Fermer" après succès
         successCloseBtn.addEventListener("click", () => {
             closeRegisterModal();
         });
 
-        /* ========= Vue admin : tableau & actions ========= */
-        function renderTable() {
-            if (!isAdmin) {
-                tableBody.innerHTML = "";
+        // ================== MODAL PROFIL ==================
+        function openProfileModal() {
+            if (!currentUser) {
+                showGlobalMessage("Vous devez être connecté pour voir votre profil.", false);
                 return;
             }
 
-            tableBody.innerHTML = "";
+            document.getElementById("profFullName").value = currentUser.fullName || "";
+            document.getElementById("profEmail").value = currentUser.email || "";
+            document.getElementById("profPhone").value = currentUser.phone || "";
+            document.getElementById("profAnimalType").value = currentUser.animalType || "";
+            document.getElementById("profAnimalName").value = currentUser.animalName || "";
 
-            if (!clients.length) {
+            profileModalMessage.textContent = "";
+            profileModal.style.display = "flex";
+        }
+
+        function closeProfileModal() {
+            profileModal.style.display = "none";
+            profileModalMessage.textContent = "";
+        }
+
+        profileBtn.addEventListener("click", openProfileModal);
+        profileCloseBtn.addEventListener("click", closeProfileModal);
+        profileModal.addEventListener("click", (e) => {
+            if (e.target === profileModal) closeProfileModal();
+        });
+
+        profileForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            if (!currentUser) {
+                showGlobalMessage("Vous devez être connecté pour modifier votre profil.", false);
+                return;
+            }
+
+            const updated = {
+                ...currentUser,
+                fullName: document.getElementById("profFullName").value.trim(),
+                phone: document.getElementById("profPhone").value.trim(),
+                animalType: document.getElementById("profAnimalType").value,
+                animalName: document.getElementById("profAnimalName").value.trim()
+            };
+
+            try {
+                const res = await fetch(`${API_CLIENTS}/${currentUser.id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updated),
+                });
+
+                if (!res.ok) {
+                    console.error("Erreur PUT profil:", await res.text());
+                    profileModalMessage.style.color = "#c0392b";
+                    profileModalMessage.textContent = "Erreur lors de la mise à jour du profil.";
+                    return;
+                }
+
+                currentUser = updated;
+                isAdmin = currentUser.role === "admin";
+                updateHeaderAuth();
+
+                profileModalMessage.style.color = "#2e7d32";
+                profileModalMessage.textContent = "Profil mis à jour avec succès.";
+
+            } catch (err) {
+                console.error("Erreur réseau (profil):", err);
+                profileModalMessage.style.color = "#c0392b";
+                profileModalMessage.textContent = "Erreur de communication avec le serveur.";
+            }
+        });
+
+        // ================== MODAL GESTION MEMBRES (ADMIN) ==================
+        function openManageModal() {
+            if (!currentUser || !isAdmin) {
+                showGlobalMessage("Accès réservé aux administrateurs.", false);
+                return;
+            }
+            manageEditMessage.textContent = "";
+            manageEditForm.style.display = "none";
+            manageEditTitle.textContent = "Sélectionnez un membre à modifier";
+            manageSearch.value = "";
+            manageModal.style.display = "flex";
+            loadMembers();
+        }
+
+        function closeManageModal() {
+            manageModal.style.display = "none";
+        }
+
+        manageMembersBtn.addEventListener("click", () => {
+            // Masquer la page d’accueil
+            document.getElementById("homeView").style.display = "none";
+
+            // Afficher la page de gestion
+            document.getElementById("manageView").style.display = "block";
+
+            // Charger les membres
+            loadMembers();
+        });
+
+        
+
+        backHomeBtn.addEventListener("click", () => {
+            document.getElementById("manageView").style.display = "none";
+            document.getElementById("homeView").style.display = "block";
+
+            // Reset propre
+            const manageEditForm = document.getElementById("manageEditForm");
+            const manageEditMessage = document.getElementById("manageEditMessage");
+
+            if (manageEditForm) manageEditForm.style.display = "none";
+            if (manageEditMessage) manageEditMessage.textContent = "";
+        });
+
+
+        manageCloseBtn.addEventListener("click", closeManageModal);
+        manageModal.addEventListener("click", (e) => {
+            if (e.target === manageModal) closeManageModal();
+        });
+
+        // Charger tous les membres depuis le backend
+        async function loadMembers() {
+            try {
+                const res = await fetch(API_CLIENTS);
+                if (!res.ok) {
+                    console.error("Erreur GET clients:", await res.text());
+                    manageTableBody.innerHTML = "<tr><td colspan='5'>Erreur de chargement.</td></tr>";
+                    return;
+                }
+                allMembers = await res.json();
+                renderMembersTable();
+            } catch (err) {
+                console.error("Erreur réseau GET clients:", err);
+                manageTableBody.innerHTML = "<tr><td colspan='5'>Erreur réseau.</td></tr>";
+            }
+        }
+
+        // Filtre de recherche simple
+        manageSearch.addEventListener("input", renderMembersTable);
+
+        function renderMembersTable() {
+            manageTableBody.innerHTML = "";
+            const term = (manageSearch.value || "").toLowerCase();
+
+            const filtered = allMembers.filter(m => {
+                if (!term) return true;
+                const haystack = `${m.fullName || ""} ${m.email || ""} ${m.animalName || ""}`.toLowerCase();
+                return haystack.includes(term);
+            });
+
+            if (!filtered.length) {
                 const tr = document.createElement("tr");
                 const td = document.createElement("td");
                 td.colSpan = 5;
-                td.textContent = "Aucun inscrit pour le moment.";
+                td.textContent = "Aucun membre trouvé.";
                 td.style.fontStyle = "italic";
-                td.style.color = "#999";
+                td.style.color = "#888";
                 tr.appendChild(td);
-                tableBody.appendChild(tr);
+                manageTableBody.appendChild(tr);
                 return;
             }
 
-            clients.forEach(c => {
+            filtered.forEach(m => {
                 const tr = document.createElement("tr");
 
                 const tdName = document.createElement("td");
-                tdName.textContent = c.fullName;
+                tdName.textContent = m.fullName || "";
                 tr.appendChild(tdName);
 
+                const tdEmail = document.createElement("td");
+                tdEmail.textContent = m.email || "";
+                tr.appendChild(tdEmail);
+
                 const tdRole = document.createElement("td");
-                const select = document.createElement("select");
-                const roles = [
-                    { value: "client", label: "Client" },
-                    { value: "admin", label: "Admin" }
-                ];
-                roles.forEach(r => {
-                    const opt = document.createElement("option");
-                    opt.value = r.value;
-                    opt.textContent = r.label;
-                    if ((c.role || "client") === r.value) opt.selected = true;
-                    select.appendChild(opt);
-                });
-                select.addEventListener("change", () => updateClientRole(c.id, select.value));
-                tdRole.appendChild(select);
+                tdRole.textContent = m.role === "admin" ? "Admin" : "Client";
                 tr.appendChild(tdRole);
 
                 const tdAnimal = document.createElement("td");
-                const animalLabel = c.animalName
-                    ? `${c.animalName} (${c.animalType})`
-                    : (c.animalType || "-");
-                tdAnimal.textContent = animalLabel;
+                const typeLabel = {
+                    chien: "Chien",
+                    chat: "Chat",
+                    nac: "NAC",
+                    oiseau: "Oiseau",
+                    autre: "Autre"
+                }[m.animalType] || m.animalType || "";
+                tdAnimal.textContent = m.animalName
+                    ? `${m.animalName} (${typeLabel})`
+                    : typeLabel;
                 tr.appendChild(tdAnimal);
 
-                const tdEmail = document.createElement("td");
-                tdEmail.textContent = c.email;
-                tr.appendChild(tdEmail);
-
                 const tdActions = document.createElement("td");
+                const editBtn = document.createElement("button");
+                editBtn.textContent = "Modifier";
+                editBtn.className = "btn-small btn-outline";
+                editBtn.style.marginRight = "4px";
+                editBtn.addEventListener("click", () => selectMemberForEdit(m));
+
                 const delBtn = document.createElement("button");
                 delBtn.textContent = "Supprimer";
-                delBtn.className = "btn-link";
-                delBtn.addEventListener("click", () => deleteClient(c.id));
+                delBtn.className = "btn-small btn-outline";
+                delBtn.style.color = "#c0392b";
+                delBtn.addEventListener("click", () => deleteMember(m));
+
+                tdActions.appendChild(editBtn);
                 tdActions.appendChild(delBtn);
                 tr.appendChild(tdActions);
 
-                tableBody.appendChild(tr);
+                manageTableBody.appendChild(tr);
             });
         }
 
-        async function deleteClient(id) {
-            if (!isAdmin) {
-                alert("Seul un admin peut supprimer un inscrit.");
+        function selectMemberForEdit(member) {
+            manageEditForm.style.display = "block";
+            manageEditTitle.textContent = `Modifier : ${member.fullName || member.email}`;
+
+            manageId.value = member.id;
+            manageFullName.value = member.fullName || "";
+            manageEmail.value = member.email || "";
+            managePhone.value = member.phone || "";
+            manageRole.value = member.role || "client";
+            manageAnimalType.value = member.animalType || "";
+            manageAnimalName.value = member.animalName || "";
+
+            manageEditMessage.textContent = "";
+        }
+
+        async function deleteMember(member) {
+            if (!currentUser || !isAdmin) {
+                showGlobalMessage("Accès réservé aux administrateurs.", false);
                 return;
             }
-            if (!confirm("Supprimer cet inscrit ?")) return;
+
+            // Interdiction de se supprimer soi-même
+            if (member.id === currentUser.id) {
+                showGlobalMessage("Vous ne pouvez pas supprimer votre propre compte.", false);
+                return;
+            }
+
+            // Option : empêcher de supprimer un autre admin (si tu veux)
+            // ici on bloque seulement si c'est toi-même
+            if (!confirm(`Supprimer le membre "${member.fullName || member.email}" ?`)) {
+                return;
+            }
 
             try {
-                const res = await fetch(`${API_CLIENTS}/${id}`, { method: "DELETE" });
+                const res = await fetch(`${API_CLIENTS}/${member.id}`, {
+                    method: "DELETE",
+                });
                 if (!res.ok) {
-                    console.error("Erreur DELETE:", await res.text());
-                    alert("Erreur lors de la suppression.");
+                    console.error("Erreur DELETE client:", await res.text());
+                    showGlobalMessage("Erreur lors de la suppression.", false);
                     return;
                 }
-                await loadClients();
+                // Recharger la liste
+                await loadMembers();
+                showGlobalMessage("Membre supprimé avec succès.", true);
             } catch (err) {
-                console.error("Erreur réseau DELETE:", err);
-                alert("Erreur de communication avec le serveur.");
+                console.error("Erreur réseau DELETE client:", err);
+                showGlobalMessage("Erreur réseau lors de la suppression.", false);
             }
         }
 
-        async function updateClientRole(id, newRole) {
-            if (!isAdmin) {
-                alert("Seul un admin peut changer les rôles.");
+        manageEditForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!currentUser || !isAdmin) {
+                showGlobalMessage("Accès réservé aux administrateurs.", false);
                 return;
             }
 
-            const client = clients.find(c => c.id === id);
-            if (!client) return;
+            const id = Number(manageId.value);
+            const member = allMembers.find(m => m.id === id);
+            if (!member) {
+                manageEditMessage.style.color = "#c0392b";
+                manageEditMessage.textContent = "Membre introuvable.";
+                return;
+            }
 
-            const updated = { ...client, role: newRole };
+            const updated = {
+                ...member,
+                fullName: manageFullName.value.trim(),
+                email: manageEmail.value.trim(),
+                phone: managePhone.value.trim(),
+                role: manageRole.value,
+                animalType: manageAnimalType.value,
+                animalName: manageAnimalName.value.trim()
+            };
 
             try {
                 const res = await fetch(`${API_CLIENTS}/${id}`, {
@@ -595,24 +920,31 @@
                 });
 
                 if (!res.ok) {
-                    console.error("Erreur PUT role:", await res.text());
-                    alert("Erreur lors de la mise à jour du rôle.");
+                    console.error("Erreur PUT membre:", await res.text());
+                    manageEditMessage.style.color = "#c0392b";
+                    manageEditMessage.textContent = "Erreur lors de la mise à jour du membre.";
                     return;
                 }
 
-                await loadClients();
-
+                // Si on vient de modifier l'utilisateur courant, on met aussi à jour currentUser
                 if (currentUser && currentUser.id === id) {
-                    currentUser.role = newRole;
-                    isAdmin = newRole === "admin";
+                    currentUser = updated;
+                    isAdmin = currentUser.role === "admin";
                     updateHeaderAuth();
-                    updateViewForRole();
                 }
+
+                manageEditMessage.style.color = "#2e7d32";
+                manageEditMessage.textContent = "Membre mis à jour avec succès.";
+
+                // Recharger la liste
+                await loadMembers();
+
             } catch (err) {
-                console.error("Erreur réseau role:", err);
-                alert("Erreur de communication avec le serveur.");
+                console.error("Erreur réseau PUT membre:", err);
+                manageEditMessage.style.color = "#c0392b";
+                manageEditMessage.textContent = "Erreur réseau lors de la mise à jour.";
             }
-        }
+        });
     </script>
 </body>
 
