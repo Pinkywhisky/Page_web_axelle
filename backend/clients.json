@@ -1,12 +1,12 @@
 [
     {
-        "animalName": "",
+        "animalName": "Hachi",
         "animalType": "chien",
         "email": "test@a.a",
-        "fullName": "test name",
+        "fullName": "Gérald Laronche",
         "id": 1765033943662,
         "password": "a",
-        "phone": "",
+        "phone": "0634879825",
         "role": "client"
     },
     {

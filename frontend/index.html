@@ -3,58 +3,40 @@
 
 <head>
     <meta charset="UTF-8" />
-    <!-- Permet d’avoir un rendu adapté sur mobile (important pour le responsive) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>Club des Pattes – Espace membres</title>
-
-    <!-- Icône de l’onglet (favicon) -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <!-- Fichier CSS externe qui contient tout le style -->
-    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <!-- Conteneur global de la page -->
     <div class="page">
-        <!-- ================== HEADER (bandeau en haut) ================== -->
-        <header>
+        <!-- ================== HEADER ================== -->
+        <header class="site-header">
             <div class="header-inner">
-                <!-- Bloc de gauche : logo + titre -->
                 <div class="logo-block">
                     <span class="logo-icon">🐾</span>
                     <div>
                         <div class="header-title">Club des Pattes</div>
-                        <div class="header-sub">Espace membres</div>
+                        <div class="header-sub">Promenade · Garde · Éducation canine</div>
                     </div>
                 </div>
 
-                <!-- Bloc de droite : zone de connexion (quand personne n'est connecté) -->
-                <div class="auth-area" id="authArea">
-                    <!-- Champ e-mail pour se connecter -->
-                    <input type="email" id="loginEmail" placeholder="E-mail" />
-                    <!-- Champ mot de passe -->
-                    <input type="password" id="loginPassword" placeholder="Mot de passe" />
-                    <!-- Bouton de connexion -->
-                    <button class="btn-small btn-primary" id="loginBtn">Se connecter</button>
-                    <!-- Bouton pour ouvrir le modal d’inscription -->
-                    <button class="btn-small btn-outline" id="openRegisterBtn">S'inscrire</button>
+                <nav class="header-nav">
+                    <a href="#homeView">Accueil</a>
+                    <a href="#services">Services</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+
+                <div class="header-actions" id="publicActions">
+                    <button class="btn-small btn-outline" id="openLoginBtn" type="button">Espace membres</button>
+                    <button class="btn-small btn-primary" id="openRegisterBtn" type="button">S'inscrire</button>
                 </div>
 
-                <!-- Bloc de droite : zone affichée quand l’utilisateur est connecté -->
                 <div class="auth-area" id="userArea" style="display:none;">
-                    <!-- Texte avec le nom + rôle (Client ou Admin) -->
                     <span id="userInfoText"></span>
-
-                    <!-- Bouton pour ouvrir le modal "Mon profil" -->
                     <button class="btn-small btn-primary" id="profileBtn">Mon profil</button>
-
-                    <!-- Bouton réservé aux admins : Gérer les membres -->
-                    <button class="btn-small btn-outline" id="manageMembersBtn" style="display:none;">
-                        Gérer les membres
-                    </button>
-
-                    <!-- Bouton de déconnexion -->
+                    <button class="btn-small btn-outline" id="manageMembersBtn" style="display:none;">Gérer les membres</button>
                     <button class="btn-small btn-outline" id="logoutBtn">Se déconnecter</button>
                 </div>
             </div>
@@ -63,132 +45,217 @@
         <!-- ================== CONTENU PRINCIPAL ================== -->
         <main>
             <div class="layout">
-                <!-- Une seule carte centrale : la page d’accueil -->
                 <section class="card home-card" id="homeView">
-
-                    <!-- Message global pour info / succès / erreur -->
                     <div id="globalMessage" class="info-message"></div>
 
-                    <!-- Bloc de présentation “hero” -->
-                    <div class="home-header">
-                        <div class="home-emoji">🐶🐱</div>
-                        <div>
-                            <h1 class="home-title">Bienvenue au Club des Pattes</h1>
+                    <div class="landing-hero">
+                        <div class="landing-copy">
+                            <span class="eyebrow">Promenade · Garde · Éducation</span>
+                            <h1 class="home-title">Un accompagnement de confiance pour vos animaux</h1>
                             <p class="home-subtitle">
-                                Un espace pour gérer les membres du club, les profils de vos animaux
-                                et les accès administrateurs.
+                                Des services simples et adaptés à votre quotidien pour prendre soin de votre chien
+                                ou de votre chat avec sérieux, douceur et attention.
                             </p>
-                            <div class="pills-row">
-                                <span class="pill highlight">Suivi des membres</span>
-                                <span class="pill">Profils animaux</span>
-                                <span class="pill">Rôles client / admin</span>
+
+                            <div class="hero-actions">
+                                <button class="btn-small btn-primary" type="button" id="heroRegisterBtn">Créer un compte</button>
+                                <button class="btn-small btn-outline" type="button" id="heroLoginBtn">Espace membres</button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Deux colonnes explicatives (membres / équipe) -->
-                    <div class="home-columns">
-                        <div class="home-block">
-                            <h3>Pour les membres 🐾</h3>
-                            <ul class="home-list">
-                                <li>Créez votre compte via le bouton <strong>“S'inscrire”</strong> en haut à droite.
-                                </li>
-                                <li>Connectez-vous avec votre e-mail et votre mot de passe.</li>
-                                <li>Votre rôle par défaut est <strong>client</strong>.</li>
-                            </ul>
-                        </div>
+                    <div class="home-columns" id="services">
+                        <article class="home-block">
+                            <h3>Promenade</h3>
+                            <p>
+                                Des sorties adaptées au rythme, à l’âge et aux besoins de votre chien,
+                                pour lui offrir un moment d’activité, de détente et de découverte.
+                            </p>
+                        </article>
 
-                        <div class="home-block">
-                            <h3>Pour l'équipe du club 🐕‍🦺</h3>
-                            <ul class="home-list">
-                                <li>Les comptes <strong>admin</strong> peuvent être configurés dans le fichier
-                                    <code>clients.json</code>.
-                                </li>
-                                <li>L’API Flask permet de gérer les membres (création, modification, suppression).</li>
-                                <li>Les données sont stockées côté serveur dans un fichier JSON.</li>
-                            </ul>
-                        </div>
+                        <article class="home-block">
+                            <h3>Garde chien & chat</h3>
+                            <p>
+                                Une présence attentive pour veiller au bien-être de vos animaux pendant
+                                vos absences, avec sérieux, douceur et régularité.
+                            </p>
+                        </article>
+
+                        <article class="home-block">
+                            <h3>Éducation canine</h3>
+                            <p>
+                                Un accompagnement personnalisé pour développer une relation plus sereine,
+                                améliorer les bases du quotidien et renforcer la confiance.
+                            </p>
+                        </article>
                     </div>
 
-                    <p class="home-footer-note">
-                        💡 Astuce : créez d'abord un compte client, puis changez son rôle en
-                        <strong>admin</strong> dans <code>clients.json</code> pour vous donner les droits d’admin.
-                    </p>
+                    <section class="feature-band">
+                        <div class="feature-intro">
+                            <span class="eyebrow">Nos services</span>
+                            <h2>Un accompagnement clair et rassurant</h2>
+                            <p class="helper-text">
+                                Une approche simple, humaine et professionnelle pour répondre aux besoins
+                                de votre animal et vous accompagner au quotidien.
+                            </p>
+                        </div>
+
+                        <div class="feature-grid">
+                            <article class="feature-card">
+                                <h3>Promenade</h3>
+                                <p>Des balades adaptées pour répondre aux besoins d’activité et d’équilibre de votre chien.</p>
+                            </article>
+                            <article class="feature-card">
+                                <h3>Garde</h3>
+                                <p>Une solution rassurante pour prendre soin de votre chien ou de votre chat pendant vos absences.</p>
+                            </article>
+                            <article class="feature-card">
+                                <h3>Éducation</h3>
+                                <p>Des séances pour mieux comprendre votre chien et avancer avec des bases simples et concrètes.</p>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section class="testimonial-strip">
+                        <div class="testimonial-card">
+                            <p class="quote">
+                                Une approche bienveillante, claire et adaptée pour le bien-être de vos animaux.
+                            </p>
+                            <span>Des services pensés pour instaurer confiance, sérénité et régularité.</span>
+                        </div>
+
+                        <div class="contact-card" id="contact">
+                            <span class="eyebrow">Contact</span>
+                            <h3>Un premier échange simple</h3>
+                            <p>
+                                Pour une promenade, une garde ou un accompagnement en éducation canine,
+                                prenez contact et échangeons sur vos besoins.
+                            </p>
+                        </div>
+                    </section>
                 </section>
-                <section class="card" id="manageView" style="display:none;">
-                    <h2>Gestion des membres</h2>
-                    <!-- Bouton retour vers l'accueil -->
-                    <button id="backHomeBtn" class="btn-small btn-outline" style="margin-bottom: 15px;">
-                        ⬅ Retour à l’accueil
-                    </button>
-                    <p class="helper-text">
-                        Vue d’administration : modifiez les comptes, les rôles, et les animaux associés.
-                    </p>
 
-                    <!-- Barre de recherche -->
-                    <div style="margin:10px 0;">
-                        <input type="text" id="manageSearch" placeholder="Rechercher un membre..."
-                            style="width:100%; padding:8px; border-radius:8px; border:1px solid #d4dde3;">
+                <!-- ================== VUE ADMIN ================== -->
+                <section class="card manage-card" id="manageView" style="display:none;">
+                    <div class="section-head">
+                        <div>
+                            <span class="eyebrow">Administration</span>
+                            <h2>Gestion des membres</h2>
+                            <p class="helper-text">Modifiez les comptes, les rôles et les animaux associés.</p>
+                        </div>
+                        <button id="backHomeBtn" class="btn-small btn-outline">Retour à l’accueil</button>
                     </div>
 
-                    <!-- Tableau des membres -->
-                    <div class="admin-manage-table-wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Email</th>
-                                    <th>Rôle</th>
-                                    <th>Animal</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="manageTableBody">
-                                <!-- Rempli par JS -->
-                            </tbody>
-                        </table>
+                    <div class="search-wrap">
+                        <input type="text" id="manageSearch" placeholder="Rechercher un membre..." />
                     </div>
 
-                    <!-- Formulaire d’édition -->
-                    <div class="admin-manage-edit">
-                        <h4 id="manageEditTitle">Sélectionnez un membre</h4>
+                    <div class="manage-grid">
+                        <div class="admin-manage-table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Email</th>
+                                        <th>Rôle</th>
+                                        <th>Animal</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="manageTableBody">
+                                    <!-- Rempli par JS -->
+                                </tbody>
+                            </table>
+                        </div>
 
-                        <form id="manageEditForm" style="display:none;">
-                            <input type="hidden" id="manageId">
+                        <div class="admin-manage-edit">
+                            <h4 id="manageEditTitle">Sélectionnez un membre</h4>
 
-                            <label>Nom</label>
-                            <input id="manageFullName">
+                            <form id="manageEditForm" style="display:none;">
+                                <input type="hidden" id="manageId">
 
-                            <label>Email</label>
-                            <input id="manageEmail">
+                                <label>Nom</label>
+                                <input id="manageFullName">
 
-                            <label>Rôle</label>
-                            <select id="manageRole">
-                                <option value="client">Client</option>
-                                <option value="admin">Admin</option>
-                            </select>
+                                <label>Email</label>
+                                <input id="manageEmail">
 
-                            <label>Animal</label>
-                            <input id="manageAnimalName">
+                                <label>Rôle</label>
+                                <select id="manageRole">
+                                    <option value="client">Client</option>
+                                    <option value="admin">Admin</option>
+                                </select>
 
-                            <label>Type d'animal</label>
-                            <select id="manageAnimalType">
-                                <option value="">—</option>
-                                <option value="chien">Chien</option>
-                                <option value="chat">Chat</option>
-                                <option value="nac">NAC</option>
-                                <option value="oiseau">Oiseau</option>
-                                <option value="autre">Autre</option>
-                            </select>
+                                <label>Téléphone</label>
+                                <input id="managePhone">
 
-                            <p id="manageEditMessage"></p>
+                                <label>Animal</label>
+                                <input id="manageAnimalName">
 
-                            <button class="btn-small btn-primary" type="submit">Enregistrer</button>
-                        </form>
+                                <label>Type d'animal</label>
+                                <select id="manageAnimalType">
+                                    <option value="">—</option>
+                                    <option value="chien">Chien</option>
+                                    <option value="chat">Chat</option>
+                                    <option value="nac">NAC</option>
+                                    <option value="oiseau">Oiseau</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+
+                                <p id="manageEditMessage"></p>
+
+                                <div class="form-actions">
+                                    <button class="btn-small btn-primary" type="submit">Enregistrer</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </section>
             </div>
         </main>
+
+        <!-- ================== FOOTER ================== -->
+        <footer class="site-footer">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <strong>Club des Pattes</strong>
+                    <p>Promenade, garde chien & chat, éducation canine.</p>
+                </div>
+
+                <div class="footer-links">
+                    <a href="https://www.google.com" target="_blank" rel="noopener noreferrer">Google</a>
+                    <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer">Facebook</a>
+                    <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
+                </div>
+
+                <div class="footer-legal">
+                    <span>© 2026 Club des Pattes — Tous droits réservés</span>
+                </div>
+            </div>
+        </footer>
+
+        <!-- ================== MODAL CONNEXION ================== -->
+        <div class="modal-backdrop" id="loginModal">
+            <div class="modal modal-narrow">
+                <h3>Connexion à l’espace membres</h3>
+                <p class="helper-text">
+                    Accédez à votre profil et aux outils réservés aux membres.
+                </p>
+
+                <div class="login-panel">
+                    <label for="loginEmail">Adresse e-mail</label>
+                    <input type="email" id="loginEmail" placeholder="vous@example.com" />
+
+                    <label for="loginPassword">Mot de passe</label>
+                    <input type="password" id="loginPassword" placeholder="Votre mot de passe" />
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-small btn-outline" id="closeLoginBtn">Annuler</button>
+                        <button type="button" class="btn-small btn-primary" id="loginBtn">Se connecter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- ================== MODAL INSCRIPTION ================== -->
         <div class="modal-backdrop" id="registerModal">
@@ -198,7 +265,6 @@
                     Inscription au Club des Pattes. Vous serez créé avec le rôle <strong>client</strong> par défaut.
                 </p>
 
-                <!-- Formulaire d’inscription -->
                 <form id="registerForm">
                     <label for="regFullName">Nom complet</label>
                     <input id="regFullName" type="text" required placeholder="Ex : Marie Dupont" />
@@ -248,13 +314,12 @@
             </div>
         </div>
 
-        <!-- ================== MODAL PROFIL UTILISATEUR ================== -->
+        <!-- ================== MODAL PROFIL ================== -->
         <div class="profile-modal-backdrop" id="profileModal">
             <div class="profile-modal">
                 <h3>Mon profil</h3>
                 <p class="helper-text">
-                    Modifiez vos informations personnelles puis cliquez sur
-                    <strong>Enregistrer</strong>.
+                    Modifiez vos informations personnelles puis cliquez sur <strong>Enregistrer</strong>.
                 </p>
 
                 <form id="profileForm">
@@ -295,18 +360,15 @@
             <div class="admin-manage-modal">
                 <h3>Gestion des membres</h3>
                 <p class="helper-text">
-                    Vous êtes connecté en tant qu'<strong>admin</strong>. Vous pouvez modifier tous les comptes clients
-                    et supprimer les utilisateurs <strong>clients</strong> (sauf votre propre compte).
+                    Vous êtes connecté en tant qu'<strong>admin</strong>. Vous pouvez modifier les comptes membres.
                 </p>
 
-                <!-- Barre de recherche simple -->
                 <div style="margin:8px 0 10px;">
-                    <input type="text" id="manageSearch" placeholder="Rechercher (nom / email / animal)…"
+                    <input type="text" id="manageSearchModal" placeholder="Rechercher (nom / email / animal)…"
                         style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #d4dde3;font-size:0.85rem;">
                 </div>
 
                 <div class="admin-manage-layout">
-                    <!-- Tableau des membres -->
                     <div class="admin-manage-table-wrap">
                         <table>
                             <thead>
@@ -318,36 +380,34 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="manageTableBody">
-                                <!-- Lignes générées en JS -->
+                            <tbody id="manageTableBodyModal">
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Formulaire d’édition du membre sélectionné -->
                     <div class="admin-manage-edit">
-                        <h4 id="manageEditTitle">Sélectionnez un membre à modifier</h4>
+                        <h4 id="manageEditTitleModal">Sélectionnez un membre à modifier</h4>
 
-                        <form id="manageEditForm" style="display:none;">
-                            <input type="hidden" id="manageId" />
+                        <form id="manageEditFormModal" style="display:none;">
+                            <input type="hidden" id="manageIdModal" />
 
-                            <label for="manageFullName">Nom complet</label>
-                            <input id="manageFullName" type="text" />
+                            <label for="manageFullNameModal">Nom complet</label>
+                            <input id="manageFullNameModal" type="text" />
 
-                            <label for="manageEmail">Adresse e-mail</label>
-                            <input id="manageEmail" type="email" />
+                            <label for="manageEmailModal">Adresse e-mail</label>
+                            <input id="manageEmailModal" type="email" />
 
-                            <label for="managePhone">Téléphone</label>
-                            <input id="managePhone" type="tel" />
+                            <label for="managePhoneModal">Téléphone</label>
+                            <input id="managePhoneModal" type="tel" />
 
-                            <label for="manageRole">Rôle</label>
-                            <select id="manageRole">
+                            <label for="manageRoleModal">Rôle</label>
+                            <select id="manageRoleModal">
                                 <option value="client">Client</option>
                                 <option value="admin">Admin</option>
                             </select>
 
-                            <label for="manageAnimalType">Type d'animal</label>
-                            <select id="manageAnimalType">
+                            <label for="manageAnimalTypeModal">Type d'animal</label>
+                            <select id="manageAnimalTypeModal">
                                 <option value="">Sélectionnez…</option>
                                 <option value="chien">Chien</option>
                                 <option value="chat">Chat</option>
@@ -356,10 +416,10 @@
                                 <option value="autre">Autre</option>
                             </select>
 
-                            <label for="manageAnimalName">Nom de l'animal</label>
-                            <input id="manageAnimalName" type="text" />
+                            <label for="manageAnimalNameModal">Nom de l'animal</label>
+                            <input id="manageAnimalNameModal" type="text" />
 
-                            <p id="manageEditMessage"></p>
+                            <p id="manageEditMessageModal"></p>
 
                             <div class="profile-modal-actions">
                                 <button type="button" class="btn-small btn-outline" id="manageCloseBtn">Fermer</button>
@@ -368,7 +428,6 @@
                         </form>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -380,16 +439,16 @@
 
         let currentUser = null;
         let isAdmin = false;
-        let allMembers = []; // liste brute de tous les comptes (pour l’admin)
+        let allMembers = [];
 
-        // --------- RÉFÉRENCES DOM ---------
-        const authArea = document.getElementById("authArea");
+        const publicActions = document.getElementById("publicActions");
         const userArea = document.getElementById("userArea");
         const userInfoText = document.getElementById("userInfoText");
 
         const loginBtn = document.getElementById("loginBtn");
         const logoutBtn = document.getElementById("logoutBtn");
         const openRegisterBtn = document.getElementById("openRegisterBtn");
+        const openLoginBtn = document.getElementById("openLoginBtn");
         const profileBtn = document.getElementById("profileBtn");
         const manageMembersBtn = document.getElementById("manageMembersBtn");
 
@@ -397,8 +456,12 @@
         const loginPassword = document.getElementById("loginPassword");
 
         const globalMessage = document.getElementById("globalMessage");
+        const heroRegisterBtn = document.getElementById("heroRegisterBtn");
+        const heroLoginBtn = document.getElementById("heroLoginBtn");
 
-        // Modal inscription
+        const loginModal = document.getElementById("loginModal");
+        const closeLoginBtn = document.getElementById("closeLoginBtn");
+
         const registerModal = document.getElementById("registerModal");
         const registerForm = document.getElementById("registerForm");
         const registerMessage = document.getElementById("registerMessage");
@@ -407,14 +470,11 @@
         const successLoginBtn = document.getElementById("successLoginBtn");
         const successCloseBtn = document.getElementById("successCloseBtn");
 
-        // Modal profil
         const profileModal = document.getElementById("profileModal");
         const profileForm = document.getElementById("profileForm");
         const profileModalMessage = document.getElementById("profileModalMessage");
         const profileCloseBtn = document.getElementById("profileCloseBtn");
 
-        // Modal gestion membres (admin)
-        const manageModal = document.getElementById("manageModal");
         const manageSearch = document.getElementById("manageSearch");
         const manageTableBody = document.getElementById("manageTableBody");
         const manageEditForm = document.getElementById("manageEditForm");
@@ -430,7 +490,6 @@
         const manageCloseBtn = document.getElementById("manageCloseBtn");
         const backHomeBtn = document.getElementById("backHomeBtn");
 
-        // ================== FONCTIONS UI ==================
         function showGlobalMessage(text, ok = true) {
             globalMessage.textContent = text;
             globalMessage.style.display = "block";
@@ -445,25 +504,40 @@
 
         function updateHeaderAuth() {
             if (currentUser) {
-                authArea.style.display = "flex";
-                authArea.style.visibility = "hidden";
+                if (publicActions) publicActions.style.display = "none";
                 userArea.style.display = "flex";
-
                 const roleText = isAdmin ? "Admin" : "Client";
                 userInfoText.textContent = `${currentUser.fullName} (${roleText})`;
-
-                // Bouton "Gérer les membres" visible seulement pour les admins
                 manageMembersBtn.style.display = isAdmin ? "inline-flex" : "none";
             } else {
-                authArea.style.display = "flex";
-                authArea.style.visibility = "visible";
+                if (publicActions) publicActions.style.display = "flex";
                 userArea.style.display = "none";
                 manageMembersBtn.style.display = "none";
             }
         }
 
-        // ================== LOGIN / LOGOUT ==================
+        function openLoginModal(prefillEmail = "") {
+            if (prefillEmail) loginEmail.value = prefillEmail;
+            loginModal.style.display = "flex";
+            setTimeout(() => (loginEmail.value ? loginPassword : loginEmail).focus(), 50);
+        }
+
+        function closeLoginModal() {
+            loginModal.style.display = "none";
+        }
+
         loginBtn.addEventListener("click", login);
+        [loginEmail, loginPassword].forEach(el => el && el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") login();
+        }));
+
+        if (heroRegisterBtn) heroRegisterBtn.addEventListener("click", () => openRegisterModal());
+        if (heroLoginBtn) heroLoginBtn.addEventListener("click", () => openLoginModal());
+        if (openLoginBtn) openLoginBtn.addEventListener("click", openLoginModal);
+        if (closeLoginBtn) closeLoginBtn.addEventListener("click", closeLoginModal);
+        if (loginModal) loginModal.addEventListener("click", (e) => {
+            if (e.target === loginModal) closeLoginModal();
+        });
 
         async function login() {
             clearGlobalMessage();
@@ -502,6 +576,7 @@
                 );
 
                 updateHeaderAuth();
+                closeLoginModal();
 
             } catch (err) {
                 console.error("Erreur login :", err);
@@ -516,11 +591,10 @@
             loginPassword.value = "";
             updateHeaderAuth();
             closeProfileModal();
-            closeManageModal();
+            closeLoginModal();
             showGlobalMessage("Vous avez été déconnecté.", true);
         });
 
-        // ================== MODAL INSCRIPTION ==================
         function openRegisterModal() {
             registerForm.style.display = "block";
             registerForm.reset();
@@ -604,7 +678,6 @@
                 registerForm.style.display = "none";
                 registerMessage.textContent = "";
                 registerSuccess.style.display = "block";
-
                 loginEmail.value = email;
 
             } catch (err) {
@@ -614,17 +687,15 @@
             }
         });
 
-
         successLoginBtn.addEventListener("click", () => {
             closeRegisterModal();
-            loginPassword.focus();
+            openLoginModal(loginEmail.value);
         });
 
         successCloseBtn.addEventListener("click", () => {
             closeRegisterModal();
         });
 
-        // ================== MODAL PROFIL ==================
         function openProfileModal() {
             if (!currentUser) {
                 showGlobalMessage("Vous devez être connecté pour voir votre profil.", false);
@@ -696,56 +767,19 @@
             }
         });
 
-        // ================== MODAL GESTION MEMBRES (ADMIN) ==================
-        function openManageModal() {
-            if (!currentUser || !isAdmin) {
-                showGlobalMessage("Accès réservé aux administrateurs.", false);
-                return;
-            }
-            manageEditMessage.textContent = "";
-            manageEditForm.style.display = "none";
-            manageEditTitle.textContent = "Sélectionnez un membre à modifier";
-            manageSearch.value = "";
-            manageModal.style.display = "flex";
-            loadMembers();
-        }
-
-        function closeManageModal() {
-            manageModal.style.display = "none";
-        }
-
         manageMembersBtn.addEventListener("click", () => {
-            // Masquer la page d’accueil
             document.getElementById("homeView").style.display = "none";
-
-            // Afficher la page de gestion
             document.getElementById("manageView").style.display = "block";
-
-            // Charger les membres
             loadMembers();
         });
-
-        
 
         backHomeBtn.addEventListener("click", () => {
             document.getElementById("manageView").style.display = "none";
             document.getElementById("homeView").style.display = "block";
-
-            // Reset propre
-            const manageEditForm = document.getElementById("manageEditForm");
-            const manageEditMessage = document.getElementById("manageEditMessage");
-
             if (manageEditForm) manageEditForm.style.display = "none";
             if (manageEditMessage) manageEditMessage.textContent = "";
         });
 
-
-        manageCloseBtn.addEventListener("click", closeManageModal);
-        manageModal.addEventListener("click", (e) => {
-            if (e.target === manageModal) closeManageModal();
-        });
-
-        // Charger tous les membres depuis le backend
         async function loadMembers() {
             try {
                 const res = await fetch(API_CLIENTS);
@@ -762,7 +796,6 @@
             }
         }
 
-        // Filtre de recherche simple
         manageSearch.addEventListener("input", renderMembersTable);
 
         function renderMembersTable() {
@@ -810,9 +843,7 @@
                     oiseau: "Oiseau",
                     autre: "Autre"
                 }[m.animalType] || m.animalType || "";
-                tdAnimal.textContent = m.animalName
-                    ? `${m.animalName} (${typeLabel})`
-                    : typeLabel;
+                tdAnimal.textContent = m.animalName ? `${m.animalName} (${typeLabel})` : typeLabel;
                 tr.appendChild(tdAnimal);
 
                 const tdActions = document.createElement("td");
@@ -839,7 +870,6 @@
         function selectMemberForEdit(member) {
             manageEditForm.style.display = "block";
             manageEditTitle.textContent = `Modifier : ${member.fullName || member.email}`;
-
             manageId.value = member.id;
             manageFullName.value = member.fullName || "";
             manageEmail.value = member.email || "";
@@ -847,7 +877,6 @@
             manageRole.value = member.role || "client";
             manageAnimalType.value = member.animalType || "";
             manageAnimalName.value = member.animalName || "";
-
             manageEditMessage.textContent = "";
         }
 
@@ -857,14 +886,11 @@
                 return;
             }
 
-            // Interdiction de se supprimer soi-même
             if (member.id === currentUser.id) {
                 showGlobalMessage("Vous ne pouvez pas supprimer votre propre compte.", false);
                 return;
             }
 
-            // Option : empêcher de supprimer un autre admin (si tu veux)
-            // ici on bloque seulement si c'est toi-même
             if (!confirm(`Supprimer le membre "${member.fullName || member.email}" ?`)) {
                 return;
             }
@@ -878,7 +904,6 @@
                     showGlobalMessage("Erreur lors de la suppression.", false);
                     return;
                 }
-                // Recharger la liste
                 await loadMembers();
                 showGlobalMessage("Membre supprimé avec succès.", true);
             } catch (err) {
@@ -926,7 +951,6 @@
                     return;
                 }
 
-                // Si on vient de modifier l'utilisateur courant, on met aussi à jour currentUser
                 if (currentUser && currentUser.id === id) {
                     currentUser = updated;
                     isAdmin = currentUser.role === "admin";
@@ -935,8 +959,6 @@
 
                 manageEditMessage.style.color = "#2e7d32";
                 manageEditMessage.textContent = "Membre mis à jour avec succès.";
-
-                // Recharger la liste
                 await loadMembers();
 
             } catch (err) {
