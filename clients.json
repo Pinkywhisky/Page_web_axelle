@@ -1,0 +1,32 @@
+[
+    {
+        "animalName": "Hachi",
+        "animalType": "chien",
+        "email": "test@a.a",
+        "fullName": "Gérald Laronche",
+        "id": 1765033943662,
+        "password": "a",
+        "phone": "0634879825",
+        "role": "client"
+    },
+    {
+        "animalName": "",
+        "animalType": "nac",
+        "email": "admin@a.a",
+        "fullName": "admin",
+        "id": 1765036561916,
+        "password": "a",
+        "phone": "",
+        "role": "admin"
+    },
+    {
+        "animalName": "pistache",
+        "animalType": "chat",
+        "email": "clemence@a.a",
+        "fullName": "Clémence",
+        "id": 1776305502715,
+        "password": "a",
+        "phone": "0112233445",
+        "role": "client"
+    }
+]
