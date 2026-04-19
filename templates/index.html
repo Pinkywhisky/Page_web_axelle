@@ -19,50 +19,36 @@
     <div class="page">
       <header class="site-header">
         <div class="header-inner">
-          <div class="logo-block">
-            <span class="logo-icon">🐾</span>
-            <div>
-              <div class="header-title">Club des Pattes</div>
-              <div class="header-sub">Promenade · Garde · Éducation canine</div>
-            </div>
-          </div>
-
-          <nav class="header-nav">
-            <a href="#homeView">Accueil</a>
-            <a href="#services">Services</a>
-            <a href="#contact">Contact</a>
-          </nav>
+          <a href="#homeView" class="brand">
+            <span class="brand-mark">🐾</span>
+            <span class="brand-text">
+              <strong>Club des Pattes</strong>
+              <small>Promenade · Garde · Éducation canine</small>
+            </span>
+          </a>
 
           <div class="header-actions" id="publicActions">
-            <button
-              class="btn-small btn-outline"
-              id="openLoginBtn"
-              type="button"
-            >
+            <button class="btn btn-secondary" id="openLoginBtn" type="button">
               Espace membres
             </button>
-            <button
-              class="btn-small btn-primary"
-              id="openRegisterBtn"
-              type="button"
-            >
+            <button class="btn btn-primary" id="openRegisterBtn" type="button">
               S'inscrire
             </button>
           </div>
 
           <div class="auth-area" id="userArea" style="display: none">
             <span id="userInfoText"></span>
-            <button class="btn-small btn-primary" id="profileBtn">
+            <button class="btn btn-primary btn-sm" id="profileBtn">
               Mon profil
             </button>
             <button
-              class="btn-small btn-outline"
+              class="btn btn-secondary btn-sm"
               id="manageMembersBtn"
               style="display: none"
             >
               Gérer les membres
             </button>
-            <button class="btn-small btn-outline" id="logoutBtn">
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">
               Se déconnecter
             </button>
           </div>
@@ -71,89 +57,85 @@
 
       <main>
         <div class="layout">
-          <section class="card home-card" id="homeView">
+          <section class="home-shell" id="homeView">
             <div id="globalMessage" class="info-message"></div>
 
-            <div class="landing-hero">
-              <div class="landing-copy">
-                <span class="eyebrow">PROMENADE · GARDE · ÉDUCATION</span>
-
-                <h1 class="home-title">
-                  Un accompagnement de confiance pour vos animaux
+            <section class="hero-section">
+              <div class="hero-card">
+                <h1>
+                  Un service attentionné pour le bien-être de votre chien ou de
+                  votre chat
                 </h1>
-
-                <p class="home-subtitle">
-                  Des services adaptés à votre quotidien pour prendre soin de
-                  votre chien ou de votre chat avec sérieux, douceur et
-                  attention.
+                <p class="hero-text">
+                  Promenade, garde et éducation canine dans une approche douce,
+                  fiable et rassurante, pensée pour le quotidien de votre animal
+                  et votre tranquillité.
                 </p>
-
                 <p class="hero-note">
-                  Contactez-nous pour en savoir plus sur nos services et notre
-                  accompagnement.
+                  Contactez-nous pour échanger sur vos besoins et trouver
+                  l’accompagnement le plus adapté.
                 </p>
               </div>
-            </div>
+            </section>
 
-            <section class="feature-band" id="services">
-              <div class="feature-intro">
-                <span class="eyebrow">Services</span>
-                <h2>Un accompagnement clair et rassurant</h2>
-                <p class="helper-text">
-                  Une approche simple, humaine et professionnelle pour répondre
-                  aux besoins de votre animal et vous accompagner au quotidien.
+            <section class="services-section" id="services">
+              <div class="section-heading">
+                <h2>Des prestations simples, utiles et humaines</h2>
+                <p>
+                  Chaque service est pensé pour apporter confort, régularité et
+                  sérénité, dans le respect du rythme de votre animal.
                 </p>
               </div>
 
-              <div class="feature-grid">
-                <article class="feature-card">
+              <div class="services-grid">
+                <article class="service-card">
+                  <div class="service-icon">🌿</div>
                   <h3>Promenade</h3>
                   <p>
-                    Des sorties adaptées au rythme, à l’âge et aux besoins de
-                    votre chien, pour lui offrir un moment d’activité, de
-                    détente et de découverte.
+                    Des sorties adaptées à l’âge, à l’énergie et aux habitudes
+                    de votre chien pour favoriser l’équilibre, la détente et la
+                    dépense quotidienne.
                   </p>
                 </article>
 
-                <article class="feature-card">
+                <article class="service-card">
+                  <div class="service-icon">🏡</div>
                   <h3>Garde chien & chat</h3>
                   <p>
-                    Une présence attentive pour veiller au bien-être de vos
-                    animaux pendant vos absences, avec sérieux, douceur et
-                    régularité.
+                    Une présence sérieuse et bienveillante pendant vos absences,
+                    afin de préserver les repères, le confort et la sécurité de
+                    vos animaux.
                   </p>
                 </article>
 
-                <article class="feature-card">
+                <article class="service-card">
+                  <div class="service-icon">🤝</div>
                   <h3>Éducation canine</h3>
                   <p>
-                    Un accompagnement personnalisé pour développer une relation
-                    plus sereine, améliorer les bases du quotidien et renforcer
-                    la confiance.
+                    Un accompagnement personnalisé pour améliorer le quotidien,
+                    renforcer la relation humain-chien et construire des bases
+                    sereines et durables.
                   </p>
                 </article>
               </div>
             </section>
 
-            <section class="testimonial-strip">
-              <div class="testimonial-card">
+            <section class="split-section" id="about">
+              <div class="split-card quote-card">
+                <h2>Une relation fondée sur la confiance</h2>
                 <p class="quote">
-                  Une approche bienveillante, claire et adaptée pour le
-                  bien-être de vos animaux.
+                  Une approche calme, respectueuse et adaptée à chaque animal,
+                  pour instaurer des habitudes plus sereines et un
+                  accompagnement cohérent dans le temps.
                 </p>
-                <span>
-                  Des services pensés pour instaurer confiance, sérénité et
-                  régularité.
-                </span>
               </div>
 
-              <div class="contact-card" id="contact">
-                <span class="eyebrow">Contact</span>
-                <h3>Un premier échange simple</h3>
+              <div class="split-card contact-card" id="contact">
+                <h2>Un premier échange simple</h2>
                 <p>
-                  Pour une promenade, une garde ou un accompagnement en
-                  éducation canine, prenez contact et échangeons sur vos
-                  besoins.
+                  Que ce soit pour une promenade, une garde ou une séance
+                  d’éducation canine, prenez contact pour présenter votre besoin
+                  et obtenir un accompagnement adapté.
                 </p>
               </div>
             </section>
@@ -166,13 +148,12 @@
           >
             <div class="section-head">
               <div>
-                <span class="eyebrow">Administration</span>
                 <h2>Gestion des membres</h2>
                 <p class="helper-text">
                   Modifiez les comptes, les rôles et les animaux associés.
                 </p>
               </div>
-              <button id="backHomeBtn" class="btn-small btn-outline">
+              <button id="backHomeBtn" class="btn btn-secondary btn-sm">
                 Retour à l’accueil
               </button>
             </div>
@@ -230,15 +211,12 @@
                     <option value="">—</option>
                     <option value="chien">Chien</option>
                     <option value="chat">Chat</option>
-                    <option value="nac">NAC</option>
-                    <option value="oiseau">Oiseau</option>
-                    <option value="autre">Autre</option>
                   </select>
 
                   <p id="manageEditMessage"></p>
 
                   <div class="form-actions">
-                    <button class="btn-small btn-primary" type="submit">
+                    <button class="btn btn-primary btn-sm" type="submit">
                       Enregistrer
                     </button>
                   </div>
@@ -261,23 +239,20 @@
               href="https://www.google.com"
               target="_blank"
               rel="noopener noreferrer"
+              >Google</a
             >
-              Google
-            </a>
             <a
               href="https://www.facebook.com"
               target="_blank"
               rel="noopener noreferrer"
+              >Facebook</a
             >
-              Facebook
-            </a>
             <a
               href="https://www.instagram.com"
               target="_blank"
               rel="noopener noreferrer"
+              >Instagram</a
             >
-              Instagram
-            </a>
           </div>
 
           <div class="footer-legal">
@@ -311,12 +286,16 @@
             <div class="modal-actions">
               <button
                 type="button"
-                class="btn-small btn-outline"
+                class="btn btn-secondary btn-sm"
                 id="closeLoginBtn"
               >
                 Annuler
               </button>
-              <button type="button" class="btn-small btn-primary" id="loginBtn">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                id="loginBtn"
+              >
                 Se connecter
               </button>
             </div>
@@ -327,7 +306,10 @@
       <div class="modal-backdrop" id="registerModal">
         <div class="modal">
           <h3>Créer un compte</h3>
-          <p class="helper-text">Inscription au Club des Pattes.</p>
+          <p class="helper-text">
+            Inscription au Club des Pattes. Vous serez créé avec le rôle
+            <strong>client</strong> par défaut.
+          </p>
 
           <form id="registerForm">
             <label for="regFullName">Nom complet</label>
@@ -343,7 +325,7 @@
               id="regEmail"
               type="email"
               required
-              placeholder="vous@exemple.com"
+              placeholder="vous@example.com"
             />
 
             <label for="regPassword">Mot de passe</label>
@@ -360,9 +342,6 @@
               <option value="">Sélectionnez…</option>
               <option value="chien">Chien</option>
               <option value="chat">Chat</option>
-              <option value="nac">NAC</option>
-              <option value="oiseau">Oiseau</option>
-              <option value="autre">Autre</option>
             </select>
 
             <label for="regAnimalName">Nom de l'animal (optionnel)</label>
@@ -371,12 +350,12 @@
             <div class="modal-actions">
               <button
                 type="button"
-                class="btn-small btn-outline"
+                class="btn btn-secondary btn-sm"
                 id="closeRegisterBtn"
               >
                 Annuler
               </button>
-              <button type="submit" class="btn-small btn-primary">
+              <button type="submit" class="btn btn-primary btn-sm">
                 Créer mon compte
               </button>
             </div>
@@ -388,14 +367,11 @@
             <h3>Compte créé avec succès 🎉</h3>
             <p class="helper-text">Vous pouvez maintenant vous connecter.</p>
 
-            <div
-              class="modal-actions"
-              style="justify-content: center; margin-top: 15px"
-            >
-              <button id="successLoginBtn" class="btn-small btn-primary">
+            <div class="modal-actions center-actions">
+              <button id="successLoginBtn" class="btn btn-primary btn-sm">
                 Se connecter
               </button>
-              <button id="successCloseBtn" class="btn-small btn-outline">
+              <button id="successCloseBtn" class="btn btn-secondary btn-sm">
                 Fermer
               </button>
             </div>
@@ -426,9 +402,6 @@
               <option value="">Sélectionnez…</option>
               <option value="chien">Chien</option>
               <option value="chat">Chat</option>
-              <option value="nac">NAC</option>
-              <option value="oiseau">Oiseau</option>
-              <option value="autre">Autre</option>
             </select>
 
             <label for="profAnimalName">Nom de l'animal</label>
@@ -439,12 +412,12 @@
             <div class="profile-modal-actions">
               <button
                 type="button"
-                class="btn-small btn-outline"
+                class="btn btn-secondary btn-sm"
                 id="profileCloseBtn"
               >
                 Fermer
               </button>
-              <button type="submit" class="btn-small btn-primary">
+              <button type="submit" class="btn btn-primary btn-sm">
                 Enregistrer
               </button>
             </div>
@@ -719,9 +692,6 @@
             {
               chien: "Chien",
               chat: "Chat",
-              nac: "NAC",
-              oiseau: "Oiseau",
-              autre: "Autre",
             }[m.animalType] ||
             m.animalType ||
             "";
@@ -848,11 +818,23 @@
       logoutBtn.addEventListener("click", () => {
         currentUser = null;
         isAdmin = false;
+
         loginEmail.value = "";
         loginPassword.value = "";
+
         updateHeaderAuth();
         closeProfileModal();
         closeLoginModal();
+
+        // Retour forcé à l'accueil
+        document.getElementById("manageView").style.display = "none";
+        document.getElementById("homeView").style.display = "block";
+
+        // Nettoyage visuel admin
+        if (manageEditForm) manageEditForm.style.display = "none";
+        if (manageEditMessage) manageEditMessage.textContent = "";
+        if (manageSearch) manageSearch.value = "";
+
         showGlobalMessage("Vous avez été déconnecté.", true);
       });
 
