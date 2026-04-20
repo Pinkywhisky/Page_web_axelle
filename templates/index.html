@@ -63,8 +63,8 @@
             <section class="hero-section">
               <div class="hero-card">
                 <h1>
-                  Un service attentionné pour le bien-être de votre chien ou de
-                  votre chat
+                  Un service attentionné pour le bien-être de votre chien
+                  ou de votre chat
                 </h1>
                 <p class="hero-text">
                   Promenade, garde et éducation canine dans une approche douce,
@@ -82,8 +82,8 @@
               <div class="section-heading">
                 <h2>Des prestations simples, utiles et humaines</h2>
                 <p>
-                  Chaque service est pensé pour apporter confort, régularité et
-                  sérénité, dans le respect du rythme de votre animal.
+                  Chaque service est pensé pour apporter confort, régularité
+                  et sérénité, dans le respect du rythme de votre animal.
                 </p>
               </div>
 
@@ -93,8 +93,8 @@
                   <h3>Promenade</h3>
                   <p>
                     Des sorties adaptées à l’âge, à l’énergie et aux habitudes
-                    de votre chien pour favoriser l’équilibre, la détente et la
-                    dépense quotidienne.
+                    de votre chien pour favoriser l’équilibre, la détente
+                    et la dépense quotidienne.
                   </p>
                 </article>
 
@@ -103,8 +103,8 @@
                   <h3>Garde chien & chat</h3>
                   <p>
                     Une présence sérieuse et bienveillante pendant vos absences,
-                    afin de préserver les repères, le confort et la sécurité de
-                    vos animaux.
+                    afin de préserver les repères, le confort et la sécurité
+                    de vos animaux.
                   </p>
                 </article>
 
@@ -120,13 +120,13 @@
               </div>
             </section>
 
-            <section class="split-section" id="about">
+            <section class="split-section">
               <div class="split-card quote-card">
                 <h2>Une relation fondée sur la confiance</h2>
                 <p class="quote">
                   Une approche calme, respectueuse et adaptée à chaque animal,
-                  pour instaurer des habitudes plus sereines et un
-                  accompagnement cohérent dans le temps.
+                  pour instaurer des habitudes plus sereines et un accompagnement
+                  cohérent dans le temps.
                 </p>
               </div>
 
@@ -141,11 +141,7 @@
             </section>
           </section>
 
-          <section
-            class="card manage-card"
-            id="manageView"
-            style="display: none"
-          >
+          <section class="card manage-card" id="manageView" style="display: none">
             <div class="section-head">
               <div>
                 <h2>Gestion des membres</h2>
@@ -211,6 +207,9 @@
                     <option value="">—</option>
                     <option value="chien">Chien</option>
                     <option value="chat">Chat</option>
+                    <option value="nac">NAC</option>
+                    <option value="oiseau">Oiseau</option>
+                    <option value="autre">Autre</option>
                   </select>
 
                   <p id="manageEditMessage"></p>
@@ -283,6 +282,8 @@
               placeholder="Votre mot de passe"
             />
 
+            <p class="helper-text" id="loginMessage"></p>
+
             <div class="modal-actions">
               <button
                 type="button"
@@ -291,11 +292,7 @@
               >
                 Annuler
               </button>
-              <button
-                type="button"
-                class="btn btn-primary btn-sm"
-                id="loginBtn"
-              >
+              <button type="button" class="btn btn-primary btn-sm" id="loginBtn">
                 Se connecter
               </button>
             </div>
@@ -342,6 +339,9 @@
               <option value="">Sélectionnez…</option>
               <option value="chien">Chien</option>
               <option value="chat">Chat</option>
+              <option value="nac">NAC</option>
+              <option value="oiseau">Oiseau</option>
+              <option value="autre">Autre</option>
             </select>
 
             <label for="regAnimalName">Nom de l'animal (optionnel)</label>
@@ -402,6 +402,9 @@
               <option value="">Sélectionnez…</option>
               <option value="chien">Chien</option>
               <option value="chat">Chat</option>
+              <option value="nac">NAC</option>
+              <option value="oiseau">Oiseau</option>
+              <option value="autre">Autre</option>
             </select>
 
             <label for="profAnimalName">Nom de l'animal</label>
@@ -447,6 +450,7 @@
 
       const loginEmail = document.getElementById("loginEmail");
       const loginPassword = document.getElementById("loginPassword");
+      const loginMessage = document.getElementById("loginMessage");
 
       const globalMessage = document.getElementById("globalMessage");
 
@@ -463,9 +467,7 @@
 
       const profileModal = document.getElementById("profileModal");
       const profileForm = document.getElementById("profileForm");
-      const profileModalMessage = document.getElementById(
-        "profileModalMessage",
-      );
+      const profileModalMessage = document.getElementById("profileModalMessage");
       const profileCloseBtn = document.getElementById("profileCloseBtn");
 
       const manageSearch = document.getElementById("manageSearch");
@@ -523,19 +525,32 @@
         }
       }
 
+      function showHomeView() {
+        document.getElementById("manageView").style.display = "none";
+        document.getElementById("homeView").style.display = "block";
+
+        if (manageEditForm) manageEditForm.style.display = "none";
+        if (manageEditMessage) manageEditMessage.textContent = "";
+        if (manageSearch) manageSearch.value = "";
+      }
+
       function openLoginModal(prefillEmail = "") {
         if (typeof prefillEmail === "string" && prefillEmail.trim()) {
           loginEmail.value = prefillEmail.trim();
         }
+
+        if (loginMessage) {
+          loginMessage.textContent = "";
+          loginMessage.style.color = "#6f7a82";
+        }
+
         loginModal.style.display = "flex";
-        setTimeout(
-          () => (loginEmail.value ? loginPassword : loginEmail).focus(),
-          50,
-        );
+        setTimeout(() => (loginEmail.value ? loginPassword : loginEmail).focus(), 50);
       }
 
       function closeLoginModal() {
         loginModal.style.display = "none";
+        if (loginMessage) loginMessage.textContent = "";
       }
 
       function openRegisterModal() {
@@ -556,21 +571,15 @@
 
       function openProfileModal() {
         if (!currentUser) {
-          showGlobalMessage(
-            "Vous devez être connecté pour voir votre profil.",
-            false,
-          );
+          showGlobalMessage("Vous devez être connecté pour voir votre profil.", false);
           return;
         }
 
-        document.getElementById("profFullName").value =
-          currentUser.fullName || "";
+        document.getElementById("profFullName").value = currentUser.fullName || "";
         document.getElementById("profEmail").value = currentUser.email || "";
         document.getElementById("profPhone").value = currentUser.phone || "";
-        document.getElementById("profAnimalType").value =
-          currentUser.animalType || "";
-        document.getElementById("profAnimalName").value =
-          currentUser.animalName || "";
+        document.getElementById("profAnimalType").value = currentUser.animalType || "";
+        document.getElementById("profAnimalName").value = currentUser.animalName || "";
 
         profileModalMessage.textContent = "";
         profileModal.style.display = "flex";
@@ -583,11 +592,20 @@
 
       async function login() {
         clearGlobalMessage();
+
+        if (loginMessage) {
+          loginMessage.textContent = "";
+          loginMessage.style.color = "#6f7a82";
+        }
+
         const email = (loginEmail.value || "").trim();
         const password = loginPassword.value;
 
         if (!email || !password) {
-          showGlobalMessage("Merci de saisir e-mail et mot de passe.", false);
+          if (loginMessage) {
+            loginMessage.textContent = "Merci de saisir e-mail et mot de passe.";
+            loginMessage.style.color = "#c0392b";
+          }
           return;
         }
 
@@ -601,9 +619,14 @@
           if (!res.ok) {
             const errorMessage = await getErrorMessageFromResponse(
               res,
-              "Identifiants incorrects.",
+              "Identifiants incorrects."
             );
-            showGlobalMessage(errorMessage, false);
+
+            if (loginMessage) {
+              loginMessage.textContent = errorMessage;
+              loginMessage.style.color = "#c0392b";
+            }
+
             currentUser = null;
             isAdmin = false;
             updateHeaderAuth();
@@ -618,14 +641,20 @@
             isAdmin
               ? `Connecté en tant qu'admin (${currentUser.fullName}).`
               : `Connecté en tant que client (${currentUser.fullName}).`,
-            true,
+            true
           );
+
+          if (loginMessage) loginMessage.textContent = "";
 
           updateHeaderAuth();
           closeLoginModal();
         } catch (err) {
           console.error("Erreur login :", err);
-          showGlobalMessage("Erreur lors de la connexion au serveur.", false);
+
+          if (loginMessage) {
+            loginMessage.textContent = "Erreur lors de la connexion au serveur.";
+            loginMessage.style.color = "#c0392b";
+          }
         }
       }
 
@@ -692,6 +721,9 @@
             {
               chien: "Chien",
               chat: "Chat",
+              nac: "NAC",
+              oiseau: "Oiseau",
+              autre: "Autre",
             }[m.animalType] ||
             m.animalType ||
             "";
@@ -705,13 +737,13 @@
 
           const editBtn = document.createElement("button");
           editBtn.textContent = "Modifier";
-          editBtn.className = "btn-small btn-outline";
+          editBtn.className = "btn btn-secondary btn-sm";
           editBtn.style.marginRight = "4px";
           editBtn.addEventListener("click", () => selectMemberForEdit(m));
 
           const delBtn = document.createElement("button");
           delBtn.textContent = "Supprimer";
-          delBtn.className = "btn-small btn-outline";
+          delBtn.className = "btn btn-secondary btn-sm";
           delBtn.style.color = "#c0392b";
           delBtn.addEventListener("click", () => deleteMember(m));
 
@@ -743,16 +775,11 @@
         }
 
         if (member.id === currentUser.id) {
-          showGlobalMessage(
-            "Vous ne pouvez pas supprimer votre propre compte.",
-            false,
-          );
+          showGlobalMessage("Vous ne pouvez pas supprimer votre propre compte.", false);
           return;
         }
 
-        if (
-          !confirm(`Supprimer le membre "${member.fullName || member.email}" ?`)
-        ) {
+        if (!confirm(`Supprimer le membre "${member.fullName || member.email}" ?`)) {
           return;
         }
 
@@ -764,7 +791,7 @@
           if (!res.ok) {
             const errorMessage = await getErrorMessageFromResponse(
               res,
-              "Erreur lors de la suppression.",
+              "Erreur lors de la suppression."
             );
             showGlobalMessage(errorMessage, false);
             return;
@@ -825,15 +852,7 @@
         updateHeaderAuth();
         closeProfileModal();
         closeLoginModal();
-
-        // Retour forcé à l'accueil
-        document.getElementById("manageView").style.display = "none";
-        document.getElementById("homeView").style.display = "block";
-
-        // Nettoyage visuel admin
-        if (manageEditForm) manageEditForm.style.display = "none";
-        if (manageEditMessage) manageEditMessage.textContent = "";
-        if (manageSearch) manageSearch.value = "";
+        showHomeView();
 
         showGlobalMessage("Vous avez été déconnecté.", true);
       });
@@ -850,16 +869,14 @@
         const password2 = document.getElementById("regPassword2").value;
         const phone = document.getElementById("regPhone").value.trim();
         const animalType = document.getElementById("regAnimalType").value;
-        const animalName = document
-          .getElementById("regAnimalName")
-          .value.trim();
+        const animalName = document.getElementById("regAnimalName").value.trim();
 
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!fullName || !email || !password || !animalType) {
           setFieldMessage(
             registerMessage,
-            "Merci de remplir tous les champs obligatoires.",
+            "Merci de remplir tous les champs obligatoires."
           );
           return;
         }
@@ -872,7 +889,7 @@
         if (/[^\x00-\x7F]/.test(email)) {
           setFieldMessage(
             registerMessage,
-            "L’adresse e-mail ne doit pas contenir d’accent.",
+            "L’adresse e-mail ne doit pas contenir d’accent."
           );
           return;
         }
@@ -880,7 +897,7 @@
         if (password !== password2) {
           setFieldMessage(
             registerMessage,
-            "Les mots de passe ne correspondent pas.",
+            "Les mots de passe ne correspondent pas."
           );
           return;
         }
@@ -906,7 +923,7 @@
           if (!res.ok) {
             const errorMessage = await getErrorMessageFromResponse(
               res,
-              "Erreur lors de l'inscription.",
+              "Erreur lors de l'inscription."
             );
             setFieldMessage(registerMessage, errorMessage);
             return;
@@ -920,7 +937,7 @@
           console.error("Erreur réseau inscription:", err);
           setFieldMessage(
             registerMessage,
-            "Erreur de communication avec le serveur.",
+            "Erreur de communication avec le serveur."
           );
         }
       });
@@ -943,10 +960,7 @@
         e.preventDefault();
 
         if (!currentUser) {
-          showGlobalMessage(
-            "Vous devez être connecté pour modifier votre profil.",
-            false,
-          );
+          showGlobalMessage("Vous devez être connecté pour modifier votre profil.", false);
           return;
         }
 
@@ -968,7 +982,7 @@
           if (!res.ok) {
             const errorMessage = await getErrorMessageFromResponse(
               res,
-              "Erreur lors de la mise à jour du profil.",
+              "Erreur lors de la mise à jour du profil."
             );
             setFieldMessage(profileModalMessage, errorMessage);
             return;
@@ -978,16 +992,12 @@
           isAdmin = currentUser.role === "admin";
           updateHeaderAuth();
 
-          setFieldMessage(
-            profileModalMessage,
-            "Profil mis à jour avec succès.",
-            true,
-          );
+          setFieldMessage(profileModalMessage, "Profil mis à jour avec succès.", true);
         } catch (err) {
           console.error("Erreur réseau (profil):", err);
           setFieldMessage(
             profileModalMessage,
-            "Erreur de communication avec le serveur.",
+            "Erreur de communication avec le serveur."
           );
         }
       });
@@ -999,11 +1009,7 @@
       });
 
       backHomeBtn.addEventListener("click", () => {
-        document.getElementById("manageView").style.display = "none";
-        document.getElementById("homeView").style.display = "block";
-
-        if (manageEditForm) manageEditForm.style.display = "none";
-        if (manageEditMessage) manageEditMessage.textContent = "";
+        showHomeView();
       });
 
       manageSearch.addEventListener("input", renderMembersTable);
@@ -1044,7 +1050,7 @@
           if (!res.ok) {
             const errorMessage = await getErrorMessageFromResponse(
               res,
-              "Erreur lors de la mise à jour du membre.",
+              "Erreur lors de la mise à jour du membre."
             );
             setFieldMessage(manageEditMessage, errorMessage);
             return;
@@ -1056,17 +1062,13 @@
             updateHeaderAuth();
           }
 
-          setFieldMessage(
-            manageEditMessage,
-            "Membre mis à jour avec succès.",
-            true,
-          );
+          setFieldMessage(manageEditMessage, "Membre mis à jour avec succès.", true);
           await loadMembers();
         } catch (err) {
           console.error("Erreur réseau PUT membre:", err);
           setFieldMessage(
             manageEditMessage,
-            "Erreur réseau lors de la mise à jour.",
+            "Erreur réseau lors de la mise à jour."
           );
         }
       });
