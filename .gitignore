@@ -1,2 +1,4 @@
 /.venv
 *.json
+*.db
+__pycache__/
