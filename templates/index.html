@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Club des Pattes | Educatrice canine et gardes chien chat</title>
+    <title>Club des Pattes | Éducation canine et gardes sur mesure</title>
     <link
       rel="icon"
       type="image/x-icon"
@@ -23,34 +23,35 @@
             <span class="brand-badge">CP</span>
             <span class="brand-copy">
               <strong>Club des Pattes</strong>
-              <small>Educatrice canine et gardes chien chat</small>
+              <small>Éducatrice canine • gardes chien et visites chat</small>
             </span>
           </a>
 
           <nav class="main-nav">
             <a href="#approach">Approche</a>
-            <a href="#companionship">Accompagnements</a>
-            <a href="#contactZone">Contact</a>
-            <a href="#dashboard" id="memberNavLink" hidden>Mon espace</a>
-            <a href="#adminPanel" id="adminNavLink" hidden>Administration</a>
+            <a href="#companionship">Prestations</a>
+            <a href="#contactZone">Premier contact</a>
           </nav>
 
           <div class="header-actions" id="headerActions">
             <button class="btn btn-secondary" id="openLoginBtn" type="button">
-              Connexion
+              Se connecter
             </button>
             <button class="btn btn-primary" id="openRegisterBtn" type="button">
-              Creer un compte
+              Créer mon accès
             </button>
           </div>
 
           <div class="user-summary" id="userSummary" hidden>
-            <div>
-              <span class="summary-label">Connecte</span>
+            <div class="user-identity">
+              <span class="summary-label" id="userSummaryRole"></span>
               <strong id="userSummaryName"></strong>
             </div>
+            <button class="btn btn-primary btn-sm" id="openAccountBtn" type="button">
+              Mon suivi
+            </button>
             <button class="btn btn-secondary btn-sm" id="logoutBtn" type="button">
-              Deconnexion
+              Déconnexion
             </button>
           </div>
         </div>
@@ -60,12 +61,16 @@
         <section class="hero-section" id="home">
           <div class="hero-card">
             <div class="hero-copy">
-              <p class="eyebrow">Education canine et pet sitting</p>
-              <h1>Une presence douce et fiable pour accompagner votre chien et veiller sur vos animaux pendant vos absences.</h1>
+              <p class="eyebrow">Éducation canine et pet sitting</p>
+              <h1>
+                Une présence douce, structurée et fiable pour mieux vivre avec votre
+                chien et partir l’esprit tranquille.
+              </h1>
               <p class="hero-text">
-                J'accompagne les familles avec une education canine respectueuse du rythme du chien
-                et je propose des gardes chien ainsi que des visites chat pour vous depanner avec
-                serieux, clarte et confiance.
+                J’accompagne les familles avec une approche bienveillante, lisible et
+                respectueuse du rythme de l’animal. Éducation du quotidien, gardes
+                chien et visites chat sont pensées comme un seul fil rouge : vous
+                offrir un cadre rassurant, clair et humain.
               </p>
 
               <div class="hero-actions">
@@ -77,17 +82,58 @@
                   id="heroBookingBtn"
                   type="button"
                 >
-                  Voir les disponibilites
+                  Voir les disponibilités
                 </button>
               </div>
 
               <div class="hero-points">
                 <span>Chiens et chats uniquement</span>
-                <span>Demandes de garde validees manuellement</span>
-                <span>Education canine en approche bienveillante</span>
+                <span>Demandes de garde validées manuellement</span>
+                <span>Accompagnement personnalisé en douceur</span>
               </div>
             </div>
 
+            <aside class="hero-editorial">
+              <article class="editorial-frame">
+                <h3>Un site vitrine pensé comme un premier rendez-vous</h3>
+                <p class="panel-text">
+                  Ici, l’objectif n’est pas de “réserver vite”, mais de vous aider à
+                  sentir si l’accompagnement vous convient. On échange d’abord, on
+                  comprend votre besoin, puis on avance simplement.
+                </p>
+
+                <div class="editorial-metrics">
+                  <div>
+                    <strong>Éducation</strong>
+                    <span>Bases, émotions, quotidien</span>
+                  </div>
+                  <div>
+                    <strong>Gardes</strong>
+                    <span>Validation humaine à chaque demande</span>
+                  </div>
+                  <div>
+                    <strong>Chats</strong>
+                    <span>Visites calmes et régulières</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="hero-note">
+                <p class="service-kicker">Approche</p>
+                <strong>Observer, comprendre, ajuster</strong>
+                <p>
+                  Chaque chien a son rythme, chaque foyer ses habitudes. Les gardes
+                  et les séances sont préparées avec la même attention au détail.
+                </p>
+              </article>
+            </aside>
+          </div>
+
+          <div class="trust-ribbon">
+            <span>Approche positive et respectueuse</span>
+            <span>Suivi simple et clair pour les familles</span>
+            <span>Chiens et chats accompagnés avec sérieux</span>
+            <span>Réponse personnalisée avant chaque garde</span>
           </div>
         </section>
 
@@ -96,42 +142,62 @@
         <section class="section-block" id="approach">
           <div class="section-head">
             <div>
-              <p class="eyebrow">Approche</p>
-              <h2>Un accompagnement pense pour rassurer les humains et respecter les animaux</h2>
+              <p class="eyebrow">Méthode</p>
+              <h2>Une éducation douce, lisible et ancrée dans le réel</h2>
             </div>
             <p class="section-text">
-              Chaque prestation est preparee avec attention: habitudes de vie, besoins du chien ou
-              du chat, rythme du foyer et objectifs recherches en education ou en garde.
+              Inspirée par les sites d’éducatrices canines les plus rassurants, cette
+              vitrine met en avant une posture claire : comprendre l’animal,
+              accompagner sans brutalité et construire des repères durables pour toute
+              la famille.
             </p>
           </div>
 
-          <div class="service-grid">
-            <article class="service-card">
-              <span class="service-kicker">Education canine</span>
-              <h3>Des bases claires pour le quotidien</h3>
-              <p>
-                Marche en laisse, rappel, gestion des emotions et conseils adaptes a votre chien
-                pour retrouver un quotidien plus serein.
+          <div class="showcase-grid">
+            <article class="story-card">
+              <h3>Créer de la stabilité pour l’humain comme pour l’animal</h3>
+              <p class="panel-text">
+                Les séances d’éducation cherchent à rendre le quotidien plus fluide :
+                marche, gestion des émotions, rappel, routines, lecture du chien et
+                compréhension des signaux. Les gardes suivent la même logique :
+                préparer l’absence pour qu’elle soit vécue sereinement.
+              </p>
+              <p class="panel-text">
+                L’idée n’est pas de proposer une solution standard, mais un cadre
+                fiable, respectueux et simple à vivre, avec des échanges humains et
+                des décisions claires.
               </p>
             </article>
 
-            <article class="service-card">
-              <span class="service-kicker">Garde chien</span>
-              <h3>Une absence preparee sans stress</h3>
-              <p>
-                Demande de garde, creneau choisi a l'avance et validation manuelle pour garantir
-                une organisation claire et un accueil de qualite.
-              </p>
-            </article>
+            <div class="pillar-grid">
+              <article class="service-card">
+                <span class="service-kicker">Écoute</span>
+                <h3>Un premier échange qui pose les bases</h3>
+                <p>
+                  Votre demande, votre rythme de vie, le tempérament de votre chien
+                  ou de votre chat et les habitudes du foyer sont pris en compte dès
+                  le départ.
+                </p>
+              </article>
 
-            <article class="service-card">
-              <span class="service-kicker">Visite chat</span>
-              <h3>Passages doux et rassurants</h3>
-              <p>
-                Nourrissage, presence, verification du confort et respect des habitudes de votre
-                chat pendant vos absences.
-              </p>
-            </article>
+              <article class="service-card">
+                <span class="service-kicker">Respect</span>
+                <h3>Des repères sans pression inutile</h3>
+                <p>
+                  Les accompagnements sont pensés pour soutenir la relation, clarifier
+                  les attentes et faire émerger des routines stables et réalistes.
+                </p>
+              </article>
+
+              <article class="service-card">
+                <span class="service-kicker">Clarté</span>
+                <h3>Un fonctionnement simple à comprendre</h3>
+                <p>
+                  Le site sert à prendre contact, consulter les créneaux et envoyer
+                  une demande de garde. La confirmation finale reste toujours humaine.
+                </p>
+              </article>
+            </div>
           </div>
         </section>
 
@@ -139,40 +205,92 @@
           <div class="section-head">
             <div>
               <p class="eyebrow">Accompagnements</p>
-              <h2>Des informations que l'admin peut ajuster selon l'activite du moment</h2>
+              <h2>Des prestations pensées pour le quotidien, les absences et la relation</h2>
             </div>
             <p class="section-text">
-              Cette zone reste editable cote administration pour presenter les accompagnements,
-              actualites ou formules mises en avant.
+              Cette zone reste administrable, mais son rôle est désormais plus clair :
+              présenter les accompagnements du moment comme sur un vrai site vitrine
+              d’éducatrice canine.
             </p>
           </div>
 
           <div class="activity-grid" id="activitiesGrid"></div>
         </section>
 
-        <section class="section-block" id="contactZone">
-          <div class="member-layout">
-            <article class="panel-card">
-              <p class="panel-label">A propos</p>
-              <h3>Une educatrice canine a l'ecoute du binome humain chien</h3>
+        <section class="section-block philosophy-block">
+          <div class="philosophy-grid">
+            <article class="quote-card">
+              <h3>Un univers plus éditorial, plus vivant et plus rassurant</h3>
               <p class="panel-text">
-                Mon travail consiste a vous aider a mieux comprendre votre chien, a mettre en place
-                des routines simples et a vous proposer une solution de garde ou de visite fiable
-                quand vous devez vous absenter.
-              </p>
-              <p class="panel-text">
-                Les demandes de garde concernent uniquement les chiens et les chats. Chaque demande
-                est relue avant validation pour confirmer que le creneau et l'accompagnement
-                conviennent vraiment.
+                Les références que tu m’as données ont un point commun fort : elles
+                ne vendent pas juste une prestation, elles installent une présence.
+                Cette version cherche ce même équilibre entre douceur, crédibilité et
+                proximité.
               </p>
             </article>
 
-            <article class="panel-card cta-card">
-              <p class="panel-label">Contact</p>
-              <h3>Un premier echange simple avant de se lancer</h3>
+            <article class="note-card">
+              <p class="service-kicker">Pour qui</p>
+              <h3>Chiens et chats uniquement</h3>
+              <p>
+                Les demandes de garde sont réservées aux chiens et aux chats. Les
+                créneaux sont consultables par tous, mais l’envoi d’une demande reste
+                réservé aux membres connectés.
+              </p>
+            </article>
+
+            <article class="note-card">
+              <p class="service-kicker">Organisation</p>
+              <h3>Une validation manuelle pour chaque réservation</h3>
+              <p>
+                Le calendrier donne une première vision des disponibilités. Ensuite,
+                chaque demande est relue avant confirmation pour préserver la qualité
+                d’accueil et la cohérence des gardes.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-block" id="contactZone">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Contact</p>
+              <h2>Un premier échange simple avant de confier son animal</h2>
+            </div>
+            <p class="section-text">
+              La page garde un ton chaleureux et professionnel : assez doux pour
+              inspirer confiance, assez structuré pour rassurer sur l’organisation.
+            </p>
+          </div>
+
+          <div class="member-layout contact-layout">
+            <article class="panel-card contact-story">
+              <h3>Une éducatrice canine attentive au lien humain animal</h3>
               <p class="panel-text">
-                Ecrivez-moi pour presenter votre besoin, choisir un premier rendez-vous ou consulter
-                les disponibilites de garde.
+                Mon travail consiste à vous aider à mieux comprendre votre chien, à
+                poser des routines cohérentes et à proposer des gardes ou des visites
+                qui respectent vraiment les habitudes de l’animal.
+              </p>
+              <p class="panel-text">
+                Avant toute garde, nous clarifions ensemble le besoin, les dates, le
+                contexte et les points de vigilance éventuels. Cela permet d’éviter
+                les réservations impersonnelles et de garder un fonctionnement
+                rassurant.
+              </p>
+
+              <div class="contact-detail-list">
+                <span>Premier contact pour éducation ou garde</span>
+                <span>Planning consultable depuis la modale</span>
+                <span>Réponse humaine avant validation</span>
+              </div>
+            </article>
+
+            <article class="panel-card cta-card">
+              <h3>Présentez votre besoin en quelques lignes</h3>
+              <p class="panel-text">
+                Vous pouvez écrire pour une question d’éducation, une demande de garde
+                chien, une visite chat ou simplement pour vérifier si votre situation
+                correspond bien à l’accompagnement proposé.
               </p>
               <div class="hero-actions">
                 <button class="btn btn-primary" id="contactSectionBtn" type="button">
@@ -183,232 +301,24 @@
                   id="contactBookingBtn"
                   type="button"
                 >
-                  Choisir un creneau
+                  Choisir un créneau
                 </button>
               </div>
             </article>
           </div>
         </section>
 
-        <section class="section-block member-block" id="dashboard" hidden>
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Espace membre</p>
-              <h2>Votre profil et le suivi de vos demandes de garde</h2>
-            </div>
-            <p class="section-text">
-              L'espace membre permet de garder vos informations a jour, de reserver un creneau et
-              de suivre les validations ou refus.
-            </p>
-          </div>
-
-          <div class="member-layout">
-            <article class="panel-card">
-              <p class="panel-label">Profil</p>
-              <h3>Informations personnelles</h3>
-
-              <form id="profileForm">
-                <label for="profileFullName">Nom complet</label>
-                <input id="profileFullName" type="text" required />
-
-                <label for="profileEmail">Adresse e-mail</label>
-                <input id="profileEmail" type="email" required />
-
-                <label for="profilePhone">Telephone</label>
-                <input id="profilePhone" type="tel" />
-
-                <label for="profileAnimalType">Type d'animal</label>
-                <select id="profileAnimalType">
-                  <option value="">Selectionner</option>
-                  <option value="chien">Chien</option>
-                  <option value="chat">Chat</option>
-                </select>
-
-                <label for="profileAnimalName">Nom de l'animal</label>
-                <input id="profileAnimalName" type="text" />
-
-                <p class="inline-message" id="profileMessage"></p>
-
-                <div class="form-actions split-actions">
-                  <button class="btn btn-primary" type="submit">Enregistrer</button>
-                  <button class="btn btn-danger" id="deleteAccountBtn" type="button">
-                    Me desinscrire du site
-                  </button>
-                </div>
-              </form>
-            </article>
-
-            <article class="panel-card">
-              <div class="panel-card-top">
-                <div>
-                  <p class="panel-label">Demandes</p>
-                  <h3>Mes reservations</h3>
-                </div>
-                <button class="btn btn-secondary btn-sm" id="dashboardBookingBtn" type="button">
-                  Nouvelle demande
-                </button>
-              </div>
-              <div class="booking-list" id="myBookingsList"></div>
-            </article>
-          </div>
-        </section>
-
-        <section class="section-block admin-block" id="adminPanel" hidden>
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Administration</p>
-              <h2>Gestion de l'activite, des membres et des demandes de garde</h2>
-            </div>
-            <p class="section-text">
-              Cette zone n'apparait que pour l'administration et rassemble tout ce qui sert au
-              pilotage du site vitrine.
-            </p>
-          </div>
-
-          <div class="admin-stats" id="adminStats"></div>
-
-          <div class="admin-grid">
-            <article class="panel-card admin-panel-card">
-              <div class="panel-card-top">
-                <div>
-                  <p class="panel-label">Membres</p>
-                  <h3>Gestion des comptes</h3>
-                </div>
-                <input
-                  id="memberSearchInput"
-                  type="search"
-                  class="compact-input"
-                  placeholder="Rechercher..."
-                />
-              </div>
-
-              <div class="table-shell">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Nom</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="membersTableBody"></tbody>
-                </table>
-              </div>
-
-              <form id="memberForm" class="stack-form">
-                <input id="memberId" type="hidden" />
-
-                <label for="memberFullName">Nom</label>
-                <input id="memberFullName" type="text" />
-
-                <label for="memberEmail">Email</label>
-                <input id="memberEmail" type="email" />
-
-                <label for="memberRole">Role</label>
-                <select id="memberRole">
-                  <option value="client">Client</option>
-                  <option value="admin">Admin</option>
-                </select>
-
-                <label for="memberPhone">Telephone</label>
-                <input id="memberPhone" type="tel" />
-
-                <label for="memberAnimalType">Type d'animal</label>
-                <select id="memberAnimalType">
-                  <option value="">Selectionner</option>
-                  <option value="chien">Chien</option>
-                  <option value="chat">Chat</option>
-                </select>
-
-                <label for="memberAnimalName">Nom de l'animal</label>
-                <input id="memberAnimalName" type="text" />
-
-                <p class="inline-message" id="memberMessage"></p>
-
-                <div class="form-actions">
-                  <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
-                </div>
-              </form>
-            </article>
-
-            <article class="panel-card admin-panel-card">
-              <p class="panel-label">Gardes</p>
-              <h3>Validation et suivi des demandes</h3>
-              <div class="admin-bookings" id="adminBookingsList"></div>
-            </article>
-
-            <article class="panel-card admin-panel-card">
-              <p class="panel-label">Indisponibilites</p>
-              <h3>Bloquer les jours non reservables</h3>
-
-              <form id="blockedDateForm" class="stack-form">
-                <label for="blockedDateInput">Date</label>
-                <input id="blockedDateInput" type="date" required />
-
-                <label for="blockedDateReason">Raison</label>
-                <input id="blockedDateReason" type="text" placeholder="Ex : complet / absence / ferie" />
-
-                <p class="inline-message" id="blockedDateMessage"></p>
-
-                <div class="form-actions">
-                  <button class="btn btn-primary btn-sm" type="submit">Bloquer la date</button>
-                </div>
-              </form>
-
-              <div class="simple-list" id="blockedDatesList"></div>
-            </article>
-
-            <article class="panel-card admin-panel-card">
-              <p class="panel-label">Vitrine</p>
-              <h3>Mettre a jour les cartes d'accompagnement</h3>
-
-              <form id="activityForm" class="stack-form">
-                <input id="activityId" type="hidden" />
-
-                <label for="activityTitle">Titre</label>
-                <input id="activityTitle" type="text" required />
-
-                <label for="activityCategory">Categorie</label>
-                <input id="activityCategory" type="text" placeholder="Ex : Education" />
-
-                <label for="activitySortOrder">Ordre</label>
-                <input id="activitySortOrder" type="number" min="0" step="1" value="0" />
-
-                <label for="activityDescription">Description</label>
-                <textarea id="activityDescription" rows="4" required></textarea>
-
-                <p class="inline-message" id="activityMessage"></p>
-
-                <div class="form-actions split-actions">
-                  <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
-                  <button class="btn btn-secondary btn-sm" id="activityResetBtn" type="button">
-                    Nouveau
-                  </button>
-                </div>
-              </form>
-
-              <div class="simple-list" id="activityAdminList"></div>
-            </article>
-          </div>
-
-          <article class="panel-card admin-panel-card contact-panel">
-            <p class="panel-label">Premier contact</p>
-            <h3>Demandes recues depuis le site</h3>
-            <div class="simple-list" id="contactsList"></div>
-          </article>
-        </section>
       </main>
 
       <footer class="site-footer">
         <div class="footer-inner">
           <div>
             <strong>Club des Pattes</strong>
-            <p>Educatrice canine, gardes chien et visites chat sur validation.</p>
+            <p>Éducatrice canine, gardes chien et visites chat sur validation.</p>
           </div>
           <div>
             <p>Approche bienveillante</p>
-            <p>Organisation simple et claire</p>
+            <p>Organisation claire et humaine</p>
           </div>
           <div class="footer-actions">
             <button class="btn btn-secondary btn-sm" id="footerContactBtn" type="button">
@@ -419,15 +329,234 @@
       </footer>
     </div>
 
+    <div class="modal-backdrop" id="memberModal" hidden>
+      <div
+        class="modal-card modal-account"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="memberModalTitle"
+      >
+        <div class="modal-head">
+          <div>
+            <span class="summary-label">Espace client</span>
+            <h3 id="memberModalTitle">Mon suivi</h3>
+            <p class="panel-text">Profil, animal et demandes en cours.</p>
+          </div>
+          <button class="icon-btn" id="closeMemberBtn" type="button" aria-label="Fermer">
+            ×
+          </button>
+        </div>
+
+        <div class="member-layout modal-account-layout">
+          <article class="panel-card">
+            <h3>Informations personnelles</h3>
+
+            <form id="profileForm">
+              <label for="profileFullName">Nom complet</label>
+              <input id="profileFullName" type="text" required />
+
+              <label for="profileEmail">Adresse e-mail</label>
+              <input id="profileEmail" type="email" required />
+
+              <label for="profilePhone">Téléphone</label>
+              <input id="profilePhone" type="tel" />
+
+              <label for="profileAnimalType">Type d’animal</label>
+              <select id="profileAnimalType">
+                <option value="">Sélectionner</option>
+                <option value="chien">Chien</option>
+                <option value="chat">Chat</option>
+              </select>
+
+              <label for="profileAnimalName">Nom de l’animal</label>
+              <input id="profileAnimalName" type="text" />
+
+              <p class="inline-message" id="profileMessage"></p>
+
+              <div class="form-actions split-actions">
+                <button class="btn btn-primary" type="submit">Enregistrer</button>
+                <button class="btn btn-danger" id="deleteAccountBtn" type="button">
+                  Me désinscrire du site
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel-card">
+            <div class="panel-card-top">
+              <div>
+                <h3>Mes réservations</h3>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="dashboardBookingBtn" type="button">
+                Nouvelle demande
+              </button>
+            </div>
+            <div class="booking-list" id="myBookingsList"></div>
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="adminModal" hidden>
+      <div
+        class="modal-card modal-admin"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="adminModalTitle"
+      >
+        <div class="modal-head">
+          <div>
+            <span class="summary-label">Administration</span>
+            <h3 id="adminModalTitle">Pilotage du site</h3>
+            <p class="panel-text">Comptes, demandes, dates et vitrine.</p>
+          </div>
+          <button class="icon-btn" id="closeAdminBtn" type="button" aria-label="Fermer">
+            ×
+          </button>
+        </div>
+
+        <div class="admin-stats" id="adminStats"></div>
+
+        <div class="admin-grid modal-admin-layout">
+          <article class="panel-card admin-panel-card">
+            <div class="panel-card-top">
+              <div>
+                <h3>Gestion des comptes</h3>
+              </div>
+              <input
+                id="memberSearchInput"
+                type="search"
+                class="compact-input"
+                placeholder="Rechercher..."
+              />
+            </div>
+
+            <div class="table-shell">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>E-mail</th>
+                    <th>Rôle</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="membersTableBody"></tbody>
+              </table>
+            </div>
+
+            <form id="memberForm" class="stack-form">
+              <input id="memberId" type="hidden" />
+
+              <label for="memberFullName">Nom</label>
+              <input id="memberFullName" type="text" />
+
+              <label for="memberEmail">E-mail</label>
+              <input id="memberEmail" type="email" />
+
+              <label for="memberRole">Rôle</label>
+              <select id="memberRole">
+                <option value="client">Client</option>
+                <option value="admin">Admin</option>
+              </select>
+
+              <label for="memberPhone">Téléphone</label>
+              <input id="memberPhone" type="tel" />
+
+              <label for="memberAnimalType">Type d’animal</label>
+              <select id="memberAnimalType">
+                <option value="">Sélectionner</option>
+                <option value="chien">Chien</option>
+                <option value="chat">Chat</option>
+              </select>
+
+              <label for="memberAnimalName">Nom de l’animal</label>
+              <input id="memberAnimalName" type="text" />
+
+              <p class="inline-message" id="memberMessage"></p>
+
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
+              </div>
+            </form>
+          </article>
+
+          <article class="panel-card admin-panel-card">
+            <h3>Validation et suivi des demandes</h3>
+            <div class="admin-bookings" id="adminBookingsList"></div>
+          </article>
+
+          <article class="panel-card admin-panel-card">
+            <h3>Bloquer les jours non réservables</h3>
+
+            <form id="blockedDateForm" class="stack-form">
+              <label for="blockedDateInput">Date</label>
+              <input id="blockedDateInput" type="date" required />
+
+              <label for="blockedDateReason">Raison</label>
+              <input
+                id="blockedDateReason"
+                type="text"
+                placeholder="Ex : complet / absence / férié"
+              />
+
+              <p class="inline-message" id="blockedDateMessage"></p>
+
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Bloquer la date</button>
+              </div>
+            </form>
+
+            <div class="simple-list" id="blockedDatesList"></div>
+          </article>
+
+          <article class="panel-card admin-panel-card">
+            <h3>Mettre à jour les cartes d’accompagnement</h3>
+
+            <form id="activityForm" class="stack-form">
+              <input id="activityId" type="hidden" />
+
+              <label for="activityTitle">Titre</label>
+              <input id="activityTitle" type="text" required />
+
+              <label for="activityCategory">Catégorie</label>
+              <input id="activityCategory" type="text" placeholder="Ex : Éducation" />
+
+              <label for="activitySortOrder">Ordre</label>
+              <input id="activitySortOrder" type="number" min="0" step="1" value="0" />
+
+              <label for="activityDescription">Description</label>
+              <textarea id="activityDescription" rows="4" required></textarea>
+
+              <p class="inline-message" id="activityMessage"></p>
+
+              <div class="form-actions split-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
+                <button class="btn btn-secondary btn-sm" id="activityResetBtn" type="button">
+                  Nouveau
+                </button>
+              </div>
+            </form>
+
+            <div class="simple-list" id="activityAdminList"></div>
+          </article>
+        </div>
+
+        <article class="panel-card admin-panel-card contact-panel">
+          <h3>Demandes reçues depuis le site</h3>
+          <div class="simple-list" id="contactsList"></div>
+        </article>
+      </div>
+    </div>
+
     <div class="modal-backdrop" id="loginModal" hidden>
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
         <div class="modal-head">
           <div>
-            <p class="panel-label">Connexion</p>
-            <h3 id="loginModalTitle">Acceder a l'espace membre</h3>
+            <h3 id="loginModalTitle">Accéder à l’espace membre</h3>
           </div>
           <button class="icon-btn" id="closeLoginBtn" type="button" aria-label="Fermer">
-            x
+            ×
           </button>
         </div>
 
@@ -448,21 +577,25 @@
     </div>
 
     <div class="modal-backdrop" id="registerModal" hidden>
-      <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="registerModalTitle">
+      <div
+        class="modal-card modal-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="registerModalTitle"
+      >
         <div class="modal-head">
           <div>
-            <p class="panel-label">Inscription</p>
-            <h3 id="registerModalTitle">Creer un compte membre</h3>
+            <h3 id="registerModalTitle">Créer un compte membre</h3>
           </div>
           <button class="icon-btn" id="closeRegisterBtn" type="button" aria-label="Fermer">
-            x
+            ×
           </button>
         </div>
 
         <form id="registerForm" class="stack-form">
           <div class="inline-fields">
             <div>
-              <label for="registerFirstName">Prenom</label>
+              <label for="registerFirstName">Prénom</label>
               <input id="registerFirstName" type="text" required />
             </div>
             <div>
@@ -477,37 +610,41 @@
           <label for="registerPassword">Mot de passe</label>
           <input id="registerPassword" type="password" required />
 
-          <label for="registerPhone">Telephone</label>
+          <label for="registerPhone">Téléphone</label>
           <input id="registerPhone" type="tel" />
 
-          <label for="registerAnimalType">Type d'animal</label>
+          <label for="registerAnimalType">Type d’animal</label>
           <select id="registerAnimalType">
-            <option value="">Selectionner</option>
+            <option value="">Sélectionner</option>
             <option value="chien">Chien</option>
             <option value="chat">Chat</option>
           </select>
 
-          <label for="registerAnimalName">Nom de l'animal</label>
+          <label for="registerAnimalName">Nom de l’animal</label>
           <input id="registerAnimalName" type="text" />
 
           <p class="inline-message" id="registerMessage"></p>
 
           <div class="form-actions">
-            <button class="btn btn-primary" type="submit">Creer mon compte</button>
+            <button class="btn btn-primary" type="submit">Créer mon compte</button>
           </div>
         </form>
       </div>
     </div>
 
     <div class="modal-backdrop" id="contactModal" hidden>
-      <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
+      <div
+        class="modal-card modal-wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="contactModalTitle"
+      >
         <div class="modal-head">
           <div>
-            <p class="panel-label">Premier contact</p>
             <h3 id="contactModalTitle">Parler de votre besoin</h3>
           </div>
           <button class="icon-btn" id="closeContactBtn" type="button" aria-label="Fermer">
-            x
+            ×
           </button>
         </div>
 
@@ -518,7 +655,7 @@
           <label for="contactEmail">Adresse e-mail</label>
           <input id="contactEmail" type="email" required />
 
-          <label for="contactPhone">Telephone</label>
+          <label for="contactPhone">Téléphone</label>
           <input id="contactPhone" type="tel" />
 
           <label for="contactMessage">Message</label>
@@ -539,25 +676,28 @@
     </div>
 
     <div class="modal-backdrop" id="bookingModal" hidden>
-      <div class="modal-card modal-booking" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+      <div
+        class="modal-card modal-booking"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bookingModalTitle"
+      >
         <div class="modal-head">
           <div>
-            <p class="panel-label">Gardes et disponibilites</p>
-            <h3 id="bookingModalTitle">Choisir un creneau pour une garde</h3>
+            <h3 id="bookingModalTitle">Choisir un créneau pour une garde</h3>
           </div>
           <button class="icon-btn" id="closeBookingBtn" type="button" aria-label="Fermer">
-            x
+            ×
           </button>
         </div>
 
         <div class="booking-layout booking-layout-modal">
           <article class="panel-card calendar-card">
             <div class="calendar-topbar">
-              <button class="icon-btn" id="calendarPrevBtn" type="button" aria-label="Mois precedent">
+              <button class="icon-btn" id="calendarPrevBtn" type="button" aria-label="Mois précédent">
                 &lt;
               </button>
               <div>
-                <p class="panel-label">Disponibilites</p>
                 <h3 id="calendarMonthLabel">Calendrier</h3>
               </div>
               <button class="icon-btn" id="calendarNextBtn" type="button" aria-label="Mois suivant">
@@ -579,8 +719,8 @@
 
             <div class="calendar-legend">
               <span><i class="legend-dot legend-dot-available"></i>Libre</span>
-              <span><i class="legend-dot legend-dot-blocked"></i>Bloque ou confirme</span>
-              <span><i class="legend-dot legend-dot-today"></i>Aujourd'hui</span>
+              <span><i class="legend-dot legend-dot-blocked"></i>Bloqué ou confirmé</span>
+              <span><i class="legend-dot legend-dot-today"></i>Aujourd’hui</span>
             </div>
 
             <div class="next-available-wrap">
@@ -590,10 +730,9 @@
           </article>
 
           <article class="panel-card request-card">
-            <p class="panel-label">Demande client</p>
             <h3>Envoyer une demande de garde</h3>
             <p class="panel-text" id="bookingIntroText">
-              Connectez-vous ou creez un compte pour envoyer une demande de garde.
+              Connectez-vous ou créez un compte pour envoyer une demande de garde.
             </p>
 
             <div class="booking-auth-actions" id="bookingAuthActions">
@@ -601,37 +740,38 @@
                 Se connecter
               </button>
               <button class="btn btn-primary" id="bookingRegisterPromptBtn" type="button">
-                Creer un compte
+                Créer un compte
               </button>
             </div>
 
             <p class="panel-text is-hidden" id="bookingAdminNotice">
-              Les demandes client sont reservees aux membres. L'administration gere les gardes
-              depuis la zone admin.
+              Les demandes client sont réservées aux membres. L’administration gère
+              les gardes depuis la zone admin.
             </p>
 
             <form id="bookingForm" hidden>
               <label for="bookingServiceType">Type de demande</label>
               <select id="bookingServiceType" required>
-                <option value="">Selectionner</option>
+                <option value="">Sélectionner</option>
                 <option value="garde-chien">Garde chien</option>
                 <option value="visite-chat">Visite chat</option>
                 <option value="garde-chien-chat">Garde chien et chat</option>
               </select>
 
-              <label for="bookingAnimalType">Type d'animal</label>
+              <label for="bookingAnimalType">Type d’animal</label>
               <select id="bookingAnimalType" required>
-                <option value="">Selectionner</option>
+                <option value="">Sélectionner</option>
                 <option value="chien">Chien</option>
                 <option value="chat">Chat</option>
               </select>
 
-              <label for="bookingAnimalName">Nom de l'animal</label>
+              <label for="bookingAnimalName">Nom de l’animal</label>
               <input id="bookingAnimalName" type="text" placeholder="Ex : Nala" />
+              <p class="panel-text is-hidden" id="bookingAnimalHint"></p>
 
               <div class="inline-fields">
                 <div>
-                  <label for="bookingStartDate">Date de debut</label>
+                  <label for="bookingStartDate">Date de début</label>
                   <input id="bookingStartDate" type="date" required />
                 </div>
                 <div>
@@ -640,20 +780,20 @@
                 </div>
               </div>
 
-              <label for="bookingTimeSlot">Creneau</label>
+              <label for="bookingTimeSlot">Créneau</label>
               <select id="bookingTimeSlot" required>
-                <option value="">Selectionner</option>
+                <option value="">Sélectionner</option>
                 <option value="matin">Matin</option>
-                <option value="apres-midi">Apres-midi</option>
-                <option value="journee">Journee complete</option>
-                <option value="soir">Soiree</option>
+                <option value="apres-midi">Après-midi</option>
+                <option value="journee">Journée complète</option>
+                <option value="soir">Soirée</option>
               </select>
 
-              <label for="bookingNotes">Notes complementaires</label>
+              <label for="bookingNotes">Notes complémentaires</label>
               <textarea
                 id="bookingNotes"
                 rows="4"
-                placeholder="Habitudes, besoins particuliers, informations utiles pour preparer la garde."
+                placeholder="Habitudes, besoins particuliers, informations utiles pour préparer la garde."
               ></textarea>
 
               <p class="inline-message" id="bookingMessage"></p>
