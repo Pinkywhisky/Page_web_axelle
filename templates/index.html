@@ -13,6 +13,12 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body>
@@ -86,225 +92,124 @@
                 </button>
               </div>
 
-              <div class="hero-points">
-                <span>Chiens et chats uniquement</span>
-                <span>Demandes de garde validées manuellement</span>
-                <span>Accompagnement personnalisé en douceur</span>
-              </div>
             </div>
 
-            <aside class="hero-editorial">
-              <article class="editorial-frame">
-                <h3>Un site vitrine pensé comme un premier rendez-vous</h3>
-                <p class="panel-text">
-                  Ici, l’objectif n’est pas de “réserver vite”, mais de vous aider à
-                  sentir si l’accompagnement vous convient. On échange d’abord, on
-                  comprend votre besoin, puis on avance simplement.
-                </p>
-
-                <div class="editorial-metrics">
-                  <div>
-                    <strong>Éducation</strong>
-                    <span>Bases, émotions, quotidien</span>
-                  </div>
-                  <div>
-                    <strong>Gardes</strong>
-                    <span>Validation humaine à chaque demande</span>
-                  </div>
-                  <div>
-                    <strong>Chats</strong>
-                    <span>Visites calmes et régulières</span>
-                  </div>
-                </div>
+            <aside class="hero-feature-grid">
+              <article class="hero-feature-card">
+                <h3>Éducation</h3>
+                <p>Bases, émotions et quotidien.</p>
               </article>
 
-              <article class="hero-note">
-                <p class="service-kicker">Approche</p>
-                <strong>Observer, comprendre, ajuster</strong>
+              <article class="hero-feature-card is-accent">
+                <h3>Gardes</h3>
+                <p>Validation humaine avant chaque accueil.</p>
+              </article>
+
+              <article class="hero-feature-wide">
+                <p class="service-kicker">Notre approche</p>
+                <h3>Observer, comprendre, ajuster.</h3>
                 <p>
-                  Chaque chien a son rythme, chaque foyer ses habitudes. Les gardes
-                  et les séances sont préparées avec la même attention au détail.
+                  Chaque accompagnement est pensé pour être lisible, doux et vraiment
+                  rassurant pour la famille comme pour l’animal.
                 </p>
               </article>
             </aside>
           </div>
 
-          <div class="trust-ribbon">
-            <span>Approche positive et respectueuse</span>
-            <span>Suivi simple et clair pour les familles</span>
-            <span>Chiens et chats accompagnés avec sérieux</span>
-            <span>Réponse personnalisée avant chaque garde</span>
-          </div>
         </section>
 
         <div class="flash-message" id="globalMessage" hidden></div>
 
-        <section class="section-block" id="approach">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Méthode</p>
-              <h2>Une éducation douce, lisible et ancrée dans le réel</h2>
-            </div>
+        <section class="section-block section-block-light" id="approach">
+          <div class="section-center">
+            <p class="eyebrow">Approche</p>
+            <h2>Une méthode ancrée dans le réel</h2>
             <p class="section-text">
-              Inspirée par les sites d’éducatrices canines les plus rassurants, cette
-              vitrine met en avant une posture claire : comprendre l’animal,
-              accompagner sans brutalité et construire des repères durables pour toute
-              la famille.
+              Comprendre l’animal, accompagner sans brutalité et construire des
+              repères durables pour toute la famille.
             </p>
           </div>
 
-          <div class="showcase-grid">
-            <article class="story-card">
-              <h3>Créer de la stabilité pour l’humain comme pour l’animal</h3>
-              <p class="panel-text">
-                Les séances d’éducation cherchent à rendre le quotidien plus fluide :
-                marche, gestion des émotions, rappel, routines, lecture du chien et
-                compréhension des signaux. Les gardes suivent la même logique :
-                préparer l’absence pour qu’elle soit vécue sereinement.
-              </p>
-              <p class="panel-text">
-                L’idée n’est pas de proposer une solution standard, mais un cadre
-                fiable, respectueux et simple à vivre, avec des échanges humains et
-                des décisions claires.
+          <div class="service-grid approach-grid">
+            <article class="service-card service-card-feature">
+              <span class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </span>
+              <h3>Écoute</h3>
+              <p>
+                Votre rythme de vie et le tempérament de l’animal sont pris en compte
+                dès le premier échange.
               </p>
             </article>
 
-            <div class="pillar-grid">
-              <article class="service-card">
-                <span class="service-kicker">Écoute</span>
-                <h3>Un premier échange qui pose les bases</h3>
-                <p>
-                  Votre demande, votre rythme de vie, le tempérament de votre chien
-                  ou de votre chat et les habitudes du foyer sont pris en compte dès
-                  le départ.
-                </p>
-              </article>
+            <article class="service-card service-card-feature">
+              <span class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="m12 21-1.45-1.32C5.4 15 2 11.86 2 8a4 4 0 0 1 7-2.65A4 4 0 0 1 16 8c0 3.86-3.4 7-8.55 11.68L12 21Z" />
+                </svg>
+              </span>
+              <h3>Respect</h3>
+              <p>
+                Des repères sans pression inutile pour faire émerger des routines
+                stables, douces et réalistes.
+              </p>
+            </article>
 
-              <article class="service-card">
-                <span class="service-kicker">Respect</span>
-                <h3>Des repères sans pression inutile</h3>
-                <p>
-                  Les accompagnements sont pensés pour soutenir la relation, clarifier
-                  les attentes et faire émerger des routines stables et réalistes.
-                </p>
-              </article>
-
-              <article class="service-card">
-                <span class="service-kicker">Clarté</span>
-                <h3>Un fonctionnement simple à comprendre</h3>
-                <p>
-                  Le site sert à prendre contact, consulter les créneaux et envoyer
-                  une demande de garde. La confirmation finale reste toujours humaine.
-                </p>
-              </article>
-            </div>
+            <article class="service-card service-card-feature">
+              <span class="service-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 8v5" />
+                  <circle cx="12" cy="16" r=".8" fill="currentColor" stroke="none" />
+                </svg>
+              </span>
+              <h3>Clarté</h3>
+              <p>
+                Un fonctionnement simple à comprendre, avec une confirmation finale
+                toujours humaine.
+              </p>
+            </article>
           </div>
         </section>
 
-        <section class="section-block info-block" id="companionship">
-          <div class="section-head">
+        <section class="section-block section-block-soft info-block" id="companionship">
+          <div class="section-row">
             <div>
-              <p class="eyebrow">Accompagnements</p>
-              <h2>Des prestations pensées pour le quotidien, les absences et la relation</h2>
+              <p class="eyebrow">Prestations</p>
+              <h2>Des accompagnements sur mesure</h2>
             </div>
             <p class="section-text">
-              Cette zone reste administrable, mais son rôle est désormais plus clair :
-              présenter les accompagnements du moment comme sur un vrai site vitrine
-              d’éducatrice canine.
+              Des services pensés pour le quotidien, les absences et la relation avec
+              votre compagnon.
             </p>
           </div>
 
           <div class="activity-grid" id="activitiesGrid"></div>
         </section>
 
-        <section class="section-block philosophy-block">
-          <div class="philosophy-grid">
-            <article class="quote-card">
-              <h3>Un univers plus éditorial, plus vivant et plus rassurant</h3>
-              <p class="panel-text">
-                Les références que tu m’as données ont un point commun fort : elles
-                ne vendent pas juste une prestation, elles installent une présence.
-                Cette version cherche ce même équilibre entre douceur, crédibilité et
-                proximité.
-              </p>
-            </article>
-
-            <article class="note-card">
-              <p class="service-kicker">Pour qui</p>
-              <h3>Chiens et chats uniquement</h3>
-              <p>
-                Les demandes de garde sont réservées aux chiens et aux chats. Les
-                créneaux sont consultables par tous, mais l’envoi d’une demande reste
-                réservé aux membres connectés.
-              </p>
-            </article>
-
-            <article class="note-card">
-              <p class="service-kicker">Organisation</p>
-              <h3>Une validation manuelle pour chaque réservation</h3>
-              <p>
-                Le calendrier donne une première vision des disponibilités. Ensuite,
-                chaque demande est relue avant confirmation pour préserver la qualité
-                d’accueil et la cohérence des gardes.
-              </p>
-            </article>
-          </div>
-        </section>
-
         <section class="section-block" id="contactZone">
-          <div class="section-head">
-            <div>
-              <p class="eyebrow">Contact</p>
-              <h2>Un premier échange simple avant de confier son animal</h2>
-            </div>
+          <div class="contact-cta">
+            <p class="eyebrow">Premier contact</p>
+            <h2>Parlez-moi de votre besoin</h2>
             <p class="section-text">
-              La page garde un ton chaleureux et professionnel : assez doux pour
-              inspirer confiance, assez structuré pour rassurer sur l’organisation.
+              Une question d’éducation, une garde chien, une visite chat ou un simple
+              besoin de conseil : écrivons-nous pour un premier échange sans pression.
             </p>
-          </div>
-
-          <div class="member-layout contact-layout">
-            <article class="panel-card contact-story">
-              <h3>Une éducatrice canine attentive au lien humain animal</h3>
-              <p class="panel-text">
-                Mon travail consiste à vous aider à mieux comprendre votre chien, à
-                poser des routines cohérentes et à proposer des gardes ou des visites
-                qui respectent vraiment les habitudes de l’animal.
-              </p>
-              <p class="panel-text">
-                Avant toute garde, nous clarifions ensemble le besoin, les dates, le
-                contexte et les points de vigilance éventuels. Cela permet d’éviter
-                les réservations impersonnelles et de garder un fonctionnement
-                rassurant.
-              </p>
-
-              <div class="contact-detail-list">
-                <span>Premier contact pour éducation ou garde</span>
-                <span>Planning consultable depuis la modale</span>
-                <span>Réponse humaine avant validation</span>
-              </div>
-            </article>
-
-            <article class="panel-card cta-card">
-              <h3>Présentez votre besoin en quelques lignes</h3>
-              <p class="panel-text">
-                Vous pouvez écrire pour une question d’éducation, une demande de garde
-                chien, une visite chat ou simplement pour vérifier si votre situation
-                correspond bien à l’accompagnement proposé.
-              </p>
-              <div class="hero-actions">
-                <button class="btn btn-primary" id="contactSectionBtn" type="button">
-                  Premier contact
-                </button>
-                <button
-                  class="btn btn-secondary client-booking-cta"
-                  id="contactBookingBtn"
-                  type="button"
-                >
-                  Choisir un créneau
-                </button>
-              </div>
-            </article>
+            <div class="hero-actions contact-cta-actions">
+              <button class="btn btn-primary" id="contactSectionBtn" type="button">
+                Envoyer un message
+              </button>
+              <button
+                class="btn btn-secondary client-booking-cta"
+                id="contactBookingBtn"
+                type="button"
+              >
+                Voir le calendrier
+              </button>
+            </div>
           </div>
         </section>
 
@@ -314,11 +219,11 @@
         <div class="footer-inner">
           <div>
             <strong>Club des Pattes</strong>
-            <p>Éducatrice canine, gardes chien et visites chat sur validation.</p>
+            <p>Éducation canine, gardes et visites pensées avec douceur.</p>
           </div>
           <div>
             <p>Approche bienveillante</p>
-            <p>Organisation claire et humaine</p>
+            <p>Organisation claire</p>
           </div>
           <div class="footer-actions">
             <button class="btn btn-secondary btn-sm" id="footerContactBtn" type="button">
@@ -553,7 +458,11 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="loginModalTitle">
         <div class="modal-head">
           <div>
+            <p class="modal-kicker">Connexion</p>
             <h3 id="loginModalTitle">Accéder à l’espace membre</h3>
+            <p class="modal-copy">
+              Retrouvez votre suivi, vos réservations et vos informations en quelques clics.
+            </p>
           </div>
           <button class="icon-btn" id="closeLoginBtn" type="button" aria-label="Fermer">
             ×
@@ -573,6 +482,13 @@
             <button class="btn btn-primary" type="submit">Se connecter</button>
           </div>
         </form>
+
+        <p class="modal-switch">
+          Pas encore de compte ?
+          <button class="text-button" id="switchToRegisterBtn" type="button">
+            Créer mon accès
+          </button>
+        </p>
       </div>
     </div>
 
@@ -585,7 +501,11 @@
       >
         <div class="modal-head">
           <div>
+            <p class="modal-kicker">Inscription</p>
             <h3 id="registerModalTitle">Créer un compte membre</h3>
+            <p class="modal-copy">
+              Un accès simple pour envoyer une demande, suivre les validations et garder vos infos à jour.
+            </p>
           </div>
           <button class="icon-btn" id="closeRegisterBtn" type="button" aria-label="Fermer">
             ×
@@ -629,6 +549,13 @@
             <button class="btn btn-primary" type="submit">Créer mon compte</button>
           </div>
         </form>
+
+        <p class="modal-switch">
+          Déjà membre ?
+          <button class="text-button" id="switchToLoginBtn" type="button">
+            Se connecter
+          </button>
+        </p>
       </div>
     </div>
 
@@ -641,7 +568,11 @@
       >
         <div class="modal-head">
           <div>
+            <p class="modal-kicker">Premier contact</p>
             <h3 id="contactModalTitle">Parler de votre besoin</h3>
+            <p class="modal-copy">
+              Dites-moi tout sur votre compagnon, vos attentes et les dates envisagées.
+            </p>
           </div>
           <button class="icon-btn" id="closeContactBtn" type="button" aria-label="Fermer">
             ×
@@ -684,7 +615,11 @@
       >
         <div class="modal-head">
           <div>
+            <p class="modal-kicker">Calendrier</p>
             <h3 id="bookingModalTitle">Choisir un créneau pour une garde</h3>
+            <p class="modal-copy">
+              Consultez les disponibilités puis envoyez une demande en quelques étapes.
+            </p>
           </div>
           <button class="icon-btn" id="closeBookingBtn" type="button" aria-label="Fermer">
             ×
@@ -735,7 +670,7 @@
               Connectez-vous ou créez un compte pour envoyer une demande de garde.
             </p>
 
-            <div class="booking-auth-actions" id="bookingAuthActions">
+            <div class="booking-auth-card booking-auth-actions" id="bookingAuthActions">
               <button class="btn btn-secondary" id="bookingLoginPromptBtn" type="button">
                 Se connecter
               </button>
@@ -750,14 +685,6 @@
             </p>
 
             <form id="bookingForm" hidden>
-              <label for="bookingServiceType">Type de demande</label>
-              <select id="bookingServiceType" required>
-                <option value="">Sélectionner</option>
-                <option value="garde-chien">Garde chien</option>
-                <option value="visite-chat">Visite chat</option>
-                <option value="garde-chien-chat">Garde chien et chat</option>
-              </select>
-
               <label for="bookingAnimalType">Type d’animal</label>
               <select id="bookingAnimalType" required>
                 <option value="">Sélectionner</option>

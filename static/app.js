@@ -36,6 +36,13 @@ const animalLabels = {
   chat: "Chat",
 };
 
+const serviceTypeLabels = {
+  garde: "Garde",
+  "garde-chien": "Garde chien",
+  "visite-chat": "Visite chat",
+  "garde-chien-chat": "Garde chien et chat",
+};
+
 const dom = {};
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -124,7 +131,6 @@ function bindDom() {
     "profilePhone",
     "profileAnimalType",
     "profileAnimalName",
-    "bookingServiceType",
     "bookingAnimalType",
     "bookingAnimalName",
     "bookingStartDate",
@@ -147,6 +153,8 @@ function bindEvents() {
   onClick("heroContactBtn", openContactModal);
   onClick("contactSectionBtn", openContactModal);
   onClick("footerContactBtn", openContactModal);
+  onClick("switchToRegisterBtn", () => switchModal(dom.loginModal, dom.registerModal));
+  onClick("switchToLoginBtn", () => switchModal(dom.registerModal, dom.loginModal));
   onClick("closeLoginBtn", () => closeModal(dom.loginModal));
   onClick("closeRegisterBtn", () => closeModal(dom.registerModal));
   onClick("closeContactBtn", () => closeModal(dom.contactModal));
@@ -201,6 +209,7 @@ function bindEvents() {
   dom.activityAdminList.addEventListener("click", handleActivityListClick);
   dom.contactsList.addEventListener("click", handleContactsClick);
   dom.myBookingsList.addEventListener("click", handleMyBookingsClick);
+  dom.activitiesGrid.addEventListener("click", handleActivitiesGridClick);
   document.addEventListener("keydown", handleGlobalKeydown);
 }
 
@@ -319,6 +328,9 @@ function renderActivities() {
           <p class="service-kicker">${escapeHtml(activity.category || "Accompagnement")}</p>
           <h3>${escapeHtml(activity.title)}</h3>
           <p>${escapeHtml(activity.description)}</p>
+          <button class="text-button activity-link" data-action="contact-activity" type="button">
+            En savoir plus
+          </button>
         </article>
       `
     )
@@ -327,6 +339,7 @@ function renderActivities() {
 
 function renderCalendar() {
   const baseDate = new Date();
+  baseDate.setHours(12, 0, 0, 0);
   const target = new Date(
     baseDate.getFullYear(),
     baseDate.getMonth() + state.calendarOffset,
@@ -337,7 +350,9 @@ function renderCalendar() {
     year: "numeric",
   });
   const unavailableMap = new Map(state.unavailableDates.map((item) => [item.date, item]));
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayIso = formatIsoDate(today);
 
   dom.calendarMonthLabel.textContent = capitalize(formatter.format(target));
   dom.calendarGrid.innerHTML = "";
@@ -351,13 +366,17 @@ function renderCalendar() {
   }
 
   for (let day = 1; day <= daysInMonth; day += 1) {
-    const isoDate = formatIsoDate(new Date(target.getFullYear(), target.getMonth(), day));
+    const currentDate = new Date(target.getFullYear(), target.getMonth(), day);
+    currentDate.setHours(12, 0, 0, 0);
+    const isoDate = formatIsoDate(currentDate);
     const unavailable = unavailableMap.get(isoDate);
-    dom.calendarGrid.appendChild(buildCalendarCell(day, unavailable, isoDate === todayIso));
+    dom.calendarGrid.appendChild(
+      buildCalendarCell(day, unavailable, isoDate === todayIso, isoDate < todayIso)
+    );
   }
 }
 
-function buildCalendarCell(day, unavailable, isToday) {
+function buildCalendarCell(day, unavailable, isToday, isPast) {
   const cell = document.createElement("div");
   cell.className = "calendar-day";
 
@@ -367,15 +386,23 @@ function buildCalendarCell(day, unavailable, isToday) {
   }
 
   if (isToday) cell.classList.add("is-today");
-  if (unavailable) cell.classList.add("is-blocked");
+  if (isPast) cell.classList.add("is-past");
+  if (unavailable && !isPast) cell.classList.add("is-blocked");
+  cell.title = isPast ? "Date passée" : unavailable ? unavailable.reason : "Disponible";
 
   const title = document.createElement("strong");
   title.textContent = String(day);
   cell.appendChild(title);
 
-  const detail = document.createElement("small");
-  detail.textContent = unavailable ? unavailable.reason : "Disponible";
-  cell.appendChild(detail);
+  if (isPast) {
+    const detail = document.createElement("small");
+    detail.textContent = "Passé";
+    cell.appendChild(detail);
+  } else if (unavailable) {
+    const detail = document.createElement("small");
+    detail.textContent = "Indisponible";
+    cell.appendChild(detail);
+  }
 
   return cell;
 }
@@ -385,7 +412,7 @@ function renderNextAvailableDate() {
 
   const blockedDates = new Set(state.unavailableDates.map((item) => item.date));
   const today = new Date();
-  today.setHours(12, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
   let nextAvailable = null;
 
   for (let offset = 0; offset < 365; offset += 1) {
@@ -413,7 +440,7 @@ function renderNextAvailableDate() {
       ${
         isToday
           ? "Une demande peut être déposée dès aujourd’hui."
-          : "C’est la première date actuellement libre au calendrier."
+          : "C’est la première date actuellement libre."
       }
     </p>
   `;
@@ -476,7 +503,7 @@ function renderMemberArea() {
         <article class="booking-item">
           <div class="booking-item-header">
             <div>
-              <h4>${escapeHtml(booking.serviceType)}</h4>
+              <h4>${escapeHtml(serviceTypeLabels[booking.serviceType] || booking.serviceType)}</h4>
               <p class="booking-meta">
                 ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
                   formatLongDate(booking.endDate)
@@ -615,7 +642,9 @@ function renderAdminBookings() {
             <div>
               <h4>${escapeHtml(booking.fullName)}</h4>
               <p class="booking-meta">
-                ${escapeHtml(booking.email)} - ${escapeHtml(booking.serviceType)}
+                ${escapeHtml(booking.email)} - ${escapeHtml(
+                  serviceTypeLabels[booking.serviceType] || booking.serviceType
+                )}
               </p>
               <p class="booking-meta">
                 ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
@@ -864,7 +893,7 @@ async function handleBookingSubmit(event) {
     await requestJson("/api/bookings", {
       method: "POST",
       body: {
-        serviceType: dom.bookingServiceType.value,
+        serviceType: "garde",
         animalType: dom.bookingAnimalType.value,
         animalName: dom.bookingAnimalName.value,
         startDate: dom.bookingStartDate.value,
@@ -1159,6 +1188,12 @@ async function updateContactStatus(contactId, status) {
   }
 }
 
+function handleActivitiesGridClick(event) {
+  const button = event.target.closest("button[data-action='contact-activity']");
+  if (!button) return;
+  openContactModal();
+}
+
 function handleMyBookingsClick(event) {
   const button = event.target.closest("button[data-action='cancel-booking']");
   if (!button) return;
@@ -1203,6 +1238,11 @@ function openContactModal() {
 
 function openNestedAuthModal(targetModal) {
   closeModal(dom.bookingModal);
+  openModal(targetModal);
+}
+
+function switchModal(currentModal, targetModal) {
+  closeModal(currentModal);
   openModal(targetModal);
 }
 
@@ -1304,11 +1344,14 @@ function formatLongDate(value) {
 }
 
 function formatIsoDate(value) {
-  return value.toISOString().slice(0, 10);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function setMinBookingDates() {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatIsoDate(new Date());
   dom.bookingStartDate.min = today;
   dom.bookingEndDate.min = today;
   dom.blockedDateInput.min = today;

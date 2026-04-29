@@ -99,21 +99,21 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 
 DEFAULT_ACTIVITIES = [
     {
-        "title": "Education canine du quotidien",
-        "category": "Education",
-        "description": "Seances individuelles pour travailler les bases, la marche, le rappel et une relation plus sereine avec votre chien.",
+        "title": "Éducation canine du quotidien",
+        "category": "Éducation",
+        "description": "Séances individuelles pour poser des bases claires, travailler la marche, le rappel et retrouver une relation plus sereine avec votre chien.",
         "sort_order": 1,
     },
     {
         "title": "Gardes chien et visites chat",
         "category": "Absences",
-        "description": "Gardes a domicile, visites de confort et suivi rassurant pour vos chiens et vos chats pendant vos absences.",
+        "description": "Gardes à domicile, visites de confort et suivi rassurant pour vos chiens et vos chats pendant vos absences.",
         "sort_order": 2,
     },
     {
-        "title": "Preparation des gardes",
+        "title": "Préparation des gardes",
         "category": "Organisation",
-        "description": "Calendrier de disponibilites, demande de creneau et confirmation manuelle pour planifier les gardes en toute clarte.",
+        "description": "Calendrier de disponibilités, demande de créneau et confirmation manuelle pour planifier les gardes avec clarté et douceur.",
         "sort_order": 3,
     },
 ]
@@ -720,7 +720,7 @@ def create_app(test_config=None):
     @login_required
     def api_create_booking(user):
         data = request.get_json(silent=True) or {}
-        service_type = (data.get("serviceType") or "").strip()
+        service_type = (data.get("serviceType") or "garde").strip()
         animal_type = (data.get("animalType") or "").strip().lower()
         animal_name = (data.get("animalName") or "").strip()
         notes = (data.get("notes") or "").strip()
@@ -732,8 +732,8 @@ def create_app(test_config=None):
         except ValueError:
             return jsonify({"error": "Dates invalides."}), 400
 
-        if not service_type or animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
-            return jsonify({"error": "Merci de renseigner le service, le type d'animal et le creneau."}), 400
+        if animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
+            return jsonify({"error": "Merci de renseigner le type d'animal et le creneau."}), 400
 
         if end_date < start_date:
             return jsonify({"error": "La date de fin doit etre apres la date de debut."}), 400
