@@ -4,6 +4,7 @@ import re
 import sqlite3
 from datetime import date, timedelta
 from functools import wraps
+from urllib.parse import urlparse
 
 from flask import (
     Flask,
@@ -34,6 +35,11 @@ TIME_SLOTS = {
 }
 BOOKING_STATUSES = {"pending", "approved", "rejected", "cancelled"}
 CONTACT_STATUSES = {"new", "handled"}
+SERVICE_TYPES = {"garde", "garde-chien", "visite-chat", "garde-chien-chat"}
+MAX_SHORT_TEXT_LENGTH = 120
+MAX_MEDIUM_TEXT_LENGTH = 255
+MAX_LONG_TEXT_LENGTH = 1200
+MAX_SORT_ORDER = 9999
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -153,6 +159,34 @@ def build_full_name(first_name: str, last_name: str) -> str:
 
 def parse_iso_date(raw_value: str) -> date:
     return date.fromisoformat((raw_value or "").strip())
+
+
+def text_too_long(value, max_length):
+    return len(value or "") > max_length
+
+
+def parse_sort_order(value):
+    try:
+        sort_order = int(value or 0)
+    except (TypeError, ValueError):
+        raise ValueError("Ordre invalide.")
+
+    if sort_order < 0 or sort_order > MAX_SORT_ORDER:
+        raise ValueError("Ordre invalide.")
+
+    return sort_order
+
+
+def is_safe_request_origin():
+    origin = request.headers.get("Origin")
+    referer = request.headers.get("Referer")
+    source = origin or referer
+
+    if not source:
+        return True
+
+    parsed = urlparse(source)
+    return parsed.netloc == request.host
 
 
 def daterange(start_date: date, end_date: date):
@@ -591,7 +625,11 @@ def get_current_user():
     if not user_id:
         return None
 
-    return query_one("SELECT * FROM users WHERE id = ?", (user_id,))
+    user = query_one("SELECT * FROM users WHERE id = ?", (user_id,))
+    if user is None:
+        session.clear()
+
+    return user
 
 
 def login_required(route_handler):
@@ -641,7 +679,7 @@ def get_unavailable_dates():
             iso_date = current_date.isoformat()
             unavailable[iso_date] = {
                 "date": iso_date,
-                "reason": f"Garde confirmee pour {build_full_name(row['first_name'], row['last_name'])}",
+                "reason": "Garde confirmee",
                 "source": "booking",
             }
 
@@ -741,6 +779,15 @@ def validate_profile_payload(data, require_password=False):
     if not first_name or not last_name or not email:
         return None, "Le prenom, le nom et l'adresse e-mail sont obligatoires."
 
+    if (
+        text_too_long(first_name, MAX_SHORT_TEXT_LENGTH)
+        or text_too_long(last_name, MAX_SHORT_TEXT_LENGTH)
+        or text_too_long(email, MAX_MEDIUM_TEXT_LENGTH)
+        or text_too_long(phone, MAX_SHORT_TEXT_LENGTH)
+        or text_too_long(animal_name, MAX_SHORT_TEXT_LENGTH)
+    ):
+        return None, "Un des champs saisis est trop long."
+
     if not is_valid_email(email):
         return None, "Adresse e-mail invalide."
 
@@ -773,10 +820,31 @@ def create_app(test_config=None):
         ALLOW_DEV_ADMIN=is_development_env() and env_flag("ALLOW_DEV_ADMIN"),
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=not is_development_env(),
+        PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
     )
 
     if test_config:
         app.config.update(test_config)
+
+    @app.before_request
+    def protect_state_changing_requests():
+        if request.method in {"POST", "PUT", "PATCH", "DELETE"} and not is_safe_request_origin():
+            return jsonify({"error": "Origine de la requete refusee."}), 403
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Content-Security-Policy", "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; base-uri 'self'; frame-ancestors 'none'")
+        return response
+
+    @app.errorhandler(500)
+    def handle_internal_error(_error):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Erreur serveur."}), 500
+        return "Erreur serveur.", 500
 
     @app.teardown_appcontext
     def teardown_db(exception):
@@ -838,6 +906,8 @@ def create_app(test_config=None):
         db.commit()
 
         user = query_one("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,))
+        session.clear()
+        session.permanent = True
         session["user_id"] = user["id"]
         return jsonify({"message": "Compte cree avec succes.", "user": serialize_user(user)}), 201
 
@@ -854,6 +924,8 @@ def create_app(test_config=None):
         if user is None or not check_password_hash(user["password_hash"], password):
             return jsonify({"error": "Identifiants incorrects."}), 401
 
+        session.clear()
+        session.permanent = True
         session["user_id"] = user["id"]
         return jsonify({"message": "Connexion reussie.", "user": serialize_user(user)}), 200
 
@@ -913,6 +985,14 @@ def create_app(test_config=None):
         if not is_valid_email(email):
             return jsonify({"error": "Adresse e-mail invalide."}), 400
 
+        if (
+            text_too_long(full_name, MAX_MEDIUM_TEXT_LENGTH)
+            or text_too_long(email, MAX_MEDIUM_TEXT_LENGTH)
+            or text_too_long(phone, MAX_SHORT_TEXT_LENGTH)
+            or text_too_long(message, MAX_LONG_TEXT_LENGTH)
+        ):
+            return jsonify({"error": "Un des champs saisis est trop long."}), 400
+
         db = get_db()
         db.execute(
             """
@@ -927,6 +1007,9 @@ def create_app(test_config=None):
     @app.post("/api/bookings")
     @login_required
     def api_create_booking(user):
+        if user["role"] == "admin":
+            return jsonify({"error": "Les demandes de garde sont reservees aux comptes client."}), 403
+
         data = request.get_json(silent=True) or {}
         service_type = (data.get("serviceType") or "garde").strip()
         animal_type = (data.get("animalType") or "").strip().lower()
@@ -940,8 +1023,14 @@ def create_app(test_config=None):
         except ValueError:
             return jsonify({"error": "Dates invalides."}), 400
 
+        if service_type not in SERVICE_TYPES:
+            return jsonify({"error": "Type de service invalide."}), 400
+
         if animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
             return jsonify({"error": "Merci de renseigner le type d'animal et le creneau."}), 400
+
+        if text_too_long(animal_name, MAX_SHORT_TEXT_LENGTH) or text_too_long(notes, MAX_LONG_TEXT_LENGTH):
+            return jsonify({"error": "Un des champs saisis est trop long."}), 400
 
         if end_date < start_date:
             return jsonify({"error": "La date de fin doit etre apres la date de debut."}), 400
@@ -1027,6 +1116,9 @@ def create_app(test_config=None):
         if role not in {"client", "admin"}:
             return jsonify({"error": "Role invalide."}), 400
 
+        if member_id == _user["id"] and role != "admin":
+            return jsonify({"error": "Impossible de retirer votre propre role admin."}), 409
+
         existing = query_one(
             "SELECT id FROM users WHERE email = ? AND id != ?",
             (payload["email"], member_id),
@@ -1053,6 +1145,9 @@ def create_app(test_config=None):
         if member is None:
             return jsonify({"error": "Membre introuvable."}), 404
 
+        if member_id == _user["id"]:
+            return jsonify({"error": "Impossible de supprimer votre propre compte admin ici."}), 409
+
         if member["role"] == "admin":
             admin_count = query_one("SELECT COUNT(*) AS count FROM users WHERE role = 'admin'")["count"]
             if admin_count <= 1:
@@ -1076,6 +1171,9 @@ def create_app(test_config=None):
 
         if status not in BOOKING_STATUSES:
             return jsonify({"error": "Statut invalide."}), 400
+
+        if text_too_long(admin_note, MAX_LONG_TEXT_LENGTH):
+            return jsonify({"error": "La note admin est trop longue."}), 400
 
         if status == "approved":
             if booking_has_conflict(
@@ -1118,6 +1216,9 @@ def create_app(test_config=None):
         except ValueError:
             return jsonify({"error": "Date invalide."}), 400
 
+        if text_too_long(reason, MAX_MEDIUM_TEXT_LENGTH):
+            return jsonify({"error": "La raison est trop longue."}), 400
+
         if query_one("SELECT id FROM blocked_dates WHERE block_date = ?", (blocked_date.isoformat(),)) is not None:
             return jsonify({"error": "Cette date est deja bloquee."}), 409
 
@@ -1155,10 +1256,21 @@ def create_app(test_config=None):
         title = (data.get("title") or "").strip()
         category = (data.get("category") or "").strip() or "Accompagnement"
         description = (data.get("description") or "").strip()
-        sort_order = int(data.get("sortOrder") or 0)
+
+        try:
+            sort_order = parse_sort_order(data.get("sortOrder"))
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
 
         if not title or not description:
             return jsonify({"error": "Titre et description sont obligatoires."}), 400
+
+        if (
+            text_too_long(title, MAX_MEDIUM_TEXT_LENGTH)
+            or text_too_long(category, MAX_SHORT_TEXT_LENGTH)
+            or text_too_long(description, MAX_LONG_TEXT_LENGTH)
+        ):
+            return jsonify({"error": "Un des champs saisis est trop long."}), 400
 
         db = get_db()
         cursor = db.execute(
@@ -1183,10 +1295,21 @@ def create_app(test_config=None):
         title = (data.get("title") or "").strip()
         category = (data.get("category") or "").strip() or "Accompagnement"
         description = (data.get("description") or "").strip()
-        sort_order = int(data.get("sortOrder") or 0)
+
+        try:
+            sort_order = parse_sort_order(data.get("sortOrder"))
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
 
         if not title or not description:
             return jsonify({"error": "Titre et description sont obligatoires."}), 400
+
+        if (
+            text_too_long(title, MAX_MEDIUM_TEXT_LENGTH)
+            or text_too_long(category, MAX_SHORT_TEXT_LENGTH)
+            or text_too_long(description, MAX_LONG_TEXT_LENGTH)
+        ):
+            return jsonify({"error": "Un des champs saisis est trop long."}), 400
 
         db = get_db()
         db.execute(
