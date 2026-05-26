@@ -22,6 +22,7 @@ DEFAULT_DATABASE = os.path.join(BASE_DIR, "club_des_pattes.db")
 DEFAULT_CLIENTS_FILE = os.path.join(BASE_DIR, "clients.json")
 DEFAULT_ADMIN_EMAIL = "admin@clubdespattes.local"
 DEFAULT_ADMIN_PASSWORD = "Admin123!"
+DEV_SECRET_KEY = "club-des-pattes-dev-key"
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 ANIMAL_TYPES = {"chien", "chat"}
@@ -195,6 +196,29 @@ def load_legacy_clients(clients_file: str):
         return []
 
     return data if isinstance(data, list) else []
+
+
+def is_development_env():
+    return os.environ.get("FLASK_ENV", "").lower() == "development"
+
+
+def env_flag(name):
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def resolve_secret_key():
+    secret_key = os.environ.get("SECRET_KEY")
+    if secret_key:
+        return secret_key
+
+    # Securite: la cle codee en dur ne sert que de secours local en developpement.
+    if is_development_env():
+        return DEV_SECRET_KEY
+
+    raise RuntimeError(
+        "SECRET_KEY manquante. Definis la variable d'environnement SECRET_KEY "
+        "ou lance l'application avec FLASK_ENV=development en local."
+    )
 
 
 def init_database():
@@ -410,6 +434,14 @@ def seed_users(db):
         imported += 1
 
     if imported:
+        return
+
+    # Securite: l'admin connu de secours ne doit jamais etre cree implicitement en production.
+    if not current_app.config["ALLOW_DEFAULT_ADMIN"]:
+        current_app.logger.warning(
+            "Aucun utilisateur importe et admin de secours desactive. "
+            "Definis CREATE_DEFAULT_ADMIN=true uniquement pour l'initialisation controlee."
+        )
         return
 
     insert_user(
@@ -710,9 +742,10 @@ def validate_profile_payload(data, require_password=False):
 def create_app(test_config=None):
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.update(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "club-des-pattes-dev-key"),
+        SECRET_KEY=resolve_secret_key(),
         DATABASE=os.environ.get("APP_DATABASE", DEFAULT_DATABASE),
         CLIENTS_FILE=DEFAULT_CLIENTS_FILE,
+        ALLOW_DEFAULT_ADMIN=is_development_env() or env_flag("CREATE_DEFAULT_ADMIN"),
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_HTTPONLY=True,
     )
@@ -924,6 +957,7 @@ def create_app(test_config=None):
         )
         return jsonify({"message": "Demande envoyee a l'administration.", "booking": serialize_booking(booking)}), 201
 
+    # Les IDs dynamiques sont declares dans l'URL pour etre valides par Flask.
     @app.delete("/api/bookings/<int:booking_id>")
     @login_required
     def api_cancel_booking(user, booking_id):
@@ -951,6 +985,7 @@ def create_app(test_config=None):
     def api_admin_dashboard(_user):
         return jsonify(build_admin_payload()), 200
 
+    # Les mutations admin de membres utilisent des parametres d'URL explicites.
     @app.put("/api/admin/members/<int:member_id>")
     @admin_required
     def api_admin_update_member(_user, member_id):

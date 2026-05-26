@@ -19,6 +19,10 @@ python app.py
 
 Application disponible sur `http://127.0.0.1:5000`.
 
+En local, lancez l'application avec `FLASK_ENV=development` si `SECRET_KEY`
+n'est pas definie. En production, definissez obligatoirement une valeur forte
+pour `SECRET_KEY`.
+
 ## Stockage
 
 Le projet utilise SQLite dans `club_des_pattes.db`.
@@ -26,9 +30,10 @@ Le projet utilise SQLite dans `club_des_pattes.db`.
 Au premier lancement:
 
 - si `clients.json` existe, ses comptes sont importes dans la base avec hashage du mot de passe
-- sinon un admin de secours est cree
+- sinon aucun admin connu n'est cree sauf si `FLASK_ENV=development` ou
+  `CREATE_DEFAULT_ADMIN=true` est defini pour une initialisation controlee
 
-Admin de secours:
+Admin de secours developpement:
 
 - email: `admin@clubdespattes.local`
 - mot de passe: `Admin123!`
