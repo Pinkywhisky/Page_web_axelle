@@ -785,6 +785,13 @@ textarea:focus {
     font-size: 0.9rem;
 }
 
+.field-hint {
+    margin: -4px 0 2px;
+    color: var(--text-soft);
+    font-size: 0.84rem;
+    line-height: 1.4;
+}
+
 .form-actions {
     justify-content: flex-end;
     gap: 10px;

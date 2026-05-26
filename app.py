@@ -599,7 +599,7 @@ def login_required(route_handler):
     def wrapped(*args, **kwargs):
         user = get_current_user()
         if user is None:
-            return jsonify({"error": "Connexion requise."}), 401
+            return jsonify({"error": "Session expiree. Merci de vous reconnecter."}), 401
         return route_handler(user, *args, **kwargs)
 
     return wrapped

@@ -289,6 +289,10 @@ async function requestJson(url, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error(data.error || "Session expirée. Merci de vous reconnecter.");
+    }
+
     throw new Error(data.error || data.message || `Erreur serveur (${response.status}).`);
   }
 
@@ -550,7 +554,7 @@ function renderMemberArea() {
 
   if (!state.myBookings.length) {
     dom.myBookingsList.innerHTML =
-      "<div class='simple-item'><h4>Aucune demande pour le moment</h4><p class='panel-text'>Votre prochaine demande de garde apparaîtra ici.</p></div>";
+      "<div class='simple-item'><h4>Aucune demande pour le moment</h4><p class='panel-text'>Les demandes envoyées depuis le calendrier apparaîtront ici.</p></div>";
     return;
   }
 
@@ -577,7 +581,7 @@ function renderMemberArea() {
               animalLabels[booking.animalType] || booking.animalType
             )})
           </p>
-          <p class="booking-meta">Note admin : ${escapeHtml(booking.adminNote || "Aucune réponse pour le moment.")}</p>
+          <p class="booking-meta">Réponse : ${escapeHtml(booking.adminNote || "Aucune réponse pour le moment.")}</p>
           ${
             booking.status === "pending" || booking.status === "approved"
               ? `<div class="booking-actions">
@@ -749,7 +753,7 @@ function setMemberEditing(isEditing) {
 function renderAdminBookings() {
   if (!state.admin.bookings.length) {
     dom.adminBookingsList.innerHTML =
-      "<div class='simple-item'><h4>Aucune demande</h4><p class='panel-text'>Les réservations client apparaîtront ici.</p></div>";
+      "<div class='simple-item'><h4>Aucune demande</h4><p class='panel-text'>Les demandes de garde envoyées par les clients apparaîtront ici.</p></div>";
     return;
   }
 
