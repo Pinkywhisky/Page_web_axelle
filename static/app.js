@@ -40,13 +40,6 @@ const animalLabels = {
   chat: "Chat",
 };
 
-const serviceTypeLabels = {
-  garde: "Garde à domicile",
-  "garde-chien": "Garde à domicile chien",
-  "visite-chat": "Garde à domicile chat",
-  "garde-chien-chat": "Garde à domicile chien et chat",
-};
-
 const roleLabels = {
   client: "Espace personnel",
   admin: "Gestion",
@@ -569,7 +562,7 @@ function renderMemberArea() {
         <article class="booking-item">
           <div class="booking-item-header">
             <div>
-              <h4>${escapeHtml(serviceTypeLabels[booking.serviceType] || booking.serviceType)}</h4>
+              <h4>Demande de garde à domicile</h4>
               <p class="booking-meta">
                 ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
                   formatLongDate(booking.endDate)
@@ -770,9 +763,7 @@ function renderAdminBookings() {
             <div>
               <h4>${escapeHtml(booking.fullName)}</h4>
               <p class="booking-meta">
-                ${escapeHtml(booking.email)} - ${escapeHtml(
-                  serviceTypeLabels[booking.serviceType] || booking.serviceType
-                )}
+                ${escapeHtml(booking.email)} - Demande de garde à domicile
               </p>
               <p class="booking-meta">
                 ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
@@ -1028,7 +1019,6 @@ async function handleBookingSubmit(event) {
       requestJson("/api/bookings", {
         method: "POST",
         body: {
-          serviceType: "garde",
           animalType: dom.bookingAnimalType.value,
           animalName: dom.bookingAnimalName.value,
           startDate: dom.bookingStartDate.value,

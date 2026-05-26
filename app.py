@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import sqlite3
@@ -20,7 +19,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DATABASE = os.path.join(BASE_DIR, "club_des_pattes.db")
-DEFAULT_CLIENTS_FILE = os.path.join(BASE_DIR, "clients.json")
 DEV_ADMIN_EMAIL = "admin@clubdespattes.local"
 DEV_ADMIN_PASSWORD = "Admin123!"
 DEV_SECRET_KEY = "club-des-pattes-dev-key"
@@ -35,7 +33,8 @@ TIME_SLOTS = {
 }
 BOOKING_STATUSES = {"pending", "approved", "rejected", "cancelled"}
 CONTACT_STATUSES = {"new", "handled"}
-SERVICE_TYPES = {"garde", "garde-chien", "visite-chat", "garde-chien-chat"}
+SERVICE_TYPE_GARDE = "garde"
+SERVICE_TYPES = {SERVICE_TYPE_GARDE}
 MAX_SHORT_TEXT_LENGTH = 120
 MAX_MEDIUM_TEXT_LENGTH = 255
 MAX_LONG_TEXT_LENGTH = 1200
@@ -90,6 +89,7 @@ CREATE TABLE IF NOT EXISTS booking_requests (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CHECK (service_type = 'garde'),
     CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))
 );
 
@@ -125,16 +125,6 @@ DEFAULT_ACTIVITIES = [
         "sort_order": 3,
     },
 ]
-
-LEGACY_DEFAULT_ACTIVITY_TITLES = {
-    "Éducation canine du quotidien",
-    "Gardes chien et " + "visites " + "chat",
-    "Préparation des gardes",
-    "Visites a domicile",
-    "Gardes sur mesure",
-    "Accompagnement quotidien",
-}
-
 
 def normalize_email(email: str) -> str:
     return (email or "").strip().lower()
@@ -222,19 +212,6 @@ def query_all(query, params=()):
     return get_db().execute(query, params).fetchall()
 
 
-def load_legacy_clients(clients_file: str):
-    if not os.path.exists(clients_file):
-        return []
-
-    try:
-        with open(clients_file, "r", encoding="utf-8") as file_handle:
-            data = json.load(file_handle)
-    except (OSError, json.JSONDecodeError):
-        return []
-
-    return data if isinstance(data, list) else []
-
-
 def is_development_env():
     return os.environ.get("FLASK_ENV", "").lower() == "development"
 
@@ -283,69 +260,12 @@ def build_initial_admin_payload():
 def init_database():
     db = get_db()
     db.executescript(SCHEMA_SQL)
-    migrate_users_name_columns(db)
     seed_users(db)
     seed_activities(db)
     db.commit()
 
 
-def migrate_users_name_columns(db):
-    columns = {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
-
-    if "first_name" not in columns:
-        db.execute("ALTER TABLE users ADD COLUMN first_name TEXT NOT NULL DEFAULT ''")
-
-    if "last_name" not in columns:
-        db.execute("ALTER TABLE users ADD COLUMN last_name TEXT NOT NULL DEFAULT ''")
-
-    if "full_name" in columns:
-        rows = db.execute(
-            """
-            SELECT id, full_name
-            FROM users
-            WHERE (first_name = '' OR first_name IS NULL)
-              AND full_name IS NOT NULL
-            """
-        ).fetchall()
-
-        for row in rows:
-            first_name, last_name = split_full_name(row["full_name"])
-            db.execute(
-                "UPDATE users SET first_name = ?, last_name = ? WHERE id = ?",
-                (first_name, last_name, row["id"]),
-            )
-
-
-def get_user_columns(db):
-    return {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
-
-
 def insert_user(db, payload, password_hash, role):
-    full_name = build_full_name(payload["firstName"], payload["lastName"])
-    columns = get_user_columns(db)
-
-    if "full_name" in columns:
-        return db.execute(
-            """
-            INSERT INTO users (
-                first_name, last_name, full_name, email, password_hash,
-                phone, animal_type, animal_name, role
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                payload["firstName"],
-                payload["lastName"],
-                full_name,
-                payload["email"],
-                password_hash,
-                payload["phone"],
-                payload["animalType"],
-                payload["animalName"],
-                role,
-            ),
-        )
-
     return db.execute(
         """
         INSERT INTO users (
@@ -368,31 +288,7 @@ def insert_user(db, payload, password_hash, role):
 
 
 def update_user_profile(db, user_id, payload, role=None):
-    full_name = build_full_name(payload["firstName"], payload["lastName"])
-    columns = get_user_columns(db)
-
     if role is None:
-        if "full_name" in columns:
-            db.execute(
-                """
-                UPDATE users
-                SET first_name = ?, last_name = ?, full_name = ?, email = ?,
-                    phone = ?, animal_type = ?, animal_name = ?
-                WHERE id = ?
-                """,
-                (
-                    payload["firstName"],
-                    payload["lastName"],
-                    full_name,
-                    payload["email"],
-                    payload["phone"],
-                    payload["animalType"],
-                    payload["animalName"],
-                    user_id,
-                ),
-            )
-            return
-
         db.execute(
             """
             UPDATE users
@@ -407,28 +303,6 @@ def update_user_profile(db, user_id, payload, role=None):
                 payload["phone"],
                 payload["animalType"],
                 payload["animalName"],
-                user_id,
-            ),
-        )
-        return
-
-    if "full_name" in columns:
-        db.execute(
-            """
-            UPDATE users
-            SET first_name = ?, last_name = ?, full_name = ?, email = ?,
-                phone = ?, animal_type = ?, animal_name = ?, role = ?
-            WHERE id = ?
-            """,
-            (
-                payload["firstName"],
-                payload["lastName"],
-                full_name,
-                payload["email"],
-                payload["phone"],
-                payload["animalType"],
-                payload["animalName"],
-                role,
                 user_id,
             ),
         )
@@ -459,42 +333,6 @@ def seed_users(db):
     if existing_users:
         return
 
-    imported = 0
-    for legacy_client in load_legacy_clients(current_app.config["CLIENTS_FILE"]):
-        email = normalize_email(legacy_client.get("email"))
-        password = legacy_client.get("password") or ""
-        full_name = (legacy_client.get("fullName") or "").strip()
-        first_name, last_name = split_full_name(full_name)
-        role = (legacy_client.get("role") or "client").strip().lower()
-        animal_type = (legacy_client.get("animalType") or "").strip().lower()
-
-        if not email or not password or not full_name or not is_valid_email(email):
-            continue
-
-        if role not in {"client", "admin"}:
-            role = "client"
-
-        if animal_type and animal_type not in ANIMAL_TYPES:
-            animal_type = ""
-
-        insert_user(
-            db,
-            {
-                "firstName": first_name,
-                "lastName": last_name,
-                "email": email,
-                "phone": (legacy_client.get("phone") or "").strip(),
-                "animalType": animal_type,
-                "animalName": (legacy_client.get("animalName") or "").strip(),
-            },
-            generate_password_hash(password),
-            role,
-        )
-        imported += 1
-
-    if imported:
-        return
-
     initial_admin_email, initial_admin_password = build_initial_admin_payload()
 
     if not initial_admin_email:
@@ -520,16 +358,9 @@ def seed_users(db):
 
 
 def seed_activities(db):
-    existing_rows = db.execute(
-        "SELECT id, title FROM activities ORDER BY sort_order ASC, id ASC"
-    ).fetchall()
-
+    existing_rows = db.execute("SELECT id FROM activities LIMIT 1").fetchone()
     if existing_rows:
-        existing_titles = {row["title"] for row in existing_rows}
-        if len(existing_rows) == 3 and existing_titles == LEGACY_DEFAULT_ACTIVITY_TITLES:
-            db.execute("DELETE FROM activities")
-        else:
-            return
+        return
 
     for activity in DEFAULT_ACTIVITIES:
         db.execute(
@@ -609,7 +440,6 @@ def serialize_booking(row):
         "lastName": row["last_name"],
         "fullName": full_name,
         "email": row["email"],
-        "serviceType": row["service_type"],
         "animalType": row["animal_type"],
         "animalName": row["animal_name"],
         "startDate": row["start_date"],
@@ -817,7 +647,6 @@ def create_app(test_config=None):
     app.config.update(
         SECRET_KEY=resolve_secret_key(),
         DATABASE=os.environ.get("APP_DATABASE", DEFAULT_DATABASE),
-        CLIENTS_FILE=DEFAULT_CLIENTS_FILE,
         INITIAL_ADMIN_EMAIL=os.environ.get("INITIAL_ADMIN_EMAIL", ""),
         INITIAL_ADMIN_PASSWORD=os.environ.get("INITIAL_ADMIN_PASSWORD", ""),
         ALLOW_DEV_ADMIN=is_development_env() and env_flag("ALLOW_DEV_ADMIN"),
@@ -1014,8 +843,8 @@ def create_app(test_config=None):
             return jsonify({"error": "Les demandes de garde sont reservees aux comptes client."}), 403
 
         data = request.get_json(silent=True) or {}
-        service_type = (data.get("serviceType") or "garde").strip()
         animal_type = (data.get("animalType") or "").strip().lower()
+        service_type = SERVICE_TYPE_GARDE
         animal_name = (data.get("animalName") or "").strip()
         notes = (data.get("notes") or "").strip()
         time_slot = (data.get("timeSlot") or "").strip().lower()
@@ -1025,9 +854,6 @@ def create_app(test_config=None):
             end_date = parse_iso_date(data.get("endDate"))
         except ValueError:
             return jsonify({"error": "Dates invalides."}), 400
-
-        if service_type not in SERVICE_TYPES:
-            return jsonify({"error": "Type de service invalide."}), 400
 
         if animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
             return jsonify({"error": "Merci de renseigner le type d'animal et le moment de passage."}), 400

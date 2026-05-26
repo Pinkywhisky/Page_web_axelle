@@ -27,12 +27,9 @@ pour `SECRET_KEY`.
 
 Le projet utilise SQLite dans `club_des_pattes.db`.
 
-Au premier lancement:
-
-- si `clients.json` existe, ses comptes sont importes dans la base avec hashage du mot de passe
-- sinon aucun admin connu n'est cree automatiquement en production
-- pour initialiser un admin en production, definissez `INITIAL_ADMIN_EMAIL` et
-  `INITIAL_ADMIN_PASSWORD`
+Au premier lancement, aucun admin connu n'est cree automatiquement en production.
+Pour initialiser un admin en production, definissez `INITIAL_ADMIN_EMAIL` et
+`INITIAL_ADMIN_PASSWORD`.
 
 Un admin de secours connu reste possible uniquement en local avec
 `FLASK_ENV=development` et `ALLOW_DEV_ADMIN=true`.
