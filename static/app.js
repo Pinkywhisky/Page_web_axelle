@@ -820,7 +820,7 @@ function renderBlockedDates() {
               <p class="panel-text">${escapeHtml(item.reason || "Aucune raison précisée")}</p>
             </div>
             <div class="simple-item-actions">
-              <button class="btn btn-secondary btn-sm" data-action="delete-blocked-date" data-block-id="${item.id}" type="button">
+              <button class="btn btn-secondary btn-sm" data-action="delete-blocked-date" data-blocked-date-id="${item.id}" type="button">
                 Supprimer
               </button>
             </div>
@@ -1180,12 +1180,12 @@ async function handleBlockedDateCreate(event) {
 function handleBlockedDatesClick(event) {
   const button = event.target.closest("button[data-action='delete-blocked-date']");
   if (!button) return;
-  deleteBlockedDate(Number(button.dataset.blockId));
+  deleteBlockedDate(Number(button.dataset.blockedDateId));
 }
 
-async function deleteBlockedDate(blockId) {
+async function deleteBlockedDate(blockedDateId) {
   try {
-    await requestJson(`/api/admin/blocked-dates/${blockId}`, { method: "DELETE" });
+    await requestJson(`/api/admin/blocked-dates/${blockedDateId}`, { method: "DELETE" });
     showGlobalMessage("Date débloquée.", "success");
     await loadBootstrap();
   } catch (error) {

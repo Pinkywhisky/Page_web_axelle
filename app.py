@@ -20,8 +20,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DATABASE = os.path.join(BASE_DIR, "club_des_pattes.db")
 DEFAULT_CLIENTS_FILE = os.path.join(BASE_DIR, "clients.json")
-DEFAULT_ADMIN_EMAIL = "admin@clubdespattes.local"
-DEFAULT_ADMIN_PASSWORD = "Admin123!"
+DEV_ADMIN_EMAIL = "admin@clubdespattes.local"
+DEV_ADMIN_PASSWORD = "Admin123!"
 DEV_SECRET_KEY = "club-des-pattes-dev-key"
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -219,6 +219,28 @@ def resolve_secret_key():
         "SECRET_KEY manquante. Definis la variable d'environnement SECRET_KEY "
         "ou lance l'application avec FLASK_ENV=development en local."
     )
+
+
+def build_initial_admin_payload():
+    email = normalize_email(current_app.config["INITIAL_ADMIN_EMAIL"])
+    password = current_app.config["INITIAL_ADMIN_PASSWORD"]
+
+    if email or password:
+        if not email or not password:
+            raise RuntimeError(
+                "INITIAL_ADMIN_EMAIL et INITIAL_ADMIN_PASSWORD doivent etre definis ensemble."
+            )
+        if not is_valid_email(email):
+            raise RuntimeError("INITIAL_ADMIN_EMAIL invalide.")
+        if len(password) < 6:
+            raise RuntimeError("INITIAL_ADMIN_PASSWORD doit contenir au moins 6 caracteres.")
+        return email, password
+
+    # Securite: l'admin previsible est disponible uniquement en developpement local explicite.
+    if current_app.config["ALLOW_DEV_ADMIN"]:
+        return DEV_ADMIN_EMAIL, DEV_ADMIN_PASSWORD
+
+    return None, None
 
 
 def init_database():
@@ -436,11 +458,12 @@ def seed_users(db):
     if imported:
         return
 
-    # Securite: l'admin connu de secours ne doit jamais etre cree implicitement en production.
-    if not current_app.config["ALLOW_DEFAULT_ADMIN"]:
+    initial_admin_email, initial_admin_password = build_initial_admin_payload()
+
+    if not initial_admin_email:
         current_app.logger.warning(
             "Aucun utilisateur importe et admin de secours desactive. "
-            "Definis CREATE_DEFAULT_ADMIN=true uniquement pour l'initialisation controlee."
+            "Definis INITIAL_ADMIN_EMAIL et INITIAL_ADMIN_PASSWORD pour l'initialisation."
         )
         return
 
@@ -449,12 +472,12 @@ def seed_users(db):
         {
             "firstName": "Administrateur",
             "lastName": "Site",
-            "email": DEFAULT_ADMIN_EMAIL,
+            "email": initial_admin_email,
             "phone": "",
             "animalType": "",
             "animalName": "",
         },
-        generate_password_hash(DEFAULT_ADMIN_PASSWORD),
+        generate_password_hash(initial_admin_password),
         "admin",
     )
 
@@ -745,7 +768,9 @@ def create_app(test_config=None):
         SECRET_KEY=resolve_secret_key(),
         DATABASE=os.environ.get("APP_DATABASE", DEFAULT_DATABASE),
         CLIENTS_FILE=DEFAULT_CLIENTS_FILE,
-        ALLOW_DEFAULT_ADMIN=is_development_env() or env_flag("CREATE_DEFAULT_ADMIN"),
+        INITIAL_ADMIN_EMAIL=os.environ.get("INITIAL_ADMIN_EMAIL", ""),
+        INITIAL_ADMIN_PASSWORD=os.environ.get("INITIAL_ADMIN_PASSWORD", ""),
+        ALLOW_DEV_ADMIN=is_development_env() and env_flag("ALLOW_DEV_ADMIN"),
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_HTTPONLY=True,
     )
@@ -1112,14 +1137,14 @@ def create_app(test_config=None):
         row = query_one("SELECT * FROM blocked_dates WHERE id = ?", (cursor.lastrowid,))
         return jsonify({"message": "Date bloquee.", "blockedDate": serialize_blocked_date(row)}), 201
 
-    @app.delete("/api/admin/blocked-dates/<int:block_id>")
+    @app.delete("/api/admin/blocked-dates/<int:blocked_date_id>")
     @admin_required
-    def api_admin_delete_blocked_date(_user, block_id):
-        if query_one("SELECT id FROM blocked_dates WHERE id = ?", (block_id,)) is None:
+    def api_admin_delete_blocked_date(_user, blocked_date_id):
+        if query_one("SELECT id FROM blocked_dates WHERE id = ?", (blocked_date_id,)) is None:
             return jsonify({"error": "Date bloquee introuvable."}), 404
 
         db = get_db()
-        db.execute("DELETE FROM blocked_dates WHERE id = ?", (block_id,))
+        db.execute("DELETE FROM blocked_dates WHERE id = ?", (blocked_date_id,))
         db.commit()
         return jsonify({"message": "Date debloquee."}), 200
 
