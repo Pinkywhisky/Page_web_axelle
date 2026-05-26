@@ -242,6 +242,15 @@
           <button
             class="tab-button"
             data-tab-scope="member"
+            data-tab-target="memberPetsPanel"
+            type="button"
+            role="tab"
+          >
+            Mes animaux
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="member"
             data-tab-target="memberBookingsPanel"
             type="button"
             role="tab"
@@ -255,7 +264,7 @@
             <div class="panel-card-top">
               <div>
                 <h3>Informations personnelles</h3>
-                <p class="panel-text">Coordonnées, animal et informations utiles à la garde.</p>
+                <p class="panel-text">Coordonnées utiles au suivi de vos demandes de garde.</p>
               </div>
               <button class="btn btn-secondary btn-sm" id="editProfileBtn" type="button">
                 Modifier
@@ -280,14 +289,6 @@
                   <span>Téléphone</span>
                   <strong id="profilePhoneView"></strong>
                 </div>
-                <div class="info-item">
-                  <span>Type d’animal</span>
-                  <strong id="profileAnimalTypeView"></strong>
-                </div>
-                <div class="info-item">
-                  <span>Nom de l’animal</span>
-                  <strong id="profileAnimalNameView"></strong>
-                </div>
               </div>
             </div>
 
@@ -309,16 +310,6 @@
               <label for="profilePhone">Téléphone</label>
               <input id="profilePhone" type="tel" />
 
-              <label for="profileAnimalType">Type d’animal</label>
-              <select id="profileAnimalType">
-                <option value="">Sélectionner</option>
-                <option value="chien">Chien</option>
-                <option value="chat">Chat</option>
-              </select>
-
-              <label for="profileAnimalName">Nom de l’animal</label>
-              <input id="profileAnimalName" type="text" />
-
               <p class="inline-message" id="profileMessage"></p>
 
               <div class="form-actions split-actions">
@@ -331,6 +322,55 @@
                 </button>
               </div>
             </form>
+          </article>
+        </div>
+
+        <div class="tab-panel" id="memberPetsPanel" role="tabpanel" hidden>
+          <article class="panel-card">
+            <div class="panel-card-top">
+              <div>
+                <h3>Mes animaux</h3>
+                <p class="panel-text">Animaux à prendre en compte pour vos demandes de garde.</p>
+              </div>
+            </div>
+
+            <form id="petForm" class="stack-form">
+              <input id="petId" type="hidden" />
+
+              <div class="inline-fields">
+                <div>
+                  <label for="petName">Nom de l’animal</label>
+                  <input id="petName" type="text" required />
+                </div>
+                <div>
+                  <label for="petSpecies">Espèce</label>
+                  <select id="petSpecies" required>
+                    <option value="">Sélectionner</option>
+                    <option value="chien">Chien</option>
+                    <option value="chat">Chat</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+              </div>
+
+              <label for="petNotes">Informations utiles</label>
+              <textarea
+                id="petNotes"
+                rows="3"
+                placeholder="Habitudes, besoins, traitement, comportement, alimentation."
+              ></textarea>
+
+              <p class="inline-message" id="petMessage"></p>
+
+              <div class="form-actions split-actions">
+                <button class="btn btn-primary btn-sm" type="submit">Enregistrer</button>
+                <button class="btn btn-secondary btn-sm" id="petResetBtn" type="button">
+                  Nouvel animal
+                </button>
+              </div>
+            </form>
+
+            <div class="simple-list" id="petsList"></div>
           </article>
         </div>
 
@@ -523,6 +563,7 @@
                 <option value="">Sélectionner</option>
                 <option value="chien">Chien</option>
                 <option value="chat">Chat</option>
+                <option value="autre">Autre</option>
               </select>
 
               <label for="memberAnimalName">Nom de l’animal</label>
@@ -701,6 +742,7 @@
             <option value="">Sélectionner</option>
             <option value="chien">Chien</option>
             <option value="chat">Chat</option>
+            <option value="autre">Autre</option>
           </select>
 
           <label for="registerAnimalName">Nom de l’animal</label>
@@ -848,15 +890,23 @@
             </p>
 
             <form id="bookingForm" hidden>
-              <label for="bookingAnimalType">Type d’animal</label>
-              <select id="bookingAnimalType" required>
-                <option value="">Sélectionner</option>
-                <option value="chien">Chien</option>
-                <option value="chat">Chat</option>
-              </select>
+              <div id="bookingPetsWrap" hidden>
+                <label>Animaux concernés</label>
+                <div class="simple-list" id="bookingPetsList"></div>
+              </div>
 
-              <label for="bookingAnimalName">Nom de l’animal</label>
-              <input id="bookingAnimalName" type="text" placeholder="Ex : Nala" />
+              <div id="bookingManualAnimalFields">
+                <label for="bookingAnimalType">Type d’animal</label>
+                <select id="bookingAnimalType">
+                  <option value="">Sélectionner</option>
+                  <option value="chien">Chien</option>
+                  <option value="chat">Chat</option>
+                  <option value="autre">Autre</option>
+                </select>
+
+                <label for="bookingAnimalName">Nom de l’animal</label>
+                <input id="bookingAnimalName" type="text" placeholder="Ex : Nala" />
+              </div>
               <p class="panel-text is-hidden" id="bookingAnimalHint"></p>
 
               <div class="inline-fields">

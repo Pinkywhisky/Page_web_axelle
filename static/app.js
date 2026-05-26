@@ -2,6 +2,7 @@ const state = {
   user: null,
   activities: [],
   unavailableDates: [],
+  pets: [],
   myBookings: [],
   admin: null,
   calendarOffset: 0,
@@ -12,6 +13,7 @@ const state = {
   memberEditing: false,
   activeModal: null,
   lastTrigger: null,
+  lastBookingPetSummary: "",
 };
 
 const slotLabels = {
@@ -38,6 +40,7 @@ const statusChoices = [
 const animalLabels = {
   chien: "Chien",
   chat: "Chat",
+  autre: "Autre",
 };
 
 const roleLabels = {
@@ -87,6 +90,14 @@ function bindDom() {
     "profilePhoneView",
     "profileAnimalTypeView",
     "profileAnimalNameView",
+    "petForm",
+    "petId",
+    "petName",
+    "petSpecies",
+    "petNotes",
+    "petMessage",
+    "petResetBtn",
+    "petsList",
     "myBookingsList",
     "adminStats",
     "membersTableBody",
@@ -156,6 +167,9 @@ function bindDom() {
     "profileAnimalName",
     "bookingAnimalType",
     "bookingAnimalName",
+    "bookingPetsWrap",
+    "bookingPetsList",
+    "bookingManualAnimalFields",
     "bookingStartDate",
     "bookingEndDate",
     "bookingTimeSlot",
@@ -199,6 +213,7 @@ function bindEvents() {
     renderCalendar();
   });
   onClick("activityResetBtn", resetActivityForm);
+  onClick("petResetBtn", resetPetForm);
   onClick("bookingLoginPromptBtn", () => openNestedAuthModal(dom.loginModal));
   onClick("bookingRegisterPromptBtn", () => openNestedAuthModal(dom.registerModal));
 
@@ -231,6 +246,7 @@ function bindEvents() {
   onEvent(dom.contactForm, "submit", handleContact);
   onEvent(dom.bookingForm, "submit", handleBookingSubmit);
   onEvent(dom.profileForm, "submit", handleProfileSave);
+  onEvent(dom.petForm, "submit", handlePetSave);
   onEvent(dom.memberForm, "submit", handleMemberSave);
   onEvent(dom.blockedDateForm, "submit", handleBlockedDateCreate);
   onEvent(dom.activityForm, "submit", handleActivitySave);
@@ -242,6 +258,8 @@ function bindEvents() {
   onEvent(dom.activityAdminList, "click", handleActivityListClick);
   onEvent(dom.contactsList, "click", handleContactsClick);
   onEvent(dom.myBookingsList, "click", handleMyBookingsClick);
+  onEvent(dom.petsList, "click", handlePetsListClick);
+  onEvent(dom.bookingPetsList, "change", syncBookingPetSummary);
   onEvent(dom.activitiesGrid, "click", handleActivitiesGridClick);
   document.addEventListener("keydown", handleGlobalKeydown);
 }
@@ -303,6 +321,7 @@ async function loadBootstrap() {
     state.user = data.user;
     state.activities = data.activities || [];
     state.unavailableDates = data.unavailableDates || [];
+    state.pets = data.pets || [];
     state.myBookings = data.myBookings || [];
     state.admin = data.admin;
     renderAll();
@@ -510,6 +529,34 @@ function syncBookingAnimalFields() {
     return;
   }
 
+  const hasPets = state.pets.length > 0;
+  dom.bookingPetsWrap.hidden = !hasPets;
+  dom.bookingManualAnimalFields.hidden = hasPets;
+  dom.bookingAnimalType.required = !hasPets;
+  dom.bookingAnimalName.required = !hasPets;
+
+  if (hasPets) {
+    dom.bookingPetsList.innerHTML = state.pets
+      .map(
+        (pet) => `
+          <label class="booking-pet-choice">
+            <input type="checkbox" value="${pet.id}" data-role="booking-pet" />
+            <span>
+              <strong>${escapeHtml(pet.name)}</strong>
+              <span class="panel-text">${escapeHtml(animalLabels[pet.species] || pet.species)}${pet.notes ? ` - ${escapeHtml(pet.notes)}` : ""}</span>
+            </span>
+          </label>
+        `
+      )
+      .join("");
+    dom.bookingAnimalHint.classList.remove("is-hidden");
+    dom.bookingAnimalHint.textContent =
+      "Sélectionnez les animaux concernés, puis complétez les informations utiles si besoin.";
+    return;
+  }
+
+  dom.bookingPetsList.innerHTML = "";
+
   if (state.user.animalType) {
     dom.bookingAnimalType.value = state.user.animalType;
   }
@@ -537,6 +584,7 @@ function renderMemberArea() {
       closeModal(dom.memberModal);
     }
     dom.myBookingsList.innerHTML = "";
+    dom.petsList.innerHTML = "";
     state.profileEditing = false;
     return;
   }
@@ -546,9 +594,8 @@ function renderMemberArea() {
   dom.profileLastName.value = state.user.lastName || "";
   dom.profileEmail.value = state.user.email || "";
   dom.profilePhone.value = state.user.phone || "";
-  dom.profileAnimalType.value = state.user.animalType || "";
-  dom.profileAnimalName.value = state.user.animalName || "";
   setProfileEditing(state.profileEditing);
+  renderPets();
 
   if (!state.myBookings.length) {
     dom.myBookingsList.innerHTML =
@@ -574,12 +621,10 @@ function renderMemberArea() {
               ${escapeHtml(statusLabels[booking.status] || booking.status)}
             </span>
           </div>
+          ${renderBookingAnimalBlock(booking)}
           <p class="booking-meta">
-            Animal : ${escapeHtml(booking.animalName || "Non précisé")} (${escapeHtml(
-              animalLabels[booking.animalType] || booking.animalType
-            )})
+            Suivi : ${escapeHtml(booking.adminNote || "Aucune réponse enregistrée pour le moment.")}
           </p>
-          <p class="booking-meta">Suivi : ${escapeHtml(booking.adminNote || "Aucune réponse enregistrée pour le moment.")}</p>
           ${
             booking.status === "pending" || booking.status === "approved"
               ? `<div class="booking-actions">
@@ -595,6 +640,60 @@ function renderMemberArea() {
     .join("");
 }
 
+function renderBookingAnimalBlock(booking) {
+  const linkedPets = booking.pets || [];
+
+  if (linkedPets.length) {
+    const petItems = linkedPets
+      .map(
+        (pet) =>
+          `${escapeHtml(pet.name)} (${escapeHtml(animalLabels[pet.species] || pet.species)})`
+      )
+      .join(", ");
+
+    return `
+      <p class="booking-meta">Animaux concernés : ${petItems}</p>
+      <p class="booking-meta">Informations animaux : ${escapeHtml(booking.animalSummary || "Aucune précision.")}</p>
+    `;
+  }
+
+  return `
+    <p class="booking-meta">
+      Animal : ${escapeHtml(booking.animalName || "Non précisé")} (${escapeHtml(
+        animalLabels[booking.animalType] || booking.animalType
+      )})
+    </p>
+  `;
+}
+
+function renderPets() {
+  if (!state.pets.length) {
+    dom.petsList.innerHTML =
+      "<div class='simple-item'><h4>Aucun animal enregistré</h4><p class='panel-text'>Ajoutez vos animaux pour les sélectionner rapidement dans une demande de garde.</p></div>";
+    return;
+  }
+
+  dom.petsList.innerHTML = state.pets
+    .map(
+      (pet) => `
+        <div class="simple-item">
+          <div class="simple-item-header">
+            <div>
+              <h4>${escapeHtml(pet.name)}</h4>
+              <p class="panel-text">${escapeHtml(animalLabels[pet.species] || pet.species)}</p>
+              <p class="panel-text">${escapeHtml(pet.notes || "Aucune information utile renseignée.")}</p>
+            </div>
+            <div class="simple-item-actions">
+              <button class="btn btn-secondary btn-sm" data-action="edit-pet" data-pet-id="${pet.id}" type="button">Modifier</button>
+              <button class="btn btn-danger btn-sm" data-action="delete-pet" data-pet-id="${pet.id}" type="button">Supprimer</button>
+            </div>
+          </div>
+        </div>
+      `
+    )
+    .join("");
+}
+
 function renderProfileView() {
   if (!state.user) return;
 
@@ -602,10 +701,6 @@ function renderProfileView() {
   dom.profileLastNameView.textContent = displayValue(state.user.lastName);
   dom.profileEmailView.textContent = displayValue(state.user.email);
   dom.profilePhoneView.textContent = displayValue(state.user.phone);
-  dom.profileAnimalTypeView.textContent = displayValue(
-    animalLabels[state.user.animalType] || state.user.animalType
-  );
-  dom.profileAnimalNameView.textContent = displayValue(state.user.animalName);
 }
 
 function setProfileEditing(isEditing) {
@@ -620,8 +715,6 @@ function setProfileEditing(isEditing) {
     dom.profileLastName.value = state.user.lastName || "";
     dom.profileEmail.value = state.user.email || "";
     dom.profilePhone.value = state.user.phone || "";
-    dom.profileAnimalType.value = state.user.animalType || "";
-    dom.profileAnimalName.value = state.user.animalName || "";
     dom.profileFirstName.focus();
   }
 }
@@ -777,11 +870,7 @@ function renderAdminBookings() {
             </span>
           </div>
 
-          <p class="booking-meta">
-            Animal : ${escapeHtml(booking.animalName || "Non précisé")} (${escapeHtml(
-              animalLabels[booking.animalType] || booking.animalType
-            )})
-          </p>
+          ${renderBookingAnimalBlock(booking)}
           <p class="booking-meta">Informations transmises : ${escapeHtml(booking.notes || "Aucune précision.")}</p>
 
           <label for="booking-status-${booking.id}">Statut</label>
@@ -996,6 +1085,34 @@ async function handleContact(event) {
   }
 }
 
+function getSelectedBookingPetIds() {
+  return Array.from(dom.bookingPetsList.querySelectorAll("[data-role='booking-pet']:checked"))
+    .map((input) => Number(input.value))
+    .filter((value) => Number.isFinite(value) && value > 0);
+}
+
+function getSelectedBookingPets() {
+  const selectedIds = new Set(getSelectedBookingPetIds());
+  return state.pets.filter((pet) => selectedIds.has(pet.id));
+}
+
+function buildPetSummary(pets) {
+  return pets
+    .map((pet) => {
+      const label = `${pet.name} (${animalLabels[pet.species] || pet.species})`;
+      return pet.notes ? `${label} - ${pet.notes}` : label;
+    })
+    .join("; ");
+}
+
+function syncBookingPetSummary() {
+  const summary = buildPetSummary(getSelectedBookingPets());
+  if (!dom.bookingNotes.value || dom.bookingNotes.value === state.lastBookingPetSummary) {
+    dom.bookingNotes.value = summary;
+  }
+  state.lastBookingPetSummary = summary;
+}
+
 async function handleBookingSubmit(event) {
   event.preventDefault();
   setInlineMessage(dom.bookingMessage, "");
@@ -1014,11 +1131,19 @@ async function handleBookingSubmit(event) {
     return;
   }
 
+  const selectedPets = getSelectedBookingPets();
+  if (state.pets.length && !selectedPets.length) {
+    setInlineMessage(dom.bookingMessage, "Sélectionnez au moins un animal concerné.", "error");
+    return;
+  }
+
   try {
     await withBusyButton(event.submitter, "Envoi...", () =>
       requestJson("/api/bookings", {
         method: "POST",
         body: {
+          petIds: selectedPets.map((pet) => pet.id),
+          animalSummary: buildPetSummary(selectedPets),
           animalType: dom.bookingAnimalType.value,
           animalName: dom.bookingAnimalName.value,
           startDate: dom.bookingStartDate.value,
@@ -1030,6 +1155,7 @@ async function handleBookingSubmit(event) {
     );
 
     dom.bookingForm.reset();
+    state.lastBookingPetSummary = "";
     syncBookingAnimalFields();
     setMinBookingDates();
     closeModal(dom.bookingModal);
@@ -1053,8 +1179,8 @@ async function handleProfileSave(event) {
           lastName: dom.profileLastName.value,
           email: dom.profileEmail.value,
           phone: dom.profilePhone.value,
-          animalType: dom.profileAnimalType.value,
-          animalName: dom.profileAnimalName.value,
+          animalType: "",
+          animalName: "",
         },
       })
     );
@@ -1065,6 +1191,84 @@ async function handleProfileSave(event) {
     await loadBootstrap();
   } catch (error) {
     setInlineMessage(dom.profileMessage, error.message, "error");
+  }
+}
+
+async function handlePetSave(event) {
+  event.preventDefault();
+  setInlineMessage(dom.petMessage, "");
+
+  const petId = Number(dom.petId.value);
+  const payload = {
+    name: dom.petName.value,
+    species: dom.petSpecies.value,
+    notes: dom.petNotes.value,
+  };
+
+  try {
+    await withBusyButton(event.submitter, "Enregistrement...", () =>
+      requestJson(petId ? `/api/pets/${petId}` : "/api/pets", {
+        method: petId ? "PUT" : "POST",
+        body: payload,
+      })
+    );
+
+    resetPetForm();
+    showGlobalMessage(petId ? "Animal mis à jour." : "Animal ajouté.", "success");
+    await loadBootstrap();
+  } catch (error) {
+    setInlineMessage(dom.petMessage, error.message, "error");
+  }
+}
+
+function handlePetsListClick(event) {
+  const button = event.target.closest("button[data-action]");
+  if (!button) return;
+
+  const petId = readNumericDataset(button, "petId");
+  if (!petId) {
+    showGlobalMessage("Animal introuvable.", "error");
+    return;
+  }
+
+  if (button.dataset.action === "edit-pet") {
+    editPet(petId);
+    return;
+  }
+
+  if (button.dataset.action === "delete-pet") {
+    deletePet(petId);
+  }
+}
+
+function editPet(petId) {
+  const pet = state.pets.find((item) => item.id === petId);
+  if (!pet) return;
+
+  dom.petId.value = pet.id;
+  dom.petName.value = pet.name || "";
+  dom.petSpecies.value = pet.species || "";
+  dom.petNotes.value = pet.notes || "";
+  setInlineMessage(dom.petMessage, "");
+  dom.petName.focus();
+}
+
+function resetPetForm() {
+  dom.petForm.reset();
+  dom.petId.value = "";
+  setInlineMessage(dom.petMessage, "");
+}
+
+async function deletePet(petId) {
+  if (!confirmAction("Supprimer cet animal de votre profil ?")) return;
+
+  try {
+    await requestJson(`/api/pets/${petId}`, { method: "DELETE" });
+    showGlobalMessage("Animal supprimé.", "success");
+    resetPetForm();
+    await loadBootstrap();
+  } catch (error) {
+    setInlineMessage(dom.petMessage, error.message, "error");
   }
 }
 
@@ -1393,6 +1597,7 @@ async function cancelMyBooking(bookingId) {
 
 function openBookingModal() {
   setInlineMessage(dom.bookingMessage, "");
+  syncBookingAnimalFields();
   openModal(dom.bookingModal);
 }
 

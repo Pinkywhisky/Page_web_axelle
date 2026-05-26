@@ -804,6 +804,26 @@ textarea:focus {
     margin-bottom: 14px;
 }
 
+.booking-pet-choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 252, 247, 0.88);
+}
+
+.booking-pet-choice input {
+    width: auto;
+    margin-top: 3px;
+}
+
+.booking-pet-choice strong,
+.booking-pet-choice span {
+    display: block;
+}
+
 .split-actions {
     justify-content: space-between;
 }

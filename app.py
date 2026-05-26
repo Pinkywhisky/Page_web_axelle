@@ -19,12 +19,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DATABASE = os.path.join(BASE_DIR, "club_des_pattes.db")
-DEV_ADMIN_EMAIL = "admin@clubdespattes.local"
-DEV_ADMIN_PASSWORD = "Admin123!"
+DEV_ADMIN_EMAIL = "admin@a.a"
+DEV_ADMIN_PASSWORD = "a"
 DEV_SECRET_KEY = "club-des-pattes-dev-key"
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-ANIMAL_TYPES = {"chien", "chat"}
+PET_SPECIES = {"chien", "chat", "autre"}
+ANIMAL_TYPES = PET_SPECIES
 TIME_SLOTS = {
     "matin": "Matin",
     "apres-midi": "Apres-midi",
@@ -74,12 +75,24 @@ CREATE TABLE IF NOT EXISTS blocked_dates (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS pets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    species TEXT NOT NULL,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CHECK (species IN ('chien', 'chat', 'autre'))
+);
+
 CREATE TABLE IF NOT EXISTS booking_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     service_type TEXT NOT NULL,
     animal_type TEXT NOT NULL,
     animal_name TEXT NOT NULL DEFAULT '',
+    animal_summary TEXT NOT NULL DEFAULT '',
     start_date TEXT NOT NULL,
     end_date TEXT NOT NULL,
     time_slot TEXT NOT NULL,
@@ -91,6 +104,14 @@ CREATE TABLE IF NOT EXISTS booking_requests (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CHECK (service_type = 'garde'),
     CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled'))
+);
+
+CREATE TABLE IF NOT EXISTS booking_request_pets (
+    booking_request_id INTEGER NOT NULL,
+    pet_id INTEGER NOT NULL,
+    PRIMARY KEY (booking_request_id, pet_id),
+    FOREIGN KEY (booking_request_id) REFERENCES booking_requests(id) ON DELETE CASCADE,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS contact_requests (
@@ -168,6 +189,25 @@ def parse_sort_order(value):
         raise ValueError("Ordre invalide.")
 
     return sort_order
+
+
+def read_int_list(value):
+    if not isinstance(value, list):
+        return []
+
+    pet_ids = []
+    for item in value:
+        try:
+            pet_id = int(item)
+        except (TypeError, ValueError):
+            raise ValueError("Animal invalide.")
+
+        if pet_id <= 0:
+            raise ValueError("Animal invalide.")
+
+        pet_ids.append(pet_id)
+
+    return list(dict.fromkeys(pet_ids))
 
 
 def is_safe_request_origin():
@@ -430,6 +470,48 @@ def serialize_contact(row):
     }
 
 
+def serialize_pet(row):
+    return {
+        "id": row["id"],
+        "userId": row["user_id"],
+        "name": row["name"],
+        "species": row["species"],
+        "notes": row["notes"],
+        "createdAt": row["created_at"],
+    }
+
+
+def get_user_pets(user_id):
+    return [
+        serialize_pet(row)
+        for row in query_all(
+            """
+            SELECT *
+            FROM pets
+            WHERE user_id = ?
+            ORDER BY created_at ASC, id ASC
+            """,
+            (user_id,),
+        )
+    ]
+
+
+def get_booking_pets(booking_id):
+    return [
+        serialize_pet(row)
+        for row in query_all(
+            """
+            SELECT pets.*
+            FROM booking_request_pets
+            JOIN pets ON pets.id = booking_request_pets.pet_id
+            WHERE booking_request_pets.booking_request_id = ?
+            ORDER BY pets.name ASC, pets.id ASC
+            """,
+            (booking_id,),
+        )
+    ]
+
+
 def serialize_booking(row):
     full_name = build_full_name(row["first_name"], row["last_name"])
 
@@ -442,6 +524,8 @@ def serialize_booking(row):
         "email": row["email"],
         "animalType": row["animal_type"],
         "animalName": row["animal_name"],
+        "animalSummary": row["animal_summary"],
+        "pets": get_booking_pets(row["id"]),
         "startDate": row["start_date"],
         "endDate": row["end_date"],
         "timeSlot": row["time_slot"],
@@ -642,6 +726,41 @@ def validate_profile_payload(data, require_password=False):
     }, None
 
 
+def validate_pet_payload(data):
+    name = (data.get("name") or "").strip()
+    species = (data.get("species") or "").strip().lower()
+    notes = (data.get("notes") or "").strip()
+
+    if not name or not species:
+        return None, "Nom et espece sont obligatoires."
+
+    if species not in PET_SPECIES:
+        return None, "Espece invalide."
+
+    if text_too_long(name, MAX_SHORT_TEXT_LENGTH) or text_too_long(notes, MAX_LONG_TEXT_LENGTH):
+        return None, "Un des champs saisis est trop long."
+
+    return {
+        "name": name,
+        "species": species,
+        "notes": notes,
+    }, None
+
+
+def build_pet_summary(pets):
+    if not pets:
+        return ""
+
+    parts = []
+    for pet in pets:
+        label = f"{pet['name']} ({pet['species']})"
+        if pet["notes"]:
+            label = f"{label} - {pet['notes']}"
+        parts.append(label)
+
+    return "; ".join(parts)
+
+
 def create_app(test_config=None):
     app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.update(
@@ -699,11 +818,15 @@ def create_app(test_config=None):
                 for row in query_all("SELECT * FROM activities ORDER BY sort_order ASC, id ASC")
             ],
             "unavailableDates": get_unavailable_dates(),
+            "pets": [],
             "myBookings": [],
             "admin": None,
         }
 
         if user is not None:
+            if user["role"] != "admin":
+                payload["pets"] = get_user_pets(user["id"])
+
             payload["myBookings"] = [
                 serialize_booking(row)
                 for row in query_all(
@@ -735,6 +858,14 @@ def create_app(test_config=None):
 
         db = get_db()
         cursor = insert_user(db, payload, generate_password_hash(payload["password"]), "client")
+        if payload["animalName"] and payload["animalType"]:
+            db.execute(
+                """
+                INSERT INTO pets (user_id, name, species)
+                VALUES (?, ?, ?)
+                """,
+                (cursor.lastrowid, payload["animalName"], payload["animalType"]),
+            )
         db.commit()
 
         user = query_one("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,))
@@ -836,6 +967,82 @@ def create_app(test_config=None):
         db.commit()
         return jsonify({"message": "Votre message a bien ete envoye."}), 201
 
+    @app.get("/api/pets")
+    @login_required
+    def api_list_pets(user):
+        if user["role"] == "admin":
+            return jsonify({"pets": []}), 200
+
+        return jsonify({"pets": get_user_pets(user["id"])}), 200
+
+    @app.post("/api/pets")
+    @login_required
+    def api_create_pet(user):
+        if user["role"] == "admin":
+            return jsonify({"error": "La gestion des animaux est reservee aux espaces personnels."}), 403
+
+        data = request.get_json(silent=True) or {}
+        payload, error_message = validate_pet_payload(data)
+        if error_message:
+            return jsonify({"error": error_message}), 400
+
+        db = get_db()
+        cursor = db.execute(
+            """
+            INSERT INTO pets (user_id, name, species, notes)
+            VALUES (?, ?, ?, ?)
+            """,
+            (user["id"], payload["name"], payload["species"], payload["notes"]),
+        )
+        db.commit()
+
+        pet = query_one("SELECT * FROM pets WHERE id = ?", (cursor.lastrowid,))
+        return jsonify({"message": "Animal ajoute.", "pet": serialize_pet(pet)}), 201
+
+    @app.put("/api/pets/<int:pet_id>")
+    @login_required
+    def api_update_pet(user, pet_id):
+        if user["role"] == "admin":
+            return jsonify({"error": "La gestion des animaux est reservee aux espaces personnels."}), 403
+
+        pet = query_one("SELECT * FROM pets WHERE id = ? AND user_id = ?", (pet_id, user["id"]))
+        if pet is None:
+            return jsonify({"error": "Animal introuvable."}), 404
+
+        data = request.get_json(silent=True) or {}
+        payload, error_message = validate_pet_payload(data)
+        if error_message:
+            return jsonify({"error": error_message}), 400
+
+        db = get_db()
+        db.execute(
+            """
+            UPDATE pets
+            SET name = ?, species = ?, notes = ?
+            WHERE id = ? AND user_id = ?
+            """,
+            (payload["name"], payload["species"], payload["notes"], pet_id, user["id"]),
+        )
+        db.commit()
+
+        updated_pet = query_one("SELECT * FROM pets WHERE id = ?", (pet_id,))
+        return jsonify({"message": "Animal mis a jour.", "pet": serialize_pet(updated_pet)}), 200
+
+    @app.delete("/api/pets/<int:pet_id>")
+    @login_required
+    def api_delete_pet(user, pet_id):
+        if user["role"] == "admin":
+            return jsonify({"error": "La gestion des animaux est reservee aux espaces personnels."}), 403
+
+        pet = query_one("SELECT * FROM pets WHERE id = ? AND user_id = ?", (pet_id, user["id"]))
+        if pet is None:
+            return jsonify({"error": "Animal introuvable."}), 404
+
+        db = get_db()
+        db.execute("DELETE FROM pets WHERE id = ? AND user_id = ?", (pet_id, user["id"]))
+        db.commit()
+        return jsonify({"message": "Animal supprime."}), 200
+
     @app.post("/api/bookings")
     @login_required
     def api_create_booking(user):
@@ -846,8 +1053,36 @@ def create_app(test_config=None):
         animal_type = (data.get("animalType") or "").strip().lower()
         service_type = SERVICE_TYPE_GARDE
         animal_name = (data.get("animalName") or "").strip()
+        animal_summary = (data.get("animalSummary") or "").strip()
         notes = (data.get("notes") or "").strip()
         time_slot = (data.get("timeSlot") or "").strip().lower()
+
+        try:
+            pet_ids = read_int_list(data.get("petIds") or [])
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+
+        selected_pet_rows = []
+        if pet_ids:
+            placeholders = ",".join("?" for _item in pet_ids)
+            selected_pet_rows = query_all(
+                f"""
+                SELECT *
+                FROM pets
+                WHERE user_id = ? AND id IN ({placeholders})
+                ORDER BY name ASC, id ASC
+                """,
+                (user["id"], *pet_ids),
+            )
+            if len(selected_pet_rows) != len(pet_ids):
+                return jsonify({"error": "Animal introuvable."}), 404
+
+            selected_pets = [serialize_pet(row) for row in selected_pet_rows]
+            species_values = {pet["species"] for pet in selected_pets}
+            animal_type = selected_pets[0]["species"] if len(species_values) == 1 else "autre"
+            animal_name = ", ".join(pet["name"] for pet in selected_pets)
+            if not animal_summary:
+                animal_summary = build_pet_summary(selected_pets)
 
         try:
             start_date = parse_iso_date(data.get("startDate"))
@@ -855,10 +1090,17 @@ def create_app(test_config=None):
         except ValueError:
             return jsonify({"error": "Dates invalides."}), 400
 
-        if animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
-            return jsonify({"error": "Merci de renseigner le type d'animal et le moment de passage."}), 400
+        if time_slot not in TIME_SLOTS:
+            return jsonify({"error": "Merci de renseigner le moment de passage."}), 400
 
-        if text_too_long(animal_name, MAX_SHORT_TEXT_LENGTH) or text_too_long(notes, MAX_LONG_TEXT_LENGTH):
+        if not pet_ids and (animal_type not in ANIMAL_TYPES or not animal_name):
+            return jsonify({"error": "Merci de renseigner le type et le nom de l'animal."}), 400
+
+        if (
+            text_too_long(animal_name, MAX_MEDIUM_TEXT_LENGTH)
+            or text_too_long(animal_summary, MAX_LONG_TEXT_LENGTH)
+            or text_too_long(notes, MAX_LONG_TEXT_LENGTH)
+        ):
             return jsonify({"error": "Un des champs saisis est trop long."}), 400
 
         if end_date < start_date:
@@ -871,22 +1113,33 @@ def create_app(test_config=None):
         cursor = db.execute(
             """
             INSERT INTO booking_requests (
-                user_id, service_type, animal_type, animal_name,
+                user_id, service_type, animal_type, animal_name, animal_summary,
                 start_date, end_date, time_slot, notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user["id"],
                 service_type,
                 animal_type,
                 animal_name,
+                animal_summary,
                 start_date.isoformat(),
                 end_date.isoformat(),
                 time_slot,
                 notes,
             ),
         )
+
+        for pet_id in pet_ids:
+            db.execute(
+                """
+                INSERT INTO booking_request_pets (booking_request_id, pet_id)
+                VALUES (?, ?)
+                """,
+                (cursor.lastrowid, pet_id),
+            )
+
         db.commit()
 
         booking = query_one(
