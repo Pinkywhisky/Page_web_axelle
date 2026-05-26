@@ -1661,6 +1661,80 @@ textarea:focus {
     display: none !important;
 }
 
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.tab-button:focus-visible,
+a:focus-visible {
+    outline: 3px solid rgba(92, 110, 88, 0.28);
+    outline-offset: 3px;
+}
+
+.btn:disabled,
+.icon-btn:disabled {
+    cursor: wait;
+    opacity: 0.7;
+    transform: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #7d2f28, #9f473d);
+}
+
+.flash-message {
+    position: relative;
+    z-index: 4;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.flash-message.is-error {
+    color: #9b2f28;
+}
+
+.flash-message.is-success {
+    color: #256f45;
+}
+
+.inline-message {
+    line-height: 1.45;
+}
+
+.table-shell {
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 18px;
+    background: #fff;
+}
+
+tbody tr.is-selected {
+    background: rgba(92, 110, 88, 0.1);
+}
+
+tbody tr.is-selected td:first-child {
+    box-shadow: inset 3px 0 0 var(--accent-900);
+}
+
+.booking-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f9fafb;
+    font-size: 0.82rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.admin-bookings .booking-item,
+.simple-list .simple-item {
+    gap: 14px;
+}
+
+.contact-message {
+    max-width: 72ch;
+    line-height: 1.6;
+}
+
 @media (max-width: 1180px) {
     .hero-card,
     .showcase-grid,
@@ -1765,5 +1839,40 @@ textarea:focus {
 
     .compact-input {
         max-width: none;
+    }
+
+    .modal-backdrop {
+        align-items: stretch;
+        padding: 10px;
+    }
+
+    .modal-card {
+        width: 100%;
+        max-height: calc(100vh - 20px);
+    }
+
+    .tab-list {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .tab-button {
+        flex: 0 0 auto;
+    }
+
+    .booking-actions,
+    .simple-item-actions {
+        justify-content: stretch;
+    }
+
+    .booking-actions .btn,
+    .simple-item-actions .btn {
+        width: 100%;
+    }
+
+    th,
+    td {
+        padding: 10px 8px;
+        font-size: 0.88rem;
     }
 }

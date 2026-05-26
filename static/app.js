@@ -228,29 +228,33 @@ function bindEvents() {
     });
   });
 
-  dom.loginForm.addEventListener("submit", handleLogin);
-  dom.registerForm.addEventListener("submit", handleRegister);
-  dom.contactForm.addEventListener("submit", handleContact);
-  dom.bookingForm.addEventListener("submit", handleBookingSubmit);
-  dom.profileForm.addEventListener("submit", handleProfileSave);
-  dom.memberForm.addEventListener("submit", handleMemberSave);
-  dom.blockedDateForm.addEventListener("submit", handleBlockedDateCreate);
-  dom.activityForm.addEventListener("submit", handleActivitySave);
-  dom.memberSearchInput.addEventListener("input", renderMembersTable);
+  onEvent(dom.loginForm, "submit", handleLogin);
+  onEvent(dom.registerForm, "submit", handleRegister);
+  onEvent(dom.contactForm, "submit", handleContact);
+  onEvent(dom.bookingForm, "submit", handleBookingSubmit);
+  onEvent(dom.profileForm, "submit", handleProfileSave);
+  onEvent(dom.memberForm, "submit", handleMemberSave);
+  onEvent(dom.blockedDateForm, "submit", handleBlockedDateCreate);
+  onEvent(dom.activityForm, "submit", handleActivitySave);
+  onEvent(dom.memberSearchInput, "input", renderMembersTable);
 
-  dom.membersTableBody.addEventListener("click", handleMemberTableClick);
-  dom.adminBookingsList.addEventListener("click", handleAdminBookingsClick);
-  dom.blockedDatesList.addEventListener("click", handleBlockedDatesClick);
-  dom.activityAdminList.addEventListener("click", handleActivityListClick);
-  dom.contactsList.addEventListener("click", handleContactsClick);
-  dom.myBookingsList.addEventListener("click", handleMyBookingsClick);
-  dom.activitiesGrid.addEventListener("click", handleActivitiesGridClick);
+  onEvent(dom.membersTableBody, "click", handleMemberTableClick);
+  onEvent(dom.adminBookingsList, "click", handleAdminBookingsClick);
+  onEvent(dom.blockedDatesList, "click", handleBlockedDatesClick);
+  onEvent(dom.activityAdminList, "click", handleActivityListClick);
+  onEvent(dom.contactsList, "click", handleContactsClick);
+  onEvent(dom.myBookingsList, "click", handleMyBookingsClick);
+  onEvent(dom.activitiesGrid, "click", handleActivitiesGridClick);
   document.addEventListener("keydown", handleGlobalKeydown);
 }
 
 function onClick(id, handler) {
   const node = document.getElementById(id);
-  if (node) node.addEventListener("click", handler);
+  onEvent(node, "click", handler);
+}
+
+function onEvent(node, eventName, handler) {
+  if (node) node.addEventListener(eventName, handler);
 }
 
 async function requestJson(url, options = {}) {
@@ -262,15 +266,30 @@ async function requestJson(url, options = {}) {
     config.body = JSON.stringify(config.body);
   }
 
-  const response = await fetch(url, config);
-  let data = {};
+  let response;
 
   try {
-    data = await response.json();
-  } catch (_error) {}
+    response = await fetch(url, config);
+  } catch (_error) {
+    throw new Error("Connexion impossible. Vérifie ta connexion puis réessaie.");
+  }
+
+  let data = {};
+  const contentType = response.headers.get("Content-Type") || "";
+
+  if (contentType.includes("application/json")) {
+    try {
+      data = await response.json();
+    } catch (_error) {
+      data = {};
+    }
+  } else {
+    const text = await response.text();
+    data = text ? { message: text } : {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.error || data.message || "Erreur serveur.");
+    throw new Error(data.error || data.message || `Erreur serveur (${response.status}).`);
   }
 
   return data;
@@ -662,14 +681,14 @@ function renderMembersTable() {
   dom.membersTableBody.innerHTML = members
     .map(
       (member) => `
-        <tr>
+        <tr class="${member.id === state.selectedMemberId ? "is-selected" : ""}">
           <td>${escapeHtml(member.fullName)}</td>
           <td>${escapeHtml(member.email)}</td>
           <td>${escapeHtml(member.role)}</td>
           <td>
             <div class="booking-actions">
               <button class="btn btn-secondary btn-sm" data-action="edit-member" data-member-id="${member.id}" type="button">Voir</button>
-              <button class="btn btn-secondary btn-sm" data-action="delete-member" data-member-id="${member.id}" type="button">Supprimer</button>
+              <button class="btn btn-danger btn-sm" data-action="delete-member" data-member-id="${member.id}" type="button">Supprimer</button>
             </div>
           </td>
         </tr>
@@ -820,7 +839,7 @@ function renderBlockedDates() {
               <p class="panel-text">${escapeHtml(item.reason || "Aucune raison précisée")}</p>
             </div>
             <div class="simple-item-actions">
-              <button class="btn btn-secondary btn-sm" data-action="delete-blocked-date" data-blocked-date-id="${item.id}" type="button">
+              <button class="btn btn-danger btn-sm" data-action="delete-blocked-date" data-blocked-date-id="${item.id}" type="button">
                 Supprimer
               </button>
             </div>
@@ -850,7 +869,7 @@ function renderActivitiesAdmin() {
             </div>
             <div class="simple-item-actions">
               <button class="btn btn-secondary btn-sm" data-action="edit-activity" data-activity-id="${activity.id}" type="button">Éditer</button>
-              <button class="btn btn-secondary btn-sm" data-action="delete-activity" data-activity-id="${activity.id}" type="button">Supprimer</button>
+              <button class="btn btn-danger btn-sm" data-action="delete-activity" data-activity-id="${activity.id}" type="button">Supprimer</button>
             </div>
           </div>
         </div>
@@ -902,13 +921,15 @@ async function handleLogin(event) {
   setInlineMessage(dom.loginMessage, "");
 
   try {
-    await requestJson("/api/login", {
-      method: "POST",
-      body: {
-        email: dom.loginEmail.value,
-        password: dom.loginPassword.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Connexion...", () =>
+      requestJson("/api/login", {
+        method: "POST",
+        body: {
+          email: dom.loginEmail.value,
+          password: dom.loginPassword.value,
+        },
+      })
+    );
 
     closeModal(dom.loginModal);
     dom.loginForm.reset();
@@ -924,18 +945,20 @@ async function handleRegister(event) {
   setInlineMessage(dom.registerMessage, "");
 
   try {
-    await requestJson("/api/register", {
-      method: "POST",
-      body: {
-        firstName: dom.registerFirstName.value,
-        lastName: dom.registerLastName.value,
-        email: dom.registerEmail.value,
-        password: dom.registerPassword.value,
-        phone: dom.registerPhone.value,
-        animalType: dom.registerAnimalType.value,
-        animalName: dom.registerAnimalName.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Création...", () =>
+      requestJson("/api/register", {
+        method: "POST",
+        body: {
+          firstName: dom.registerFirstName.value,
+          lastName: dom.registerLastName.value,
+          email: dom.registerEmail.value,
+          password: dom.registerPassword.value,
+          phone: dom.registerPhone.value,
+          animalType: dom.registerAnimalType.value,
+          animalName: dom.registerAnimalName.value,
+        },
+      })
+    );
 
     closeModal(dom.registerModal);
     dom.registerForm.reset();
@@ -951,15 +974,17 @@ async function handleContact(event) {
   setInlineMessage(dom.contactMessageBox, "");
 
   try {
-    await requestJson("/api/contact", {
-      method: "POST",
-      body: {
-        fullName: dom.contactFullName.value,
-        email: dom.contactEmail.value,
-        phone: dom.contactPhone.value,
-        message: dom.contactMessage.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Envoi...", () =>
+      requestJson("/api/contact", {
+        method: "POST",
+        body: {
+          fullName: dom.contactFullName.value,
+          email: dom.contactEmail.value,
+          phone: dom.contactPhone.value,
+          message: dom.contactMessage.value,
+        },
+      })
+    );
 
     closeModal(dom.contactModal);
     dom.contactForm.reset();
@@ -990,18 +1015,20 @@ async function handleBookingSubmit(event) {
   }
 
   try {
-    await requestJson("/api/bookings", {
-      method: "POST",
-      body: {
-        serviceType: "garde",
-        animalType: dom.bookingAnimalType.value,
-        animalName: dom.bookingAnimalName.value,
-        startDate: dom.bookingStartDate.value,
-        endDate: dom.bookingEndDate.value,
-        timeSlot: dom.bookingTimeSlot.value,
-        notes: dom.bookingNotes.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Envoi...", () =>
+      requestJson("/api/bookings", {
+        method: "POST",
+        body: {
+          serviceType: "garde",
+          animalType: dom.bookingAnimalType.value,
+          animalName: dom.bookingAnimalName.value,
+          startDate: dom.bookingStartDate.value,
+          endDate: dom.bookingEndDate.value,
+          timeSlot: dom.bookingTimeSlot.value,
+          notes: dom.bookingNotes.value,
+        },
+      })
+    );
 
     dom.bookingForm.reset();
     syncBookingAnimalFields();
@@ -1019,17 +1046,19 @@ async function handleProfileSave(event) {
   setInlineMessage(dom.profileMessage, "");
 
   try {
-    await requestJson("/api/account", {
-      method: "PUT",
-      body: {
-        firstName: dom.profileFirstName.value,
-        lastName: dom.profileLastName.value,
-        email: dom.profileEmail.value,
-        phone: dom.profilePhone.value,
-        animalType: dom.profileAnimalType.value,
-        animalName: dom.profileAnimalName.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Enregistrement...", () =>
+      requestJson("/api/account", {
+        method: "PUT",
+        body: {
+          firstName: dom.profileFirstName.value,
+          lastName: dom.profileLastName.value,
+          email: dom.profileEmail.value,
+          phone: dom.profilePhone.value,
+          animalType: dom.profileAnimalType.value,
+          animalName: dom.profileAnimalName.value,
+        },
+      })
+    );
 
     state.profileEditing = false;
     activateTab("member", "memberProfilePanel");
@@ -1042,7 +1071,7 @@ async function handleProfileSave(event) {
 
 async function deleteAccount() {
   if (!state.user) return;
-  if (!window.confirm("Supprimer ton compte et toutes tes demandes ?")) return;
+  if (!confirmAction("Supprimer ton compte et toutes tes demandes ?")) return;
 
   try {
     await requestJson("/api/account", { method: "DELETE" });
@@ -1068,10 +1097,12 @@ function handleMemberTableClick(event) {
   if (!button) return;
 
   const memberId = Number(button.dataset.memberId);
+  if (!memberId) return;
+
   if (button.dataset.action === "edit-member") {
     selectMember(memberId);
     activateTab("admin", "adminMembersPanel");
-    dom.selectedMemberView.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    dom.selectedMemberView?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
 
@@ -1091,18 +1122,20 @@ async function handleMemberSave(event) {
   }
 
   try {
-    await requestJson(`/api/admin/members/${memberId}`, {
-      method: "PUT",
-      body: {
-        firstName: dom.memberFirstName.value,
-        lastName: dom.memberLastName.value,
-        email: dom.memberEmail.value,
-        role: dom.memberRole.value,
-        phone: dom.memberPhone.value,
-        animalType: dom.memberAnimalType.value,
-        animalName: dom.memberAnimalName.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Sauvegarde...", () =>
+      requestJson(`/api/admin/members/${memberId}`, {
+        method: "PUT",
+        body: {
+          firstName: dom.memberFirstName.value,
+          lastName: dom.memberLastName.value,
+          email: dom.memberEmail.value,
+          role: dom.memberRole.value,
+          phone: dom.memberPhone.value,
+          animalType: dom.memberAnimalType.value,
+          animalName: dom.memberAnimalName.value,
+        },
+      })
+    );
 
     state.memberEditing = false;
     showGlobalMessage("Membre mis à jour.", "success");
@@ -1114,7 +1147,7 @@ async function handleMemberSave(event) {
 }
 
 async function deleteMember(memberId) {
-  if (!window.confirm("Supprimer ce membre ?")) return;
+  if (!confirmAction("Supprimer ce membre et ses données associées ?")) return;
 
   try {
     await requestJson(`/api/admin/members/${memberId}`, { method: "DELETE" });
@@ -1129,16 +1162,26 @@ async function deleteMember(memberId) {
 function handleAdminBookingsClick(event) {
   const button = event.target.closest("button[data-action='save-booking']");
   if (!button) return;
-  saveAdminBooking(Number(button.dataset.bookingId));
+  saveAdminBooking(readNumericDataset(button, "bookingId"));
 }
 
 async function saveAdminBooking(bookingId) {
+  if (!bookingId) {
+    showGlobalMessage("Demande introuvable.", "error");
+    return;
+  }
+
   const statusSelect = dom.adminBookingsList.querySelector(
     `[data-role="booking-status"][data-booking-id="${bookingId}"]`
   );
   const noteInput = dom.adminBookingsList.querySelector(
     `[data-role="booking-note"][data-booking-id="${bookingId}"]`
   );
+
+  if (!statusSelect || !noteInput) {
+    showGlobalMessage("Impossible de retrouver les champs de cette demande.", "error");
+    return;
+  }
 
   try {
     await requestJson(`/api/admin/bookings/${bookingId}`, {
@@ -1161,13 +1204,15 @@ async function handleBlockedDateCreate(event) {
   setInlineMessage(dom.blockedDateMessage, "");
 
   try {
-    await requestJson("/api/admin/blocked-dates", {
-      method: "POST",
-      body: {
-        date: dom.blockedDateInput.value,
-        reason: dom.blockedDateReason.value,
-      },
-    });
+    await withBusyButton(event.submitter, "Blocage...", () =>
+      requestJson("/api/admin/blocked-dates", {
+        method: "POST",
+        body: {
+          date: dom.blockedDateInput.value,
+          reason: dom.blockedDateReason.value,
+        },
+      })
+    );
 
     dom.blockedDateForm.reset();
     setInlineMessage(dom.blockedDateMessage, "Date bloquée.", "success");
@@ -1180,10 +1225,17 @@ async function handleBlockedDateCreate(event) {
 function handleBlockedDatesClick(event) {
   const button = event.target.closest("button[data-action='delete-blocked-date']");
   if (!button) return;
-  deleteBlockedDate(Number(button.dataset.blockedDateId));
+  deleteBlockedDate(readNumericDataset(button, "blockedDateId"));
 }
 
 async function deleteBlockedDate(blockedDateId) {
+  if (!blockedDateId) {
+    showGlobalMessage("Date bloquée introuvable.", "error");
+    return;
+  }
+
+  if (!confirmAction("Rendre cette date à nouveau réservable ?")) return;
+
   try {
     await requestJson(`/api/admin/blocked-dates/${blockedDateId}`, { method: "DELETE" });
     showGlobalMessage("Date débloquée.", "success");
@@ -1206,12 +1258,14 @@ async function handleActivitySave(event) {
   };
 
   try {
-    await requestJson(
-      activityId ? `/api/admin/activities/${activityId}` : "/api/admin/activities",
-      {
-        method: activityId ? "PUT" : "POST",
-        body: payload,
-      }
+    await withBusyButton(event.submitter, "Sauvegarde...", () =>
+      requestJson(
+        activityId ? `/api/admin/activities/${activityId}` : "/api/admin/activities",
+        {
+          method: activityId ? "PUT" : "POST",
+          body: payload,
+        }
+      )
     );
 
     resetActivityForm();
@@ -1229,7 +1283,12 @@ function handleActivityListClick(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
 
-  const activityId = Number(button.dataset.activityId);
+  const activityId = readNumericDataset(button, "activityId");
+  if (!activityId) {
+    showGlobalMessage("Carte introuvable.", "error");
+    return;
+  }
+
   if (button.dataset.action === "edit-activity") {
     editActivity(activityId);
     return;
@@ -1250,7 +1309,7 @@ function editActivity(activityId) {
   dom.activitySortOrder.value = activity.sortOrder ?? 0;
   dom.activityDescription.value = activity.description || "";
   setInlineMessage(dom.activityMessage, "");
-  dom.activityForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  dom.activityForm?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 function resetActivityForm() {
@@ -1261,7 +1320,12 @@ function resetActivityForm() {
 }
 
 async function deleteActivity(activityId) {
-  if (!window.confirm("Supprimer cette carte d’information ?")) return;
+  if (!activityId) {
+    showGlobalMessage("Carte introuvable.", "error");
+    return;
+  }
+
+  if (!confirmAction("Supprimer cette carte d’information ?")) return;
 
   try {
     await requestJson(`/api/admin/activities/${activityId}`, { method: "DELETE" });
@@ -1277,10 +1341,15 @@ function handleContactsClick(event) {
   if (!button) return;
 
   const nextStatus = button.dataset.currentStatus === "handled" ? "new" : "handled";
-  updateContactStatus(Number(button.dataset.contactId), nextStatus);
+  updateContactStatus(readNumericDataset(button, "contactId"), nextStatus);
 }
 
 async function updateContactStatus(contactId, status) {
+  if (!contactId) {
+    showGlobalMessage("Contact introuvable.", "error");
+    return;
+  }
+
   try {
     await requestJson(`/api/admin/contacts/${contactId}`, {
       method: "PUT",
@@ -1303,11 +1372,16 @@ function handleActivitiesGridClick(event) {
 function handleMyBookingsClick(event) {
   const button = event.target.closest("button[data-action='cancel-booking']");
   if (!button) return;
-  cancelMyBooking(Number(button.dataset.bookingId));
+  cancelMyBooking(readNumericDataset(button, "bookingId"));
 }
 
 async function cancelMyBooking(bookingId) {
-  if (!window.confirm("Annuler cette demande de garde ?")) return;
+  if (!bookingId) {
+    showGlobalMessage("Demande introuvable.", "error");
+    return;
+  }
+
+  if (!confirmAction("Annuler cette demande de garde ?")) return;
 
   try {
     await requestJson(`/api/bookings/${bookingId}`, { method: "DELETE" });
@@ -1466,6 +1540,30 @@ function setInlineMessage(node, message, kind = "error") {
       : kind === "error"
         ? "var(--danger)"
         : "var(--text-soft)";
+}
+
+async function withBusyButton(button, busyLabel, task) {
+  if (!button) return task();
+
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = busyLabel;
+
+  try {
+    return await task();
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
+function confirmAction(message) {
+  return window.confirm(message);
+}
+
+function readNumericDataset(node, key) {
+  const value = Number(node?.dataset?.[key]);
+  return Number.isFinite(value) ? value : 0;
 }
 
 function displayValue(value) {
