@@ -39,7 +39,8 @@ PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL DEFAULT '',
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     phone TEXT NOT NULL DEFAULT '',
@@ -145,6 +146,10 @@ def split_full_name(full_name: str):
     return parts[0], " ".join(parts[1:])
 
 
+def build_full_name(first_name: str, last_name: str) -> str:
+    return " ".join(part for part in [first_name, last_name] if part).strip()
+
+
 def parse_iso_date(raw_value: str) -> date:
     return date.fromisoformat((raw_value or "").strip())
 
@@ -195,9 +200,175 @@ def load_legacy_clients(clients_file: str):
 def init_database():
     db = get_db()
     db.executescript(SCHEMA_SQL)
+    migrate_users_name_columns(db)
     seed_users(db)
     seed_activities(db)
     db.commit()
+
+
+def migrate_users_name_columns(db):
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
+
+    if "first_name" not in columns:
+        db.execute("ALTER TABLE users ADD COLUMN first_name TEXT NOT NULL DEFAULT ''")
+
+    if "last_name" not in columns:
+        db.execute("ALTER TABLE users ADD COLUMN last_name TEXT NOT NULL DEFAULT ''")
+
+    if "full_name" in columns:
+        rows = db.execute(
+            """
+            SELECT id, full_name
+            FROM users
+            WHERE (first_name = '' OR first_name IS NULL)
+              AND full_name IS NOT NULL
+            """
+        ).fetchall()
+
+        for row in rows:
+            first_name, last_name = split_full_name(row["full_name"])
+            db.execute(
+                "UPDATE users SET first_name = ?, last_name = ? WHERE id = ?",
+                (first_name, last_name, row["id"]),
+            )
+
+
+def get_user_columns(db):
+    return {row["name"] for row in db.execute("PRAGMA table_info(users)").fetchall()}
+
+
+def insert_user(db, payload, password_hash, role):
+    full_name = build_full_name(payload["firstName"], payload["lastName"])
+    columns = get_user_columns(db)
+
+    if "full_name" in columns:
+        return db.execute(
+            """
+            INSERT INTO users (
+                first_name, last_name, full_name, email, password_hash,
+                phone, animal_type, animal_name, role
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                payload["firstName"],
+                payload["lastName"],
+                full_name,
+                payload["email"],
+                password_hash,
+                payload["phone"],
+                payload["animalType"],
+                payload["animalName"],
+                role,
+            ),
+        )
+
+    return db.execute(
+        """
+        INSERT INTO users (
+            first_name, last_name, email, password_hash,
+            phone, animal_type, animal_name, role
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            payload["firstName"],
+            payload["lastName"],
+            payload["email"],
+            password_hash,
+            payload["phone"],
+            payload["animalType"],
+            payload["animalName"],
+            role,
+        ),
+    )
+
+
+def update_user_profile(db, user_id, payload, role=None):
+    full_name = build_full_name(payload["firstName"], payload["lastName"])
+    columns = get_user_columns(db)
+
+    if role is None:
+        if "full_name" in columns:
+            db.execute(
+                """
+                UPDATE users
+                SET first_name = ?, last_name = ?, full_name = ?, email = ?,
+                    phone = ?, animal_type = ?, animal_name = ?
+                WHERE id = ?
+                """,
+                (
+                    payload["firstName"],
+                    payload["lastName"],
+                    full_name,
+                    payload["email"],
+                    payload["phone"],
+                    payload["animalType"],
+                    payload["animalName"],
+                    user_id,
+                ),
+            )
+            return
+
+        db.execute(
+            """
+            UPDATE users
+            SET first_name = ?, last_name = ?, email = ?,
+                phone = ?, animal_type = ?, animal_name = ?
+            WHERE id = ?
+            """,
+            (
+                payload["firstName"],
+                payload["lastName"],
+                payload["email"],
+                payload["phone"],
+                payload["animalType"],
+                payload["animalName"],
+                user_id,
+            ),
+        )
+        return
+
+    if "full_name" in columns:
+        db.execute(
+            """
+            UPDATE users
+            SET first_name = ?, last_name = ?, full_name = ?, email = ?,
+                phone = ?, animal_type = ?, animal_name = ?, role = ?
+            WHERE id = ?
+            """,
+            (
+                payload["firstName"],
+                payload["lastName"],
+                full_name,
+                payload["email"],
+                payload["phone"],
+                payload["animalType"],
+                payload["animalName"],
+                role,
+                user_id,
+            ),
+        )
+        return
+
+    db.execute(
+        """
+        UPDATE users
+        SET first_name = ?, last_name = ?, email = ?,
+            phone = ?, animal_type = ?, animal_name = ?, role = ?
+        WHERE id = ?
+        """,
+        (
+            payload["firstName"],
+            payload["lastName"],
+            payload["email"],
+            payload["phone"],
+            payload["animalType"],
+            payload["animalName"],
+            role,
+            user_id,
+        ),
+    )
 
 
 def seed_users(db):
@@ -210,6 +381,7 @@ def seed_users(db):
         email = normalize_email(legacy_client.get("email"))
         password = legacy_client.get("password") or ""
         full_name = (legacy_client.get("fullName") or "").strip()
+        first_name, last_name = split_full_name(full_name)
         role = (legacy_client.get("role") or "client").strip().lower()
         animal_type = (legacy_client.get("animalType") or "").strip().lower()
 
@@ -222,36 +394,36 @@ def seed_users(db):
         if animal_type and animal_type not in ANIMAL_TYPES:
             animal_type = ""
 
-        db.execute(
-            """
-            INSERT INTO users (full_name, email, password_hash, phone, animal_type, animal_name, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                full_name,
-                email,
-                generate_password_hash(password),
-                (legacy_client.get("phone") or "").strip(),
-                animal_type,
-                (legacy_client.get("animalName") or "").strip(),
-                role,
-            ),
+        insert_user(
+            db,
+            {
+                "firstName": first_name,
+                "lastName": last_name,
+                "email": email,
+                "phone": (legacy_client.get("phone") or "").strip(),
+                "animalType": animal_type,
+                "animalName": (legacy_client.get("animalName") or "").strip(),
+            },
+            generate_password_hash(password),
+            role,
         )
         imported += 1
 
     if imported:
         return
 
-    db.execute(
-        """
-        INSERT INTO users (full_name, email, password_hash, phone, animal_type, animal_name, role)
-        VALUES (?, ?, ?, '', '', '', 'admin')
-        """,
-        (
-            "Administrateur",
-            DEFAULT_ADMIN_EMAIL,
-            generate_password_hash(DEFAULT_ADMIN_PASSWORD),
-        ),
+    insert_user(
+        db,
+        {
+            "firstName": "Administrateur",
+            "lastName": "Site",
+            "email": DEFAULT_ADMIN_EMAIL,
+            "phone": "",
+            "animalType": "",
+            "animalName": "",
+        },
+        generate_password_hash(DEFAULT_ADMIN_PASSWORD),
+        "admin",
     )
 
 
@@ -286,13 +458,14 @@ def serialize_user(row):
     if row is None:
         return None
 
-    first_name, last_name = split_full_name(row["full_name"])
+    first_name = row["first_name"]
+    last_name = row["last_name"]
 
     return {
         "id": row["id"],
         "firstName": first_name,
         "lastName": last_name,
-        "fullName": row["full_name"],
+        "fullName": build_full_name(first_name, last_name),
         "email": row["email"],
         "phone": row["phone"],
         "animalType": row["animal_type"],
@@ -335,10 +508,14 @@ def serialize_contact(row):
 
 
 def serialize_booking(row):
+    full_name = build_full_name(row["first_name"], row["last_name"])
+
     return {
         "id": row["id"],
         "userId": row["user_id"],
-        "fullName": row["full_name"],
+        "firstName": row["first_name"],
+        "lastName": row["last_name"],
+        "fullName": full_name,
         "email": row["email"],
         "serviceType": row["service_type"],
         "animalType": row["animal_type"],
@@ -388,7 +565,7 @@ def get_unavailable_dates():
     blocked_rows = query_all("SELECT * FROM blocked_dates ORDER BY block_date ASC")
     approved_rows = query_all(
         """
-        SELECT booking_requests.*, users.full_name, users.email
+        SELECT booking_requests.*, users.first_name, users.last_name, users.email
         FROM booking_requests
         JOIN users ON users.id = booking_requests.user_id
         WHERE booking_requests.status = 'approved'
@@ -409,7 +586,7 @@ def get_unavailable_dates():
             iso_date = current_date.isoformat()
             unavailable[iso_date] = {
                 "date": iso_date,
-                "reason": f"Garde confirmee pour {row['full_name']}",
+                "reason": f"Garde confirmee pour {build_full_name(row['first_name'], row['last_name'])}",
                 "source": "booking",
             }
 
@@ -455,7 +632,7 @@ def build_admin_payload():
         serialize_booking(row)
         for row in query_all(
             """
-            SELECT booking_requests.*, users.full_name, users.email
+            SELECT booking_requests.*, users.first_name, users.last_name, users.email
             FROM booking_requests
             JOIN users ON users.id = booking_requests.user_id
             ORDER BY
@@ -503,11 +680,11 @@ def validate_profile_payload(data, require_password=False):
     animal_type = (data.get("animalType") or "").strip().lower()
     animal_name = (data.get("animalName") or "").strip()
 
-    if not full_name and (first_name or last_name):
-        full_name = " ".join(part for part in [first_name, last_name] if part).strip()
+    if full_name and not (first_name or last_name):
+        first_name, last_name = split_full_name(full_name)
 
-    if not full_name or not email:
-        return None, "Le nom complet et l'adresse e-mail sont obligatoires."
+    if not first_name or not last_name or not email:
+        return None, "Le prenom, le nom et l'adresse e-mail sont obligatoires."
 
     if not is_valid_email(email):
         return None, "Adresse e-mail invalide."
@@ -521,7 +698,7 @@ def validate_profile_payload(data, require_password=False):
     return {
         "firstName": first_name,
         "lastName": last_name,
-        "fullName": full_name,
+        "fullName": build_full_name(first_name, last_name),
         "email": email,
         "password": password,
         "phone": phone,
@@ -573,7 +750,7 @@ def create_app(test_config=None):
                 serialize_booking(row)
                 for row in query_all(
                     """
-                    SELECT booking_requests.*, users.full_name, users.email
+                    SELECT booking_requests.*, users.first_name, users.last_name, users.email
                     FROM booking_requests
                     JOIN users ON users.id = booking_requests.user_id
                     WHERE booking_requests.user_id = ?
@@ -599,20 +776,7 @@ def create_app(test_config=None):
             return jsonify({"error": "Cet e-mail est deja utilise."}), 409
 
         db = get_db()
-        cursor = db.execute(
-            """
-            INSERT INTO users (full_name, email, password_hash, phone, animal_type, animal_name, role)
-            VALUES (?, ?, ?, ?, ?, ?, 'client')
-            """,
-            (
-                payload["fullName"],
-                payload["email"],
-                generate_password_hash(payload["password"]),
-                payload["phone"],
-                payload["animalType"],
-                payload["animalName"],
-            ),
-        )
+        cursor = insert_user(db, payload, generate_password_hash(payload["password"]), "client")
         db.commit()
 
         user = query_one("SELECT * FROM users WHERE id = ?", (cursor.lastrowid,))
@@ -656,21 +820,7 @@ def create_app(test_config=None):
             return jsonify({"error": "Cet e-mail est deja utilise par un autre compte."}), 409
 
         db = get_db()
-        db.execute(
-            """
-            UPDATE users
-            SET full_name = ?, email = ?, phone = ?, animal_type = ?, animal_name = ?
-            WHERE id = ?
-            """,
-            (
-                payload["fullName"],
-                payload["email"],
-                payload["phone"],
-                payload["animalType"],
-                payload["animalName"],
-                user["id"],
-            ),
-        )
+        update_user_profile(db, user["id"], payload)
         db.commit()
 
         updated_user = query_one("SELECT * FROM users WHERE id = ?", (user["id"],))
@@ -765,7 +915,7 @@ def create_app(test_config=None):
 
         booking = query_one(
             """
-            SELECT booking_requests.*, users.full_name, users.email
+            SELECT booking_requests.*, users.first_name, users.last_name, users.email
             FROM booking_requests
             JOIN users ON users.id = booking_requests.user_id
             WHERE booking_requests.id = ?
@@ -830,22 +980,7 @@ def create_app(test_config=None):
                 return jsonify({"error": "Impossible de retrograder le dernier administrateur."}), 409
 
         db = get_db()
-        db.execute(
-            """
-            UPDATE users
-            SET full_name = ?, email = ?, phone = ?, animal_type = ?, animal_name = ?, role = ?
-            WHERE id = ?
-            """,
-            (
-                payload["fullName"],
-                payload["email"],
-                payload["phone"],
-                payload["animalType"],
-                payload["animalName"],
-                role,
-                member_id,
-            ),
-        )
+        update_user_profile(db, member_id, payload, role)
         db.commit()
 
         updated_member = query_one("SELECT * FROM users WHERE id = ?", (member_id,))
@@ -903,7 +1038,7 @@ def create_app(test_config=None):
 
         updated_booking = query_one(
             """
-            SELECT booking_requests.*, users.full_name, users.email
+            SELECT booking_requests.*, users.first_name, users.last_name, users.email
             FROM booking_requests
             JOIN users ON users.id = booking_requests.user_id
             WHERE booking_requests.id = ?

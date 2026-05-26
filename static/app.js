@@ -6,6 +6,10 @@ const state = {
   admin: null,
   calendarOffset: 0,
   selectedMemberId: null,
+  memberActiveTab: "memberProfilePanel",
+  adminActiveTab: "adminMembersPanel",
+  profileEditing: false,
+  memberEditing: false,
   activeModal: null,
   lastTrigger: null,
 };
@@ -75,20 +79,40 @@ function bindDom() {
     "bookingAdminNotice",
     "bookingAnimalHint",
     "profileForm",
+    "profileView",
+    "editProfileBtn",
+    "cancelProfileEditBtn",
     "profileMessage",
+    "profileFirstNameView",
+    "profileLastNameView",
+    "profileEmailView",
+    "profilePhoneView",
+    "profileAnimalTypeView",
+    "profileAnimalNameView",
     "myBookingsList",
     "adminStats",
     "membersTableBody",
     "memberSearchInput",
     "memberForm",
     "memberId",
-    "memberFullName",
+    "memberFirstName",
+    "memberLastName",
     "memberEmail",
     "memberRole",
     "memberPhone",
     "memberAnimalType",
     "memberAnimalName",
     "memberMessage",
+    "selectedMemberView",
+    "editMemberBtn",
+    "cancelMemberEditBtn",
+    "memberFirstNameView",
+    "memberLastNameView",
+    "memberEmailView",
+    "memberRoleView",
+    "memberPhoneView",
+    "memberAnimalTypeView",
+    "memberAnimalNameView",
     "adminBookingsList",
     "blockedDateForm",
     "blockedDateInput",
@@ -126,7 +150,8 @@ function bindDom() {
     "contactPhone",
     "contactMessage",
     "contactMessageBox",
-    "profileFullName",
+    "profileFirstName",
+    "profileLastName",
     "profileEmail",
     "profilePhone",
     "profileAnimalType",
@@ -163,6 +188,10 @@ function bindEvents() {
   onClick("closeAdminBtn", () => closeModal(dom.adminModal));
   onClick("logoutBtn", logout);
   onClick("deleteAccountBtn", deleteAccount);
+  onClick("editProfileBtn", () => setProfileEditing(true));
+  onClick("cancelProfileEditBtn", () => setProfileEditing(false));
+  onClick("editMemberBtn", () => setMemberEditing(true));
+  onClick("cancelMemberEditBtn", () => setMemberEditing(false));
   onClick("calendarPrevBtn", () => {
     state.calendarOffset -= 1;
     renderCalendar();
@@ -177,6 +206,12 @@ function bindEvents() {
 
   dom.bookingTriggers.forEach((button) => {
     button.addEventListener("click", openBookingModal);
+  });
+
+  document.querySelectorAll("[data-tab-scope][data-tab-target]").forEach((button) => {
+    button.addEventListener("click", () => {
+      activateTab(button.dataset.tabScope, button.dataset.tabTarget);
+    });
   });
 
   [
@@ -257,6 +292,7 @@ async function loadBootstrap() {
 
 function renderAll() {
   renderHeader();
+  syncTabs();
   renderActivities();
   renderCalendar();
   renderNextAvailableDate();
@@ -277,9 +313,7 @@ function renderHeader() {
       ? "Administration"
       : "Espace client"
     : "";
-  dom.userSummaryName.textContent = loggedIn
-    ? getPreferredName(state.user.fullName)
-    : "";
+  dom.userSummaryName.textContent = loggedIn ? state.user.firstName || "" : "";
   dom.openAccountBtn.textContent = isAdmin ? "Piloter" : "Mon suivi";
 
   dom.bookingTriggers.forEach((button) => {
@@ -482,14 +516,18 @@ function renderMemberArea() {
       closeModal(dom.memberModal);
     }
     dom.myBookingsList.innerHTML = "";
+    state.profileEditing = false;
     return;
   }
 
-  dom.profileFullName.value = state.user.fullName || "";
+  renderProfileView();
+  dom.profileFirstName.value = state.user.firstName || "";
+  dom.profileLastName.value = state.user.lastName || "";
   dom.profileEmail.value = state.user.email || "";
   dom.profilePhone.value = state.user.phone || "";
   dom.profileAnimalType.value = state.user.animalType || "";
   dom.profileAnimalName.value = state.user.animalName || "";
+  setProfileEditing(state.profileEditing);
 
   if (!state.myBookings.length) {
     dom.myBookingsList.innerHTML =
@@ -536,12 +574,44 @@ function renderMemberArea() {
     .join("");
 }
 
+function renderProfileView() {
+  if (!state.user) return;
+
+  dom.profileFirstNameView.textContent = displayValue(state.user.firstName);
+  dom.profileLastNameView.textContent = displayValue(state.user.lastName);
+  dom.profileEmailView.textContent = displayValue(state.user.email);
+  dom.profilePhoneView.textContent = displayValue(state.user.phone);
+  dom.profileAnimalTypeView.textContent = displayValue(
+    animalLabels[state.user.animalType] || state.user.animalType
+  );
+  dom.profileAnimalNameView.textContent = displayValue(state.user.animalName);
+}
+
+function setProfileEditing(isEditing) {
+  state.profileEditing = Boolean(isEditing);
+  dom.profileView.hidden = state.profileEditing;
+  dom.profileForm.hidden = !state.profileEditing;
+  dom.editProfileBtn.hidden = state.profileEditing;
+  setInlineMessage(dom.profileMessage, "");
+
+  if (state.profileEditing) {
+    dom.profileFirstName.value = state.user.firstName || "";
+    dom.profileLastName.value = state.user.lastName || "";
+    dom.profileEmail.value = state.user.email || "";
+    dom.profilePhone.value = state.user.phone || "";
+    dom.profileAnimalType.value = state.user.animalType || "";
+    dom.profileAnimalName.value = state.user.animalName || "";
+    dom.profileFirstName.focus();
+  }
+}
+
 function renderAdminArea() {
   const isAdmin = Boolean(state.user) && state.user.role === "admin" && state.admin;
   if (!isAdmin) {
     if (state.activeModal === dom.adminModal) {
       closeModal(dom.adminModal);
     }
+    state.memberEditing = false;
     return;
   }
 
@@ -598,7 +668,7 @@ function renderMembersTable() {
           <td>${escapeHtml(member.role)}</td>
           <td>
             <div class="booking-actions">
-              <button class="btn btn-secondary btn-sm" data-action="edit-member" data-member-id="${member.id}" type="button">Éditer</button>
+              <button class="btn btn-secondary btn-sm" data-action="edit-member" data-member-id="${member.id}" type="button">Voir</button>
               <button class="btn btn-secondary btn-sm" data-action="delete-member" data-member-id="${member.id}" type="button">Supprimer</button>
             </div>
           </td>
@@ -607,24 +677,54 @@ function renderMembersTable() {
     )
     .join("");
 
-  if (!state.selectedMemberId && members.length) {
+  if (state.selectedMemberId) {
+    selectMember(state.selectedMemberId, state.memberEditing);
+  } else if (members.length) {
     selectMember(members[0].id);
   }
 }
 
-function selectMember(memberId) {
+function selectMember(memberId, keepEditing = false) {
   state.selectedMemberId = Number(memberId);
   const member = state.admin.members.find((item) => item.id === state.selectedMemberId);
   if (!member) return;
 
   dom.memberId.value = member.id;
-  dom.memberFullName.value = member.fullName || "";
+  dom.memberFirstName.value = member.firstName || "";
+  dom.memberLastName.value = member.lastName || "";
   dom.memberEmail.value = member.email || "";
   dom.memberRole.value = member.role || "client";
   dom.memberPhone.value = member.phone || "";
   dom.memberAnimalType.value = member.animalType || "";
   dom.memberAnimalName.value = member.animalName || "";
+  renderSelectedMember(member);
+  setMemberEditing(keepEditing);
   setInlineMessage(dom.memberMessage, "");
+}
+
+function renderSelectedMember(member) {
+  dom.memberFirstNameView.textContent = displayValue(member.firstName);
+  dom.memberLastNameView.textContent = displayValue(member.lastName);
+  dom.memberEmailView.textContent = displayValue(member.email);
+  dom.memberRoleView.textContent = member.role === "admin" ? "Admin" : "Client";
+  dom.memberPhoneView.textContent = displayValue(member.phone);
+  dom.memberAnimalTypeView.textContent = displayValue(
+    animalLabels[member.animalType] || member.animalType
+  );
+  dom.memberAnimalNameView.textContent = displayValue(member.animalName);
+}
+
+function setMemberEditing(isEditing) {
+  const hasMember = Boolean(state.selectedMemberId);
+  state.memberEditing = Boolean(isEditing && hasMember);
+  dom.selectedMemberView.hidden = state.memberEditing;
+  dom.memberForm.hidden = !state.memberEditing;
+  dom.editMemberBtn.hidden = state.memberEditing || !hasMember;
+  setInlineMessage(dom.memberMessage, "");
+
+  if (state.memberEditing) {
+    dom.memberFirstName.focus();
+  }
 }
 
 function renderAdminBookings() {
@@ -922,7 +1022,8 @@ async function handleProfileSave(event) {
     await requestJson("/api/account", {
       method: "PUT",
       body: {
-        fullName: dom.profileFullName.value,
+        firstName: dom.profileFirstName.value,
+        lastName: dom.profileLastName.value,
         email: dom.profileEmail.value,
         phone: dom.profilePhone.value,
         animalType: dom.profileAnimalType.value,
@@ -930,7 +1031,9 @@ async function handleProfileSave(event) {
       },
     });
 
-    setInlineMessage(dom.profileMessage, "Profil mis à jour.", "success");
+    state.profileEditing = false;
+    activateTab("member", "memberProfilePanel");
+    showGlobalMessage("Profil mis à jour.", "success");
     await loadBootstrap();
   } catch (error) {
     setInlineMessage(dom.profileMessage, error.message, "error");
@@ -967,7 +1070,8 @@ function handleMemberTableClick(event) {
   const memberId = Number(button.dataset.memberId);
   if (button.dataset.action === "edit-member") {
     selectMember(memberId);
-    dom.memberForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    activateTab("admin", "adminMembersPanel");
+    dom.selectedMemberView.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
 
@@ -990,7 +1094,8 @@ async function handleMemberSave(event) {
     await requestJson(`/api/admin/members/${memberId}`, {
       method: "PUT",
       body: {
-        fullName: dom.memberFullName.value,
+        firstName: dom.memberFirstName.value,
+        lastName: dom.memberLastName.value,
         email: dom.memberEmail.value,
         role: dom.memberRole.value,
         phone: dom.memberPhone.value,
@@ -999,7 +1104,8 @@ async function handleMemberSave(event) {
       },
     });
 
-    setInlineMessage(dom.memberMessage, "Membre mis à jour.", "success");
+    state.memberEditing = false;
+    showGlobalMessage("Membre mis à jour.", "success");
     await loadBootstrap();
     selectMember(memberId);
   } catch (error) {
@@ -1224,10 +1330,12 @@ function openAccountModal() {
   }
 
   if (state.user.role === "admin") {
+    activateTab("admin", state.adminActiveTab);
     openModal(dom.adminModal);
     return;
   }
 
+  activateTab("member", state.memberActiveTab);
   openModal(dom.memberModal);
 }
 
@@ -1262,6 +1370,37 @@ function openModal(node) {
   if (focusTarget) {
     window.setTimeout(() => focusTarget.focus(), 0);
   }
+}
+
+function activateTab(scope, targetId) {
+  if (!targetId) return;
+
+  if (scope === "member") {
+    state.memberActiveTab = targetId;
+  } else if (scope === "admin") {
+    state.adminActiveTab = targetId;
+  }
+
+  syncTabs(scope);
+}
+
+function syncTabs(scopeFilter) {
+  ["member", "admin"].forEach((scope) => {
+    if (scopeFilter && scopeFilter !== scope) return;
+
+    const activeTarget =
+      scope === "member" ? state.memberActiveTab : state.adminActiveTab;
+
+    document.querySelectorAll(`[data-tab-scope="${scope}"]`).forEach((button) => {
+      const isActive = button.dataset.tabTarget === activeTarget;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-selected", String(isActive));
+    });
+
+    document.querySelectorAll(`[id^="${scope === "member" ? "member" : "admin"}"][role="tabpanel"]`).forEach((panel) => {
+      panel.hidden = panel.id !== activeTarget;
+    });
+  });
 }
 
 function closeModal(node) {
@@ -1329,9 +1468,8 @@ function setInlineMessage(node, message, kind = "error") {
         : "var(--text-soft)";
 }
 
-function getPreferredName(fullName) {
-  if (!fullName) return "";
-  return String(fullName).trim().split(/\s+/)[0];
+function displayValue(value) {
+  return value ? String(value) : "Non renseigné";
 }
 
 function formatLongDate(value) {

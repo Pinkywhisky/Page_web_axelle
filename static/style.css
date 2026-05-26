@@ -1019,6 +1019,76 @@ tbody tr:hover {
     max-width: 44ch;
 }
 
+.tab-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.tab-button {
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text-soft);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tab-button:hover {
+    background: rgba(92, 110, 88, 0.08);
+    color: var(--text-main);
+}
+
+.tab-button.is-active {
+    background: var(--accent-900);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.tab-panel {
+    margin-top: 0;
+}
+
+.profile-view {
+    margin-top: 16px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: #f9fafb;
+}
+
+.info-item span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.info-item strong {
+    display: block;
+    min-height: 1.35em;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+}
+
 .modal-account-layout,
 .modal-admin-layout {
     align-items: start;
@@ -1678,6 +1748,12 @@ textarea:focus {
     }
 
     .inline-fields,
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .inline-fields,
+    .info-grid,
     .calendar-grid {
         gap: 6px;
     }

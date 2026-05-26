@@ -230,13 +230,79 @@
           </button>
         </div>
 
-        <div class="member-layout modal-account-layout">
-          <article class="panel-card">
-            <h3>Informations personnelles</h3>
+        <div class="tab-list" role="tablist" aria-label="Navigation de mon suivi">
+          <button
+            class="tab-button is-active"
+            data-tab-scope="member"
+            data-tab-target="memberProfilePanel"
+            type="button"
+            role="tab"
+          >
+            Infos perso
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="member"
+            data-tab-target="memberBookingsPanel"
+            type="button"
+            role="tab"
+          >
+            Suivi des demandes
+          </button>
+        </div>
 
-            <form id="profileForm">
-              <label for="profileFullName">Nom complet</label>
-              <input id="profileFullName" type="text" required />
+        <div class="tab-panel" id="memberProfilePanel" role="tabpanel">
+          <article class="panel-card">
+            <div class="panel-card-top">
+              <div>
+                <h3>Informations personnelles</h3>
+                <p class="panel-text">Coordonnées et informations de l’animal.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="editProfileBtn" type="button">
+                Modifier
+              </button>
+            </div>
+
+            <div class="profile-view" id="profileView">
+              <div class="info-grid">
+                <div class="info-item">
+                  <span>Prénom</span>
+                  <strong id="profileFirstNameView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Nom</span>
+                  <strong id="profileLastNameView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Adresse e-mail</span>
+                  <strong id="profileEmailView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Téléphone</span>
+                  <strong id="profilePhoneView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Type d’animal</span>
+                  <strong id="profileAnimalTypeView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Nom de l’animal</span>
+                  <strong id="profileAnimalNameView"></strong>
+                </div>
+              </div>
+            </div>
+
+            <form id="profileForm" hidden>
+              <div class="inline-fields">
+                <div>
+                  <label for="profileFirstName">Prénom</label>
+                  <input id="profileFirstName" type="text" required />
+                </div>
+                <div>
+                  <label for="profileLastName">Nom</label>
+                  <input id="profileLastName" type="text" required />
+                </div>
+              </div>
 
               <label for="profileEmail">Adresse e-mail</label>
               <input id="profileEmail" type="email" required />
@@ -258,13 +324,18 @@
 
               <div class="form-actions split-actions">
                 <button class="btn btn-primary" type="submit">Enregistrer</button>
+                <button class="btn btn-secondary" id="cancelProfileEditBtn" type="button">
+                  Annuler
+                </button>
                 <button class="btn btn-danger" id="deleteAccountBtn" type="button">
                   Me désinscrire du site
                 </button>
               </div>
             </form>
           </article>
+        </div>
 
+        <div class="tab-panel" id="memberBookingsPanel" role="tabpanel" hidden>
           <article class="panel-card">
             <div class="panel-card-top">
               <div>
@@ -300,7 +371,56 @@
 
         <div class="admin-stats" id="adminStats"></div>
 
-        <div class="admin-grid modal-admin-layout">
+        <div class="tab-list" role="tablist" aria-label="Navigation du pilotage">
+          <button
+            class="tab-button is-active"
+            data-tab-scope="admin"
+            data-tab-target="adminMembersPanel"
+            type="button"
+            role="tab"
+          >
+            Comptes
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="admin"
+            data-tab-target="adminBookingsPanel"
+            type="button"
+            role="tab"
+          >
+            Demandes
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="admin"
+            data-tab-target="adminDatesPanel"
+            type="button"
+            role="tab"
+          >
+            Dates
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="admin"
+            data-tab-target="adminActivitiesPanel"
+            type="button"
+            role="tab"
+          >
+            Cartes
+          </button>
+          <button
+            class="tab-button"
+            data-tab-scope="admin"
+            data-tab-target="adminContactsPanel"
+            type="button"
+            role="tab"
+          >
+            Contacts
+          </button>
+        </div>
+
+        <div class="tab-panel" id="adminMembersPanel" role="tabpanel">
+          <div class="admin-grid modal-admin-layout">
           <article class="panel-card admin-panel-card">
             <div class="panel-card-top">
               <div>
@@ -327,12 +447,65 @@
                 <tbody id="membersTableBody"></tbody>
               </table>
             </div>
+          </article>
 
-            <form id="memberForm" class="stack-form">
+          <article class="panel-card admin-panel-card">
+            <div class="panel-card-top">
+              <div>
+                <h3>Fiche utilisateur</h3>
+                <p class="panel-text">Sélectionnez un compte pour consulter ses informations.</p>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="editMemberBtn" type="button">
+                Modifier
+              </button>
+            </div>
+
+            <div class="profile-view" id="selectedMemberView">
+              <div class="info-grid">
+                <div class="info-item">
+                  <span>Prénom</span>
+                  <strong id="memberFirstNameView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Nom</span>
+                  <strong id="memberLastNameView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>E-mail</span>
+                  <strong id="memberEmailView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Rôle</span>
+                  <strong id="memberRoleView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Téléphone</span>
+                  <strong id="memberPhoneView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Type d’animal</span>
+                  <strong id="memberAnimalTypeView"></strong>
+                </div>
+                <div class="info-item">
+                  <span>Nom de l’animal</span>
+                  <strong id="memberAnimalNameView"></strong>
+                </div>
+              </div>
+            </div>
+
+            <form id="memberForm" class="stack-form" hidden>
               <input id="memberId" type="hidden" />
 
-              <label for="memberFullName">Nom</label>
-              <input id="memberFullName" type="text" />
+              <div class="inline-fields">
+                <div>
+                  <label for="memberFirstName">Prénom</label>
+                  <input id="memberFirstName" type="text" />
+                </div>
+                <div>
+                  <label for="memberLastName">Nom</label>
+                  <input id="memberLastName" type="text" />
+                </div>
+              </div>
 
               <label for="memberEmail">E-mail</label>
               <input id="memberEmail" type="email" />
@@ -358,17 +531,25 @@
 
               <p class="inline-message" id="memberMessage"></p>
 
-              <div class="form-actions">
+              <div class="form-actions split-actions">
                 <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
+                <button class="btn btn-secondary btn-sm" id="cancelMemberEditBtn" type="button">
+                  Annuler
+                </button>
               </div>
             </form>
           </article>
+          </div>
+        </div>
 
+        <div class="tab-panel" id="adminBookingsPanel" role="tabpanel" hidden>
           <article class="panel-card admin-panel-card">
             <h3>Validation et suivi des demandes</h3>
             <div class="admin-bookings" id="adminBookingsList"></div>
           </article>
+        </div>
 
+        <div class="tab-panel" id="adminDatesPanel" role="tabpanel" hidden>
           <article class="panel-card admin-panel-card">
             <h3>Bloquer les jours non réservables</h3>
 
@@ -392,7 +573,9 @@
 
             <div class="simple-list" id="blockedDatesList"></div>
           </article>
+        </div>
 
+        <div class="tab-panel" id="adminActivitiesPanel" role="tabpanel" hidden>
           <article class="panel-card admin-panel-card">
             <h3>Mettre à jour les cartes d’accompagnement</h3>
 
@@ -425,10 +608,12 @@
           </article>
         </div>
 
-        <article class="panel-card admin-panel-card contact-panel">
-          <h3>Demandes reçues depuis le site</h3>
-          <div class="simple-list" id="contactsList"></div>
-        </article>
+        <div class="tab-panel" id="adminContactsPanel" role="tabpanel" hidden>
+          <article class="panel-card admin-panel-card">
+            <h3>Demandes reçues depuis le site</h3>
+            <div class="simple-list" id="contactsList"></div>
+          </article>
+        </div>
       </div>
     </div>
 
