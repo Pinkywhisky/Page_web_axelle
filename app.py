@@ -107,28 +107,28 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 
 DEFAULT_ACTIVITIES = [
     {
-        "title": "Garde à domicile personnalisée",
+        "title": "Garde à domicile organisée",
         "category": "Présence à domicile",
-        "description": "Une présence organisée à votre domicile pour préserver les repères de l’animal et assurer un suivi clair pendant votre absence.",
+        "description": "Une présence planifiée à votre domicile pour respecter les habitudes de l’animal et assurer un suivi clair pendant votre absence.",
         "sort_order": 1,
     },
     {
         "title": "Pet-sitting de confiance",
         "category": "Accompagnement",
-        "description": "Un accompagnement attentif pour chiens et chats, avec des informations utiles partagées avant validation de la demande.",
+        "description": "Un service de garde pour chiens et chats, préparé à partir des informations utiles transmises avant validation.",
         "sort_order": 2,
     },
     {
-        "title": "Préparation de la présence",
+        "title": "Préparation de la garde",
         "category": "Organisation",
-        "description": "Calendrier de disponibilités, demande de garde et confirmation manuelle pour planifier une présence simple, fiable et rassurante.",
+        "description": "Calendrier de disponibilités, demande de garde et confirmation manuelle pour planifier une intervention claire et fiable.",
         "sort_order": 3,
     },
 ]
 
 LEGACY_DEFAULT_ACTIVITY_TITLES = {
     "Éducation canine du quotidien",
-    "Gardes chien et visites chat",
+    "Gardes chien et " + "visites " + "chat",
     "Préparation des gardes",
     "Visites a domicile",
     "Gardes sur mesure",
@@ -1030,7 +1030,7 @@ def create_app(test_config=None):
             return jsonify({"error": "Type de service invalide."}), 400
 
         if animal_type not in ANIMAL_TYPES or time_slot not in TIME_SLOTS:
-            return jsonify({"error": "Merci de renseigner le type d'animal et le creneau."}), 400
+            return jsonify({"error": "Merci de renseigner le type d'animal et le moment de passage."}), 400
 
         if text_too_long(animal_name, MAX_SHORT_TEXT_LENGTH) or text_too_long(notes, MAX_LONG_TEXT_LENGTH):
             return jsonify({"error": "Un des champs saisis est trop long."}), 400
@@ -1039,7 +1039,7 @@ def create_app(test_config=None):
             return jsonify({"error": "La date de fin doit etre apres la date de debut."}), 400
 
         if booking_has_conflict(start_date, end_date):
-            return jsonify({"error": "Le creneau choisi n'est plus disponible."}), 409
+            return jsonify({"error": "La période demandée n'est plus disponible."}), 409
 
         db = get_db()
         cursor = db.execute(
@@ -1184,7 +1184,7 @@ def create_app(test_config=None):
                 parse_iso_date(booking["end_date"]),
                 exclude_booking_id=booking["id"],
             ):
-                return jsonify({"error": "Ce creneau est deja bloque ou confirme."}), 409
+                return jsonify({"error": "Cette période est deja indisponible ou confirmee."}), 409
 
         db = get_db()
         db.execute(

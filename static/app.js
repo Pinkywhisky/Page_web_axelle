@@ -366,7 +366,7 @@ function updateBookingAccessState(loggedIn, isAdmin) {
 
   if (bookingAllowed) {
     dom.bookingIntroText.textContent =
-      "Choisissez vos dates et partagez les informations utiles pour organiser une présence à domicile. La demande reste en attente jusqu’à validation.";
+      "Choisissez vos dates et renseignez les informations utiles pour organiser la garde à domicile. La demande reste en attente jusqu’à validation.";
   } else if (isAdmin) {
     dom.bookingIntroText.textContent =
       "Le calendrier reste consultable, mais l’envoi de demandes est réservé aux espaces personnels.";
@@ -379,7 +379,7 @@ function updateBookingAccessState(loggedIn, isAdmin) {
 function renderActivities() {
   if (!state.activities.length) {
     dom.activitiesGrid.innerHTML =
-      "<p class='panel-text'>Aucun accompagnement n’est mis en avant pour le moment.</p>";
+      "<p class='panel-text'>Aucun service n’est publié pour le moment.</p>";
     return;
   }
 
@@ -387,7 +387,7 @@ function renderActivities() {
     .map(
       (activity) => `
         <article class="activity-card">
-          <p class="service-kicker">${escapeHtml(activity.category || "Accompagnement")}</p>
+          <p class="service-kicker">${escapeHtml(activity.category || "Service de garde")}</p>
           <h3>${escapeHtml(activity.title)}</h3>
           <p>${escapeHtml(activity.description)}</p>
           <button class="text-button activity-link" data-action="contact-activity" type="button">
@@ -502,7 +502,7 @@ function renderNextAvailableDate() {
       ${
         isToday
           ? "Une demande peut être déposée dès aujourd’hui."
-          : "C’est la première date actuellement libre."
+          : "Première disponibilité identifiée."
       }
     </p>
   `;
@@ -530,7 +530,7 @@ function syncBookingAnimalFields() {
 
   if (hasAnimalInfo) {
     dom.bookingAnimalHint.textContent =
-      "Les informations de votre animal sont reprises depuis votre profil. Modifiez-les dans votre espace personnel si besoin.";
+      "Les informations de votre animal sont reprises depuis votre profil. Vous pouvez les mettre à jour dans votre espace personnel.";
   } else {
     dom.bookingAnimalHint.textContent = "";
   }
@@ -559,7 +559,7 @@ function renderMemberArea() {
 
   if (!state.myBookings.length) {
     dom.myBookingsList.innerHTML =
-      "<div class='simple-item'><h4>Aucune demande pour le moment</h4><p class='panel-text'>Les demandes envoyées depuis le calendrier apparaîtront ici.</p></div>";
+      "<div class='simple-item'><h4>Aucune demande en cours</h4><p class='panel-text'>Les demandes de garde envoyées depuis le calendrier apparaîtront ici.</p></div>";
     return;
   }
 
@@ -586,7 +586,7 @@ function renderMemberArea() {
               animalLabels[booking.animalType] || booking.animalType
             )})
           </p>
-          <p class="booking-meta">Réponse : ${escapeHtml(booking.adminNote || "Aucune réponse pour le moment.")}</p>
+          <p class="booking-meta">Suivi : ${escapeHtml(booking.adminNote || "Aucune réponse enregistrée pour le moment.")}</p>
           ${
             booking.status === "pending" || booking.status === "approved"
               ? `<div class="booking-actions">
