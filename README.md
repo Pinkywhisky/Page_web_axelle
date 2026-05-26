@@ -1,12 +1,12 @@
-# Club des Pattes
+# Presence Animale
 
-Mini application Flask pour un site vitrine avec:
+Mini application Flask pour un service de garde a domicile et pet-sitting avec:
 
-- espace membre (inscription, connexion, edition, suppression du compte)
-- demandes de garde avec validation admin
+- espace personnel (inscription, connexion, edition, suppression du compte)
+- demandes de garde avec validation par l'espace de gestion
 - calendrier des indisponibilites
-- gestion admin des membres, reservations, jours bloques et cartes d'information
-- zone de premier contact
+- gestion des comptes, demandes, jours indisponibles et services presentes
+- zone de demande de garde
 
 ## Lancer le projet
 

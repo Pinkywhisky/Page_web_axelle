@@ -41,10 +41,15 @@ const animalLabels = {
 };
 
 const serviceTypeLabels = {
-  garde: "Garde",
-  "garde-chien": "Garde chien",
-  "visite-chat": "Visite chat",
-  "garde-chien-chat": "Garde chien et chat",
+  garde: "Garde à domicile",
+  "garde-chien": "Garde à domicile chien",
+  "visite-chat": "Garde à domicile chat",
+  "garde-chien-chat": "Garde à domicile chien et chat",
+};
+
+const roleLabels = {
+  client: "Espace personnel",
+  admin: "Gestion",
 };
 
 const dom = {};
@@ -333,11 +338,11 @@ function renderHeader() {
   dom.userSummary.hidden = !loggedIn;
   dom.userSummaryRole.textContent = loggedIn
     ? isAdmin
-      ? "Administration"
-      : "Espace client"
+      ? roleLabels.admin
+      : roleLabels.client
     : "";
   dom.userSummaryName.textContent = loggedIn ? state.user.firstName || "" : "";
-  dom.openAccountBtn.textContent = isAdmin ? "Piloter" : "Mon suivi";
+  dom.openAccountBtn.textContent = isAdmin ? "Gérer" : "Mon suivi";
 
   dom.bookingTriggers.forEach((button) => {
     if (!button) return;
@@ -361,13 +366,13 @@ function updateBookingAccessState(loggedIn, isAdmin) {
 
   if (bookingAllowed) {
     dom.bookingIntroText.textContent =
-      "Choisissez vos dates, le type de garde et quelques informations utiles. La demande restera en attente jusqu’à validation.";
+      "Choisissez vos dates et partagez les informations utiles pour organiser une présence à domicile. La demande reste en attente jusqu’à validation.";
   } else if (isAdmin) {
     dom.bookingIntroText.textContent =
-      "Le calendrier reste consultable, mais l’envoi de demandes est réservé aux clients connectés.";
+      "Le calendrier reste consultable, mais l’envoi de demandes est réservé aux espaces personnels.";
   } else {
     dom.bookingIntroText.textContent =
-      "Consultez les disponibilités puis connectez-vous ou créez un compte pour envoyer une demande.";
+      "Consultez les disponibilités puis connectez-vous ou créez un espace pour envoyer une demande de garde.";
   }
 }
 
@@ -525,7 +530,7 @@ function syncBookingAnimalFields() {
 
   if (hasAnimalInfo) {
     dom.bookingAnimalHint.textContent =
-      "Les informations de votre animal sont reprises depuis votre profil. Modifiez-les dans votre espace membre si besoin.";
+      "Les informations de votre animal sont reprises depuis votre profil. Modifiez-les dans votre espace personnel si besoin.";
   } else {
     dom.bookingAnimalHint.textContent = "";
   }
@@ -649,10 +654,10 @@ function renderAdminArea() {
 function renderAdminStats() {
   const { stats } = state.admin;
   const cards = [
-    ["Membres", stats.memberCount],
-    ["Demandes", stats.bookingCount],
+    ["Comptes", stats.memberCount],
+    ["Demandes de garde", stats.bookingCount],
     ["En attente", stats.pendingBookingCount],
-    ["Premiers contacts", stats.newContactCount],
+    ["Messages reçus", stats.newContactCount],
   ];
 
   dom.adminStats.innerHTML = cards
@@ -661,7 +666,7 @@ function renderAdminStats() {
         <article class="stat-card">
           <h3>${label}</h3>
           <strong>${value}</strong>
-          <span class="panel-text">Vue admin en direct</span>
+          <span class="panel-text">Vue de gestion à jour</span>
         </article>
       `
     )
@@ -678,7 +683,7 @@ function renderMembersTable() {
   });
 
   if (!members.length) {
-    dom.membersTableBody.innerHTML = "<tr><td colspan='4'>Aucun membre trouvé.</td></tr>";
+    dom.membersTableBody.innerHTML = "<tr><td colspan='4'>Aucun compte trouvé.</td></tr>";
     return;
   }
 
@@ -688,7 +693,7 @@ function renderMembersTable() {
         <tr class="${member.id === state.selectedMemberId ? "is-selected" : ""}">
           <td>${escapeHtml(member.fullName)}</td>
           <td>${escapeHtml(member.email)}</td>
-          <td>${escapeHtml(member.role)}</td>
+          <td>${escapeHtml(roleLabels[member.role] || member.role)}</td>
           <td>
             <div class="booking-actions">
               <button class="btn btn-secondary btn-sm" data-action="edit-member" data-member-id="${member.id}" type="button">Voir</button>
@@ -729,7 +734,7 @@ function renderSelectedMember(member) {
   dom.memberFirstNameView.textContent = displayValue(member.firstName);
   dom.memberLastNameView.textContent = displayValue(member.lastName);
   dom.memberEmailView.textContent = displayValue(member.email);
-  dom.memberRoleView.textContent = member.role === "admin" ? "Admin" : "Client";
+  dom.memberRoleView.textContent = roleLabels[member.role] || displayValue(member.role);
   dom.memberPhoneView.textContent = displayValue(member.phone);
   dom.memberAnimalTypeView.textContent = displayValue(
     animalLabels[member.animalType] || member.animalType
@@ -753,7 +758,7 @@ function setMemberEditing(isEditing) {
 function renderAdminBookings() {
   if (!state.admin.bookings.length) {
     dom.adminBookingsList.innerHTML =
-      "<div class='simple-item'><h4>Aucune demande</h4><p class='panel-text'>Les demandes de garde envoyées par les clients apparaîtront ici.</p></div>";
+      "<div class='simple-item'><h4>Aucune demande</h4><p class='panel-text'>Les demandes de garde envoyées depuis les espaces personnels apparaîtront ici.</p></div>";
     return;
   }
 
@@ -786,7 +791,7 @@ function renderAdminBookings() {
               animalLabels[booking.animalType] || booking.animalType
             )})
           </p>
-          <p class="booking-meta">Note client : ${escapeHtml(booking.notes || "Aucune note.")}</p>
+          <p class="booking-meta">Informations transmises : ${escapeHtml(booking.notes || "Aucune précision.")}</p>
 
           <label for="booking-status-${booking.id}">Statut</label>
           <select
@@ -802,7 +807,7 @@ function renderAdminBookings() {
               .join("")}
           </select>
 
-          <label for="booking-note-${booking.id}">Note admin</label>
+          <label for="booking-note-${booking.id}">Réponse de suivi</label>
           <textarea
             id="booking-note-${booking.id}"
             rows="3"
@@ -829,7 +834,7 @@ function renderAdminBookings() {
 function renderBlockedDates() {
   if (!state.admin.blockedDates.length) {
     dom.blockedDatesList.innerHTML =
-      "<div class='simple-item'><h4>Aucune date bloquée</h4><p class='panel-text'>Ajoute une date pour la rendre indisponible.</p></div>";
+      "<div class='simple-item'><h4>Aucune indisponibilité</h4><p class='panel-text'>Ajoutez une date pour la rendre indisponible.</p></div>";
     return;
   }
 
@@ -857,7 +862,7 @@ function renderBlockedDates() {
 function renderActivitiesAdmin() {
   if (!state.activities.length) {
     dom.activityAdminList.innerHTML =
-      "<div class='simple-item'><h4>Aucune carte</h4><p class='panel-text'>Utilise le formulaire pour en créer une.</p></div>";
+      "<div class='simple-item'><h4>Aucun service présenté</h4><p class='panel-text'>Utilisez le formulaire pour ajouter un service.</p></div>";
     return;
   }
 
@@ -868,7 +873,7 @@ function renderActivitiesAdmin() {
           <div class="simple-item-header">
             <div>
               <h4>${escapeHtml(activity.title)}</h4>
-              <p class="panel-text">${escapeHtml(activity.category)} - ordre ${activity.sortOrder}</p>
+              <p class="panel-text">${escapeHtml(activity.category)} - position ${activity.sortOrder}</p>
               <p class="panel-text">${escapeHtml(activity.description)}</p>
             </div>
             <div class="simple-item-actions">
@@ -885,7 +890,7 @@ function renderActivitiesAdmin() {
 function renderContacts() {
   if (!state.admin.contacts.length) {
     dom.contactsList.innerHTML =
-      "<div class='simple-item'><h4>Aucun message</h4><p class='panel-text'>Les premiers contacts apparaîtront ici.</p></div>";
+      "<div class='simple-item'><h4>Aucun message</h4><p class='panel-text'>Les demandes reçues depuis le site apparaîtront ici.</p></div>";
     return;
   }
 
@@ -993,7 +998,7 @@ async function handleContact(event) {
     closeModal(dom.contactModal);
     dom.contactForm.reset();
     prefillContactForm();
-    showGlobalMessage("Premier contact envoyé.", "success");
+    showGlobalMessage("Demande envoyée.", "success");
     await loadBootstrap();
   } catch (error) {
     setInlineMessage(dom.contactMessageBox, error.message, "error");
@@ -1012,7 +1017,7 @@ async function handleBookingSubmit(event) {
   if (state.user.role === "admin") {
     setInlineMessage(
       dom.bookingMessage,
-      "L’administration ne peut pas envoyer de demande client.",
+      "L’espace de gestion ne peut pas envoyer de demande de garde.",
       "error"
     );
     return;
@@ -1075,7 +1080,7 @@ async function handleProfileSave(event) {
 
 async function deleteAccount() {
   if (!state.user) return;
-  if (!confirmAction("Supprimer ton compte et toutes tes demandes ?")) return;
+  if (!confirmAction("Supprimer votre espace et toutes vos demandes ?")) return;
 
   try {
     await requestJson("/api/account", { method: "DELETE" });
@@ -1121,7 +1126,7 @@ async function handleMemberSave(event) {
 
   const memberId = Number(dom.memberId.value);
   if (!memberId) {
-    setInlineMessage(dom.memberMessage, "Sélectionne un membre.", "error");
+    setInlineMessage(dom.memberMessage, "Sélectionnez un compte.", "error");
     return;
   }
 
@@ -1142,7 +1147,7 @@ async function handleMemberSave(event) {
     );
 
     state.memberEditing = false;
-    showGlobalMessage("Membre mis à jour.", "success");
+    showGlobalMessage("Compte mis à jour.", "success");
     await loadBootstrap();
     selectMember(memberId);
   } catch (error) {
@@ -1151,11 +1156,11 @@ async function handleMemberSave(event) {
 }
 
 async function deleteMember(memberId) {
-  if (!confirmAction("Supprimer ce membre et ses données associées ?")) return;
+  if (!confirmAction("Supprimer ce compte et ses données associées ?")) return;
 
   try {
     await requestJson(`/api/admin/members/${memberId}`, { method: "DELETE" });
-    showGlobalMessage("Membre supprimé.", "success");
+    showGlobalMessage("Compte supprimé.", "success");
     state.selectedMemberId = null;
     await loadBootstrap();
   } catch (error) {
@@ -1196,7 +1201,7 @@ async function saveAdminBooking(bookingId) {
       },
     });
 
-    showGlobalMessage("Demande admin mise à jour.", "success");
+    showGlobalMessage("Demande de garde mise à jour.", "success");
     await loadBootstrap();
   } catch (error) {
     showGlobalMessage(error.message, "error");
@@ -1219,7 +1224,7 @@ async function handleBlockedDateCreate(event) {
     );
 
     dom.blockedDateForm.reset();
-    setInlineMessage(dom.blockedDateMessage, "Date bloquée.", "success");
+    setInlineMessage(dom.blockedDateMessage, "Indisponibilité ajoutée.", "success");
     await loadBootstrap();
   } catch (error) {
     setInlineMessage(dom.blockedDateMessage, error.message, "error");
@@ -1234,15 +1239,15 @@ function handleBlockedDatesClick(event) {
 
 async function deleteBlockedDate(blockedDateId) {
   if (!blockedDateId) {
-    showGlobalMessage("Date bloquée introuvable.", "error");
+    showGlobalMessage("Indisponibilité introuvable.", "error");
     return;
   }
 
-  if (!confirmAction("Rendre cette date à nouveau réservable ?")) return;
+  if (!confirmAction("Rendre cette date à nouveau disponible ?")) return;
 
   try {
     await requestJson(`/api/admin/blocked-dates/${blockedDateId}`, { method: "DELETE" });
-    showGlobalMessage("Date débloquée.", "success");
+    showGlobalMessage("Indisponibilité retirée.", "success");
     await loadBootstrap();
   } catch (error) {
     showGlobalMessage(error.message, "error");
@@ -1274,7 +1279,7 @@ async function handleActivitySave(event) {
 
     resetActivityForm();
     showGlobalMessage(
-      activityId ? "Activité mise à jour." : "Activité ajoutée.",
+      activityId ? "Service mis à jour." : "Service ajouté.",
       "success"
     );
     await loadBootstrap();
@@ -1289,7 +1294,7 @@ function handleActivityListClick(event) {
 
   const activityId = readNumericDataset(button, "activityId");
   if (!activityId) {
-    showGlobalMessage("Carte introuvable.", "error");
+    showGlobalMessage("Service introuvable.", "error");
     return;
   }
 
@@ -1325,15 +1330,15 @@ function resetActivityForm() {
 
 async function deleteActivity(activityId) {
   if (!activityId) {
-    showGlobalMessage("Carte introuvable.", "error");
+    showGlobalMessage("Service introuvable.", "error");
     return;
   }
 
-  if (!confirmAction("Supprimer cette carte d’information ?")) return;
+  if (!confirmAction("Supprimer ce service présenté ?")) return;
 
   try {
     await requestJson(`/api/admin/activities/${activityId}`, { method: "DELETE" });
-    showGlobalMessage("Activité supprimée.", "success");
+    showGlobalMessage("Service supprimé.", "success");
     await loadBootstrap();
   } catch (error) {
     showGlobalMessage(error.message, "error");

@@ -107,26 +107,29 @@ CREATE TABLE IF NOT EXISTS contact_requests (
 
 DEFAULT_ACTIVITIES = [
     {
-        "title": "Éducation canine du quotidien",
-        "category": "Éducation",
-        "description": "Séances individuelles pour poser des bases claires, travailler la marche, le rappel et retrouver une relation plus sereine avec votre chien.",
+        "title": "Garde à domicile personnalisée",
+        "category": "Présence à domicile",
+        "description": "Une présence organisée à votre domicile pour préserver les repères de l’animal et assurer un suivi clair pendant votre absence.",
         "sort_order": 1,
     },
     {
-        "title": "Gardes chien et visites chat",
-        "category": "Absences",
-        "description": "Gardes à domicile, visites de confort et suivi rassurant pour vos chiens et vos chats pendant vos absences.",
+        "title": "Pet-sitting de confiance",
+        "category": "Accompagnement",
+        "description": "Un accompagnement attentif pour chiens et chats, avec des informations utiles partagées avant validation de la demande.",
         "sort_order": 2,
     },
     {
-        "title": "Préparation des gardes",
+        "title": "Préparation de la présence",
         "category": "Organisation",
-        "description": "Calendrier de disponibilités, demande de créneau et confirmation manuelle pour planifier les gardes avec clarté et douceur.",
+        "description": "Calendrier de disponibilités, demande de garde et confirmation manuelle pour planifier une présence simple, fiable et rassurante.",
         "sort_order": 3,
     },
 ]
 
 LEGACY_DEFAULT_ACTIVITY_TITLES = {
+    "Éducation canine du quotidien",
+    "Gardes chien et visites chat",
+    "Préparation des gardes",
     "Visites a domicile",
     "Gardes sur mesure",
     "Accompagnement quotidien",
