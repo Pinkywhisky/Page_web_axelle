@@ -1,7 +1,7 @@
 import os
 import re
 import sqlite3
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -21,17 +21,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DATABASE = os.path.join(BASE_DIR, "club_des_pattes.db")
 DEV_ADMIN_EMAIL = "admin@a.a"
 DEV_ADMIN_PASSWORD = "a"
+DEV_CLIENT_EMAIL = "client@a.a"
+DEV_CLIENT_PASSWORD = "a"
 DEV_SECRET_KEY = "club-des-pattes-dev-key"
 
 EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-PET_SPECIES = {"chien", "chat", "autre"}
+PET_SPECIES = {"chien", "chat"}
 ANIMAL_TYPES = PET_SPECIES
-TIME_SLOTS = {
-    "matin": "Matin",
-    "apres-midi": "Apres-midi",
-    "journee": "Journee complete",
-    "soir": "Soiree",
-}
 BOOKING_STATUSES = {"pending", "approved", "rejected", "cancelled"}
 CONTACT_STATUSES = {"new", "handled"}
 SERVICE_TYPE_GARDE = "garde"
@@ -83,7 +79,7 @@ CREATE TABLE IF NOT EXISTS pets (
     notes TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CHECK (species IN ('chien', 'chat', 'autre'))
+    CHECK (species IN ('chien', 'chat'))
 );
 
 CREATE TABLE IF NOT EXISTS booking_requests (
@@ -93,9 +89,8 @@ CREATE TABLE IF NOT EXISTS booking_requests (
     animal_type TEXT NOT NULL,
     animal_name TEXT NOT NULL DEFAULT '',
     animal_summary TEXT NOT NULL DEFAULT '',
-    start_date TEXT NOT NULL,
-    end_date TEXT NOT NULL,
-    time_slot TEXT NOT NULL,
+    start_datetime TEXT NOT NULL,
+    end_datetime TEXT NOT NULL,
     notes TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'pending',
     admin_note TEXT NOT NULL DEFAULT '',
@@ -173,6 +168,20 @@ def build_full_name(first_name: str, last_name: str) -> str:
 
 def parse_iso_date(raw_value: str) -> date:
     return date.fromisoformat((raw_value or "").strip())
+
+
+def parse_iso_datetime(raw_value: str) -> datetime:
+    cleaned = (raw_value or "").strip()
+    if "T" not in cleaned:
+        raise ValueError("Datetime incomplete.")
+    parsed = datetime.fromisoformat(cleaned)
+    if parsed.hour is None or parsed.minute is None:
+        raise ValueError("Datetime incomplete.")
+    return parsed
+
+
+def serialize_datetime(value: datetime) -> str:
+    return value.replace(second=0, microsecond=0).isoformat(timespec="minutes")
 
 
 def text_too_long(value, max_length):
@@ -369,32 +378,95 @@ def update_user_profile(db, user_id, payload, role=None):
 
 
 def seed_users(db):
-    existing_users = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
-    if existing_users:
-        return
-
     initial_admin_email, initial_admin_password = build_initial_admin_payload()
 
-    if not initial_admin_email:
+    if initial_admin_email:
+        ensure_seed_user(
+            db,
+            {
+                "firstName": "Administrateur",
+                "lastName": "Site",
+                "email": initial_admin_email,
+                "phone": "",
+                "animalType": "",
+                "animalName": "",
+            },
+            initial_admin_password,
+            "admin",
+        )
+    else:
+        existing_users = db.execute("SELECT COUNT(*) AS count FROM users").fetchone()["count"]
+        if existing_users:
+            return
         current_app.logger.warning(
             "Aucun utilisateur importe et admin de secours desactive. "
             "Definis INITIAL_ADMIN_EMAIL et INITIAL_ADMIN_PASSWORD pour l'initialisation."
         )
         return
 
-    insert_user(
+    if not current_app.config["ALLOW_DEV_ADMIN"]:
+        return
+
+    ensure_seed_user(
         db,
         {
             "firstName": "Administrateur",
             "lastName": "Site",
-            "email": initial_admin_email,
+            "email": DEV_ADMIN_EMAIL,
             "phone": "",
             "animalType": "",
             "animalName": "",
         },
-        generate_password_hash(initial_admin_password),
+        DEV_ADMIN_PASSWORD,
         "admin",
     )
+
+    client_id = ensure_seed_user(
+        db,
+        {
+            "firstName": "client",
+            "lastName": "A",
+            "email": DEV_CLIENT_EMAIL,
+            "phone": "",
+            "animalType": "",
+            "animalName": "",
+        },
+        DEV_CLIENT_PASSWORD,
+        "client",
+    )
+    ensure_seed_pet(db, client_id, "Hachi", "chien")
+
+
+def ensure_seed_user(db, payload, password, role):
+    existing = db.execute("SELECT id FROM users WHERE email = ?", (payload["email"],)).fetchone()
+    if existing is not None:
+        return existing["id"]
+
+    cursor = insert_user(db, payload, generate_password_hash(password), role)
+    return cursor.lastrowid
+
+
+def ensure_seed_pet(db, user_id, name, species):
+    existing = db.execute(
+        """
+        SELECT id
+        FROM pets
+        WHERE user_id = ? AND lower(name) = lower(?)
+        LIMIT 1
+        """,
+        (user_id, name),
+    ).fetchone()
+    if existing is not None:
+        return existing["id"]
+
+    cursor = db.execute(
+        """
+        INSERT INTO pets (user_id, name, species)
+        VALUES (?, ?, ?)
+        """,
+        (user_id, name, species),
+    )
+    return cursor.lastrowid
 
 
 def seed_activities(db):
@@ -526,9 +598,8 @@ def serialize_booking(row):
         "animalName": row["animal_name"],
         "animalSummary": row["animal_summary"],
         "pets": get_booking_pets(row["id"]),
-        "startDate": row["start_date"],
-        "endDate": row["end_date"],
-        "timeSlot": row["time_slot"],
+        "startDateTime": row["start_datetime"],
+        "endDateTime": row["end_datetime"],
         "notes": row["notes"],
         "status": row["status"],
         "adminNote": row["admin_note"],
@@ -579,7 +650,7 @@ def get_unavailable_dates():
         FROM booking_requests
         JOIN users ON users.id = booking_requests.user_id
         WHERE booking_requests.status = 'approved'
-        ORDER BY booking_requests.start_date ASC
+        ORDER BY booking_requests.start_datetime ASC
         """
     )
 
@@ -592,7 +663,10 @@ def get_unavailable_dates():
         }
 
     for row in approved_rows:
-        for current_date in daterange(parse_iso_date(row["start_date"]), parse_iso_date(row["end_date"])):
+        for current_date in daterange(
+            parse_iso_datetime(row["start_datetime"]).date(),
+            parse_iso_datetime(row["end_datetime"]).date(),
+        ):
             iso_date = current_date.isoformat()
             unavailable[iso_date] = {
                 "date": iso_date,
@@ -603,18 +677,23 @@ def get_unavailable_dates():
     return sorted(unavailable.values(), key=lambda item: item["date"])
 
 
-def booking_has_conflict(start_date: date, end_date: date, exclude_booking_id=None):
+def booking_has_conflict(start_datetime: datetime, end_datetime: datetime, exclude_booking_id=None):
     db = get_db()
     conflict = db.execute(
         """
         SELECT id
         FROM booking_requests
         WHERE status = 'approved'
-          AND NOT (end_date < ? OR start_date > ?)
+          AND NOT (end_datetime <= ? OR start_datetime >= ?)
           AND (? IS NULL OR id != ?)
         LIMIT 1
         """,
-        (start_date.isoformat(), end_date.isoformat(), exclude_booking_id, exclude_booking_id),
+        (
+            serialize_datetime(start_datetime),
+            serialize_datetime(end_datetime),
+            exclude_booking_id,
+            exclude_booking_id,
+        ),
     ).fetchone()
 
     if conflict is not None:
@@ -627,7 +706,7 @@ def booking_has_conflict(start_date: date, end_date: date, exclude_booking_id=No
         WHERE block_date BETWEEN ? AND ?
         LIMIT 1
         """,
-        (start_date.isoformat(), end_date.isoformat()),
+        (start_datetime.date().isoformat(), end_datetime.date().isoformat()),
     ).fetchone()
 
     return blocked is not None
@@ -652,7 +731,7 @@ def build_admin_payload():
                     WHEN 'rejected' THEN 2
                     WHEN 'cancelled' THEN 3
                 END,
-                booking_requests.start_date ASC,
+                booking_requests.start_datetime ASC,
                 booking_requests.id DESC
             """
         )
@@ -712,7 +791,7 @@ def validate_profile_payload(data, require_password=False):
         return None, "Le mot de passe doit contenir au moins 6 caracteres."
 
     if animal_type and animal_type not in ANIMAL_TYPES:
-        return None, "Type d'animal invalide."
+        return None, "Le type d'animal doit etre chien ou chat."
 
     return {
         "firstName": first_name,
@@ -735,7 +814,7 @@ def validate_pet_payload(data):
         return None, "Nom et espece sont obligatoires."
 
     if species not in PET_SPECIES:
-        return None, "Espece invalide."
+        return None, "L'espece doit etre chien ou chat."
 
     if text_too_long(name, MAX_SHORT_TEXT_LENGTH) or text_too_long(notes, MAX_LONG_TEXT_LENGTH):
         return None, "Un des champs saisis est trop long."
@@ -788,7 +867,7 @@ def create_app(test_config=None):
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.headers.setdefault("Content-Security-Policy", "default-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'self'; base-uri 'self'; frame-ancestors 'none'")
+        response.headers.setdefault("Content-Security-Policy", "default-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; script-src 'self'; base-uri 'self'; frame-ancestors 'none'")
         return response
 
     @app.errorhandler(500)
@@ -910,7 +989,7 @@ def create_app(test_config=None):
             (payload["email"], user["id"]),
         )
         if existing is not None:
-            return jsonify({"error": "Cet e-mail est deja utilise par un autre compte."}), 409
+            return jsonify({"error": "Cet e-mail est deja utilise par un compte different."}), 409
 
         db = get_db()
         update_user_profile(db, user["id"], payload)
@@ -1055,7 +1134,6 @@ def create_app(test_config=None):
         animal_name = (data.get("animalName") or "").strip()
         animal_summary = (data.get("animalSummary") or "").strip()
         notes = (data.get("notes") or "").strip()
-        time_slot = (data.get("timeSlot") or "").strip().lower()
 
         try:
             pet_ids = read_int_list(data.get("petIds") or [])
@@ -1079,19 +1157,16 @@ def create_app(test_config=None):
 
             selected_pets = [serialize_pet(row) for row in selected_pet_rows]
             species_values = {pet["species"] for pet in selected_pets}
-            animal_type = selected_pets[0]["species"] if len(species_values) == 1 else "autre"
+            animal_type = selected_pets[0]["species"] if len(species_values) == 1 else ""
             animal_name = ", ".join(pet["name"] for pet in selected_pets)
             if not animal_summary:
                 animal_summary = build_pet_summary(selected_pets)
 
         try:
-            start_date = parse_iso_date(data.get("startDate"))
-            end_date = parse_iso_date(data.get("endDate"))
+            start_datetime = parse_iso_datetime(data.get("startDateTime"))
+            end_datetime = parse_iso_datetime(data.get("endDateTime"))
         except ValueError:
-            return jsonify({"error": "Dates invalides."}), 400
-
-        if time_slot not in TIME_SLOTS:
-            return jsonify({"error": "Merci de renseigner le moment de passage."}), 400
+            return jsonify({"error": "Merci de renseigner une arrivee et un depart valides."}), 400
 
         if not pet_ids and (animal_type not in ANIMAL_TYPES or not animal_name):
             return jsonify({"error": "Merci de renseigner le type et le nom de l'animal."}), 400
@@ -1103,10 +1178,10 @@ def create_app(test_config=None):
         ):
             return jsonify({"error": "Un des champs saisis est trop long."}), 400
 
-        if end_date < start_date:
-            return jsonify({"error": "La date de fin doit etre apres la date de debut."}), 400
+        if end_datetime <= start_datetime:
+            return jsonify({"error": "Le depart doit etre strictement apres l'arrivee."}), 400
 
-        if booking_has_conflict(start_date, end_date):
+        if booking_has_conflict(start_datetime, end_datetime):
             return jsonify({"error": "La période demandée n'est plus disponible."}), 409
 
         db = get_db()
@@ -1114,9 +1189,9 @@ def create_app(test_config=None):
             """
             INSERT INTO booking_requests (
                 user_id, service_type, animal_type, animal_name, animal_summary,
-                start_date, end_date, time_slot, notes
+                start_datetime, end_datetime, notes
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 user["id"],
@@ -1124,9 +1199,8 @@ def create_app(test_config=None):
                 animal_type,
                 animal_name,
                 animal_summary,
-                start_date.isoformat(),
-                end_date.isoformat(),
-                time_slot,
+                serialize_datetime(start_datetime),
+                serialize_datetime(end_datetime),
                 notes,
             ),
         )
@@ -1206,7 +1280,7 @@ def create_app(test_config=None):
             (payload["email"], member_id),
         )
         if existing is not None:
-            return jsonify({"error": "Cet e-mail est deja utilise par un autre compte."}), 409
+            return jsonify({"error": "Cet e-mail est deja utilise par un compte different."}), 409
 
         if member["role"] == "admin" and role != "admin":
             admin_count = query_one("SELECT COUNT(*) AS count FROM users WHERE role = 'admin'")["count"]
@@ -1259,8 +1333,8 @@ def create_app(test_config=None):
 
         if status == "approved":
             if booking_has_conflict(
-                parse_iso_date(booking["start_date"]),
-                parse_iso_date(booking["end_date"]),
+                parse_iso_datetime(booking["start_datetime"]),
+                parse_iso_datetime(booking["end_datetime"]),
                 exclude_booking_id=booking["id"],
             ):
                 return jsonify({"error": "Cette période est deja indisponible ou confirmee."}), 409
@@ -1304,7 +1378,10 @@ def create_app(test_config=None):
         if query_one("SELECT id FROM blocked_dates WHERE block_date = ?", (blocked_date.isoformat(),)) is not None:
             return jsonify({"error": "Cette date est deja bloquee."}), 409
 
-        if booking_has_conflict(blocked_date, blocked_date):
+        if booking_has_conflict(
+            datetime.combine(blocked_date, datetime.min.time()),
+            datetime.combine(blocked_date + timedelta(days=1), datetime.min.time()),
+        ):
             return jsonify({"error": "Cette date est deja occupee par une garde confirmee."}), 409
 
         db = get_db()

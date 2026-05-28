@@ -828,22 +828,81 @@ textarea:focus {
     justify-content: space-between;
 }
 
-.flash-message {
-    margin-top: 18px;
-    padding: 14px 16px;
-    border-radius: 18px;
-    border: 1px solid var(--line);
-    background: rgba(255, 252, 247, 0.88);
+.toast-region {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 120;
+    display: grid;
+    gap: 10px;
+    width: min(360px, calc(100vw - 36px));
+    pointer-events: none;
 }
 
-.flash-message.is-error {
-    border-color: rgba(159, 62, 51, 0.2);
-    background: rgba(251, 234, 230, 0.92);
+.toast-message {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 12px;
+    padding: 13px 14px 13px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(95, 67, 49, 0.16);
+    background: rgba(255, 252, 247, 0.98);
+    box-shadow: 0 16px 36px rgba(48, 34, 25, 0.16);
+    color: var(--text-main);
+    line-height: 1.45;
+    pointer-events: auto;
+    animation: toast-in 0.18s ease-out;
 }
 
-.flash-message.is-success {
-    border-color: rgba(47, 122, 79, 0.22);
-    background: rgba(232, 248, 238, 0.92);
+.toast-message p {
+    margin: 0;
+}
+
+.toast-message.is-success {
+    border-color: rgba(47, 122, 79, 0.24);
+}
+
+.toast-message.is-error {
+    border-color: rgba(159, 62, 51, 0.24);
+}
+
+.toast-message.is-info {
+    border-color: rgba(92, 110, 88, 0.24);
+}
+
+.toast-close {
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-soft);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.toast-close:hover {
+    background: rgba(95, 67, 49, 0.08);
+    color: var(--text-main);
+}
+
+.toast-message.is-dismissing {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .booking-list,
@@ -1653,12 +1712,6 @@ main {
     flex: 1 1 180px;
 }
 
-.flash-message {
-    border-radius: 18px;
-    background: #fff;
-    border: 1px solid rgba(15, 23, 42, 0.06);
-}
-
 label {
     margin-bottom: 6px;
     color: #344054;
@@ -1705,21 +1758,6 @@ a:focus-visible {
 
 .btn-danger:hover {
     background: linear-gradient(135deg, #7d2f28, #9f473d);
-}
-
-.flash-message {
-    position: relative;
-    z-index: 4;
-    font-weight: 700;
-    line-height: 1.5;
-}
-
-.flash-message.is-error {
-    color: #9b2f28;
-}
-
-.flash-message.is-success {
-    color: #256f45;
 }
 
 .inline-message {
@@ -1866,6 +1904,16 @@ tbody tr.is-selected td:first-child {
 
     .compact-input {
         max-width: none;
+    }
+
+    .toast-region {
+        right: 12px;
+        bottom: 12px;
+        width: calc(100vw - 24px);
+    }
+
+    .toast-message {
+        border-radius: 14px;
     }
 
     .modal-backdrop {

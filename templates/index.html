@@ -13,12 +13,6 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
   </head>
 
   <body>
@@ -97,7 +91,7 @@
 
         </section>
 
-        <div class="flash-message" id="globalMessage" hidden></div>
+        <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="false"></div>
 
         <section class="section-block section-block-light" id="approach">
           <div class="section-center">
@@ -348,7 +342,6 @@
                     <option value="">Sélectionner</option>
                     <option value="chien">Chien</option>
                     <option value="chat">Chat</option>
-                    <option value="autre">Autre</option>
                   </select>
                 </div>
               </div>
@@ -563,7 +556,6 @@
                 <option value="">Sélectionner</option>
                 <option value="chien">Chien</option>
                 <option value="chat">Chat</option>
-                <option value="autre">Autre</option>
               </select>
 
               <label for="memberAnimalName">Nom de l’animal</label>
@@ -742,7 +734,6 @@
             <option value="">Sélectionner</option>
             <option value="chien">Chien</option>
             <option value="chat">Chat</option>
-            <option value="autre">Autre</option>
           </select>
 
           <label for="registerAnimalName">Nom de l’animal</label>
@@ -901,7 +892,6 @@
                   <option value="">Sélectionner</option>
                   <option value="chien">Chien</option>
                   <option value="chat">Chat</option>
-                  <option value="autre">Autre</option>
                 </select>
 
                 <label for="bookingAnimalName">Nom de l’animal</label>
@@ -911,29 +901,20 @@
 
               <div class="inline-fields">
                 <div>
-                  <label for="bookingStartDate">Date de début</label>
-                  <input id="bookingStartDate" type="date" required />
+                  <label for="bookingStartDateTime">Arrivée prévue</label>
+                  <input id="bookingStartDateTime" type="datetime-local" required />
                 </div>
                 <div>
-                  <label for="bookingEndDate">Date de fin</label>
-                  <input id="bookingEndDate" type="date" required />
+                  <label for="bookingEndDateTime">Départ prévu</label>
+                  <input id="bookingEndDateTime" type="datetime-local" required />
                 </div>
               </div>
-
-              <label for="bookingTimeSlot">Moment de passage</label>
-              <select id="bookingTimeSlot" required>
-                <option value="">Sélectionner</option>
-                <option value="matin">Matin</option>
-                <option value="apres-midi">Après-midi</option>
-                <option value="journee">Journée complète</option>
-                <option value="soir">Soirée</option>
-              </select>
 
               <label for="bookingNotes">Informations complémentaires</label>
               <textarea
                 id="bookingNotes"
                 rows="4"
-                placeholder="Nombre d’animaux, habitudes, accès au domicile, besoins particuliers, informations utiles pour organiser la garde."
+                placeholder="Consignes, habitudes, alimentation, médicaments, accès au domicile, remarques utiles."
               ></textarea>
 
               <p class="inline-message" id="bookingMessage"></p>

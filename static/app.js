@@ -13,14 +13,6 @@ const state = {
   memberEditing: false,
   activeModal: null,
   lastTrigger: null,
-  lastBookingPetSummary: "",
-};
-
-const slotLabels = {
-  matin: "Matin",
-  "apres-midi": "Après-midi",
-  journee: "Journée complète",
-  soir: "Soirée",
 };
 
 const statusLabels = {
@@ -40,13 +32,14 @@ const statusChoices = [
 const animalLabels = {
   chien: "Chien",
   chat: "Chat",
-  autre: "Autre",
 };
 
 const roleLabels = {
   client: "Espace personnel",
   admin: "Gestion",
 };
+
+const TOAST_DURATION_MS = 5200;
 
 const dom = {};
 
@@ -59,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function bindDom() {
   [
-    "globalMessage",
+    "toastRegion",
     "headerActions",
     "userSummary",
     "userSummaryRole",
@@ -88,8 +81,6 @@ function bindDom() {
     "profileLastNameView",
     "profileEmailView",
     "profilePhoneView",
-    "profileAnimalTypeView",
-    "profileAnimalNameView",
     "petForm",
     "petId",
     "petName",
@@ -163,16 +154,13 @@ function bindDom() {
     "profileLastName",
     "profileEmail",
     "profilePhone",
-    "profileAnimalType",
-    "profileAnimalName",
     "bookingAnimalType",
     "bookingAnimalName",
     "bookingPetsWrap",
     "bookingPetsList",
     "bookingManualAnimalFields",
-    "bookingStartDate",
-    "bookingEndDate",
-    "bookingTimeSlot",
+    "bookingStartDateTime",
+    "bookingEndDateTime",
     "bookingNotes",
   ].forEach((id) => {
     dom[id] = document.getElementById(id);
@@ -259,8 +247,8 @@ function bindEvents() {
   onEvent(dom.contactsList, "click", handleContactsClick);
   onEvent(dom.myBookingsList, "click", handleMyBookingsClick);
   onEvent(dom.petsList, "click", handlePetsListClick);
-  onEvent(dom.bookingPetsList, "change", syncBookingPetSummary);
   onEvent(dom.activitiesGrid, "click", handleActivitiesGridClick);
+  onEvent(dom.toastRegion, "click", handleToastRegionClick);
   document.addEventListener("keydown", handleGlobalKeydown);
 }
 
@@ -610,12 +598,7 @@ function renderMemberArea() {
           <div class="booking-item-header">
             <div>
               <h4>Demande de garde à domicile</h4>
-              <p class="booking-meta">
-                ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
-                  formatLongDate(booking.endDate)
-                )}
-                - ${escapeHtml(slotLabels[booking.timeSlot] || booking.timeSlot)}
-              </p>
+              <p class="booking-meta">${escapeHtml(formatBookingPeriod(booking))}</p>
             </div>
             <span class="booking-status ${escapeHtml(booking.status)}">
               ${escapeHtml(statusLabels[booking.status] || booking.status)}
@@ -859,10 +842,7 @@ function renderAdminBookings() {
                 ${escapeHtml(booking.email)} - Demande de garde à domicile
               </p>
               <p class="booking-meta">
-                ${escapeHtml(formatLongDate(booking.startDate))} au ${escapeHtml(
-                  formatLongDate(booking.endDate)
-                )}
-                - ${escapeHtml(slotLabels[booking.timeSlot] || booking.timeSlot)}
+                ${escapeHtml(formatBookingPeriod(booking))}
               </p>
             </div>
             <span class="booking-status ${escapeHtml(booking.status)}">
@@ -1105,14 +1085,6 @@ function buildPetSummary(pets) {
     .join("; ");
 }
 
-function syncBookingPetSummary() {
-  const summary = buildPetSummary(getSelectedBookingPets());
-  if (!dom.bookingNotes.value || dom.bookingNotes.value === state.lastBookingPetSummary) {
-    dom.bookingNotes.value = summary;
-  }
-  state.lastBookingPetSummary = summary;
-}
-
 async function handleBookingSubmit(event) {
   event.preventDefault();
   setInlineMessage(dom.bookingMessage, "");
@@ -1146,16 +1118,14 @@ async function handleBookingSubmit(event) {
           animalSummary: buildPetSummary(selectedPets),
           animalType: dom.bookingAnimalType.value,
           animalName: dom.bookingAnimalName.value,
-          startDate: dom.bookingStartDate.value,
-          endDate: dom.bookingEndDate.value,
-          timeSlot: dom.bookingTimeSlot.value,
+          startDateTime: dom.bookingStartDateTime.value,
+          endDateTime: dom.bookingEndDateTime.value,
           notes: dom.bookingNotes.value,
         },
       })
     );
 
     dom.bookingForm.reset();
-    state.lastBookingPetSummary = "";
     syncBookingAnimalFields();
     setMinBookingDates();
     closeModal(dom.bookingModal);
@@ -1722,28 +1692,55 @@ function prefillContactForm() {
 }
 
 function showGlobalMessage(message, kind = "success") {
-  if (!message) {
-    dom.globalMessage.hidden = true;
-    dom.globalMessage.textContent = "";
-    dom.globalMessage.classList.remove("is-success", "is-error");
-    return;
-  }
-
-  dom.globalMessage.hidden = false;
-  dom.globalMessage.textContent = message;
-  dom.globalMessage.classList.toggle("is-success", kind === "success");
-  dom.globalMessage.classList.toggle("is-error", kind === "error");
+  showToast(message, kind);
 }
 
 function setInlineMessage(node, message, kind = "error") {
-  if (!node) return;
-  node.textContent = message || "";
-  node.style.color =
-    kind === "success"
-      ? "var(--success)"
-      : kind === "error"
-        ? "var(--danger)"
-        : "var(--text-soft)";
+  if (node) {
+    node.textContent = "";
+  }
+
+  if (message) {
+    showToast(message, kind);
+  }
+}
+
+function showToast(message, kind = "info") {
+  if (!message || !dom.toastRegion) return;
+
+  const toast = document.createElement("div");
+  const toastKind = ["success", "error", "info"].includes(kind) ? kind : "info";
+  toast.className = `toast-message is-${toastKind}`;
+  toast.setAttribute("role", toastKind === "error" ? "alert" : "status");
+
+  const content = document.createElement("p");
+  content.textContent = message;
+
+  const closeButton = document.createElement("button");
+  closeButton.className = "toast-close";
+  closeButton.type = "button";
+  closeButton.dataset.toastClose = "true";
+  closeButton.setAttribute("aria-label", "Fermer la notification");
+  closeButton.textContent = "×";
+
+  toast.append(content, closeButton);
+  dom.toastRegion.appendChild(toast);
+
+  window.setTimeout(() => {
+    dismissToast(toast);
+  }, TOAST_DURATION_MS);
+}
+
+function handleToastRegionClick(event) {
+  const closeButton = event.target.closest("[data-toast-close]");
+  if (!closeButton) return;
+  dismissToast(closeButton.closest(".toast-message"));
+}
+
+function dismissToast(toast) {
+  if (!toast) return;
+  toast.classList.add("is-dismissing");
+  window.setTimeout(() => toast.remove(), 180);
 }
 
 async function withBusyButton(button, busyLabel, task) {
@@ -1783,6 +1780,23 @@ function formatLongDate(value) {
   return formatter.format(new Date(`${value}T12:00:00`));
 }
 
+function formatLongDateTime(value) {
+  const formatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return formatter.format(new Date(value));
+}
+
+function formatBookingPeriod(booking) {
+  return `Arrivée ${formatLongDateTime(booking.startDateTime)} - départ ${formatLongDateTime(
+    booking.endDateTime
+  )}`;
+}
+
 function formatIsoDate(value) {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
@@ -1790,10 +1804,21 @@ function formatIsoDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function formatLocalDateTimeInput(value) {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  const hours = String(value.getHours()).padStart(2, "0");
+  const minutes = String(value.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 function setMinBookingDates() {
-  const today = formatIsoDate(new Date());
-  dom.bookingStartDate.min = today;
-  dom.bookingEndDate.min = today;
+  const now = new Date();
+  const today = formatIsoDate(now);
+  const minDateTime = formatLocalDateTimeInput(now);
+  dom.bookingStartDateTime.min = minDateTime;
+  dom.bookingEndDateTime.min = minDateTime;
   dom.blockedDateInput.min = today;
 }
 
