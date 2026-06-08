@@ -14,6 +14,55 @@ function findUserById(int $id): ?array
     return $user ?: null;
 }
 
+function tableExists(string $tableName): bool
+{
+    $statement = db()->prepare(
+        'SELECT COUNT(*) AS total
+         FROM information_schema.tables
+         WHERE table_schema = DATABASE()
+           AND table_name = :table_name'
+    );
+    $statement->execute(['table_name' => $tableName]);
+
+    return (int) $statement->fetch()['total'] > 0;
+}
+
+function petsForUser(int $userId): array
+{
+    if (!tableExists('pets')) {
+        return [];
+    }
+
+    $statement = db()->prepare('SELECT * FROM pets WHERE user_id = :user_id ORDER BY created_at ASC, id ASC');
+    $statement->execute(['user_id' => $userId]);
+    return $statement->fetchAll();
+}
+
+function enrichUserWithPets(array $user): array
+{
+    $publicUser = publicUser($user);
+    $pets = petsForUser((int) $user['id']);
+    $publicUser['pets'] = array_map(
+        fn(array $pet): array => [
+            'id' => (int) $pet['id'],
+            'name' => $pet['name'],
+            'species' => $pet['species'],
+            'notes' => $pet['notes'] ?? '',
+        ],
+        $pets
+    );
+
+    if ($pets) {
+        $publicUser['animal_name'] = implode(', ', array_map(fn(array $pet): string => $pet['name'], $pets));
+        $publicUser['animalName'] = $publicUser['animal_name'];
+        $species = array_unique(array_map(fn(array $pet): string => $pet['species'], $pets));
+        $publicUser['animal_type'] = count($species) === 1 ? $species[0] : 'plusieurs';
+        $publicUser['animalType'] = $publicUser['animal_type'];
+    }
+
+    return $publicUser;
+}
+
 function validateUserPayload(array $data, bool $requirePassword = false): array
 {
     $fullName = cleanText($data['full_name'] ?? $data['fullName'] ?? '', 150);
@@ -76,7 +125,7 @@ try {
              FROM users
              ORDER BY created_at DESC, id DESC'
         );
-        $users = array_map('publicUser', $statement->fetchAll());
+        $users = array_map('enrichUserWithPets', $statement->fetchAll());
 
         jsonResponse(['users' => $users]);
     }
@@ -96,6 +145,9 @@ try {
             'INSERT INTO users (full_name, email, password_hash, phone, animal_type, animal_name, role)
              VALUES (:full_name, :email, :password_hash, :phone, :animal_type, :animal_name, :role)'
         );
+        $pdo = db();
+        $pdo->beginTransaction();
+
         $insert->execute([
             'full_name' => $payload['full_name'],
             'email' => $payload['email'],
@@ -106,7 +158,23 @@ try {
             'role' => $payload['role'],
         ]);
 
-        $user = findUserById((int) db()->lastInsertId());
+        $userId = (int) $pdo->lastInsertId();
+
+        if ($payload['animal_type'] !== '' && $payload['animal_name'] !== '' && tableExists('pets')) {
+            $petInsert = $pdo->prepare(
+                'INSERT INTO pets (user_id, name, species)
+                 VALUES (:user_id, :name, :species)'
+            );
+            $petInsert->execute([
+                'user_id' => $userId,
+                'name' => $payload['animal_name'],
+                'species' => $payload['animal_type'],
+            ]);
+        }
+
+        $pdo->commit();
+
+        $user = findUserById($userId);
         jsonResponse(['message' => 'Votre espace a bien été créé.', 'user' => publicUser($user)], 201);
     }
 
@@ -197,6 +265,10 @@ try {
 
     jsonResponse(['error' => 'Méthode non autorisée.'], 405);
 } catch (PDOException $error) {
+    if (db()->inTransaction()) {
+        db()->rollBack();
+    }
+
     if ($error->getCode() === '23000') {
         jsonResponse(['error' => 'Cet e-mail est déjà utilisé.'], 409);
     }
