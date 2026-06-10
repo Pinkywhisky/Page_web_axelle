@@ -1,5 +1,18 @@
-/.venv
-*.json
+# Local databases and dumps
 *.db
-__pycache__/
-tests/
+*.sqlite
+*.sqlite3
+
+# Local environment files
+.env
+.env.*
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+*:Zone.Identifier

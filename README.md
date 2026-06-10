@@ -1,48 +1,141 @@
-# Presence Animale
+# Club des Pattes
 
-Mini application Flask pour un service de garde a domicile et pet-sitting avec:
+Application de gestion de clients et d'animaux pour un service de garde à domicile.
 
-- espace personnel (inscription, connexion, edition, suppression du compte)
-- demandes de garde avec validation par l'espace de gestion
-- calendrier des indisponibilites
-- gestion des comptes, demandes, jours indisponibles et services presentes
-- zone de demande de garde
+Le projet est désormais une application PHP native avec stockage MariaDB / MySQL.
+La racine fonctionnelle officielle se trouve dans le dossier `www/`.
 
-## Lancer le projet
+## Technologies
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-FLASK_ENV=development ALLOW_DEV_ADMIN=true flask run --port 5000
+- PHP 8+
+- MariaDB / MySQL
+- HTML
+- CSS
+- JavaScript
+
+## Installation locale
+
+### Prérequis
+
+- PHP 8+
+- MariaDB ou MySQL
+
+### Création de la base
+
+```sql
+CREATE DATABASE club_des_pattes
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 ```
 
-Pour le developpement local manuel, l'application utilise le port `5000` et
-reste disponible sur `http://127.0.0.1:5000`.
+### Import du schéma
 
-En local, lancez l'application avec `FLASK_ENV=development` si `SECRET_KEY`
-n'est pas definie. En production, definissez obligatoirement une valeur forte
-pour `SECRET_KEY`.
-
-## Stockage
-
-Le projet utilise SQLite dans `club_des_pattes.db`.
-
-Au premier lancement, aucun admin connu n'est cree automatiquement en production.
-Pour initialiser un admin en production, definissez `INITIAL_ADMIN_EMAIL` et
-`INITIAL_ADMIN_PASSWORD`.
-
-Un admin de secours connu reste possible uniquement en local avec
-`FLASK_ENV=development` et `ALLOW_DEV_ADMIN=true`.
-
-Dans ce mode de developpement uniquement, la base est initialisee avec:
-
-- admin: `admin@a.a` / `a`
-- client: `client@a.a` / `a`
-- animal du client: `Hachi` (`chien`)
-
-## Tests
+Depuis la racine du projet :
 
 ```bash
-python -m unittest discover -s tests
+mysql -u admin -p club_des_pattes < www/schema.sql
 ```
+
+### Configuration
+
+Modifier le fichier :
+
+```text
+www/config/config.php
+```
+
+Renseigner les constantes :
+
+```php
+DB_HOST
+DB_NAME
+DB_USER
+DB_PASS
+APP_NAME
+```
+
+### Création du premier administrateur
+
+Depuis le dossier `www/` :
+
+```bash
+php create_admin.php admin@example.com motdepasse "Administrateur"
+```
+
+Le script `create_admin.php` est un outil de bootstrap local. Il doit être supprimé ou désactivé en production.
+
+### Lancement local
+
+Depuis la racine du projet :
+
+```bash
+cd www
+php -S 0.0.0.0:8000
+```
+
+Puis ouvrir :
+
+```text
+http://localhost:8000
+```
+
+## Fonctionnalités
+
+- Connexion
+- Déconnexion
+- Inscription client
+- Gestion des membres
+- Gestion des rôles
+- Gestion des animaux
+- Demandes de garde
+- Sélection des animaux lors d'une demande de garde
+- Administration des demandes
+- Formulaire de contact
+
+## Structure
+
+```text
+www/
+├── api/
+│   ├── bookings.php
+│   ├── contact.php
+│   ├── login.php
+│   ├── pets.php
+│   └── users.php
+├── assets/
+│   ├── favicon.ico
+│   ├── script.js
+│   └── style.css
+├── config/
+│   └── config.php
+├── includes/
+│   ├── auth.php
+│   ├── db.php
+│   └── functions.php
+├── create_admin.php
+├── dashboard.php
+├── index.php
+├── login.php
+├── logout.php
+└── schema.sql
+```
+
+## Sécurité
+
+- Les mots de passe sont stockés avec `password_hash()`.
+- La connexion utilise `password_verify()`.
+- L'authentification repose sur les sessions PHP.
+- Les API d'administration sont protégées par rôle.
+- Un administrateur ne peut pas supprimer son propre compte.
+- Les réponses API sont au format JSON.
+- Les e-mails invalides ou contenant des accents sont refusés.
+
+## Déploiement
+
+Pour un hébergement PHP/MySQL classique :
+
+1. Copier le contenu de `www/` dans la racine web de l'hébergement.
+2. Importer `www/schema.sql` dans la base MariaDB/MySQL.
+3. Configurer `www/config/config.php`.
+4. Créer le premier administrateur.
+5. Supprimer ou désactiver `www/create_admin.php`.

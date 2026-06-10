@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+/*
+ * Script de bootstrap.
+ * À supprimer ou désactiver en production.
+ */
+
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/functions.php';
 
