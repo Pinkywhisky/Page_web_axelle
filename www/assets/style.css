@@ -632,6 +632,71 @@ main {
     min-width: 0;
 }
 
+.booking-period {
+    display: grid;
+    gap: 12px;
+    margin: 4px 0 2px;
+    padding: 16px;
+    border: 1px solid rgba(77, 55, 40, 0.10);
+    border-radius: 18px;
+    background: rgba(234, 223, 204, 0.28);
+}
+
+.booking-period h4 {
+    margin: 0 0 4px;
+    color: var(--brown-dark);
+    font-size: 1rem;
+}
+
+.booking-period p {
+    margin: 0;
+    color: var(--text-soft);
+    font-size: 0.92rem;
+}
+
+.date-time-field {
+    display: grid;
+    gap: 8px;
+}
+
+.date-time-field small {
+    min-height: 1.2em;
+    color: var(--text-soft);
+    font-size: 0.86rem;
+}
+
+.date-time-summary {
+    appearance: none;
+    cursor: pointer;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 14px;
+    border: 1px solid rgba(77, 55, 40, 0.14);
+    border-radius: 16px;
+    color: var(--brown-dark);
+    background: var(--off-white);
+    font-weight: 900;
+    text-align: left;
+}
+
+.date-time-summary:hover {
+    border-color: rgba(138, 101, 74, 0.42);
+    box-shadow: 0 10px 24px rgba(77, 55, 40, 0.08);
+}
+
+.date-time-summary.is-complete {
+    color: var(--off-white);
+    background: var(--brown-soft);
+}
+
+.nested-modal {
+    z-index: 140;
+}
+
+.modal-compact {
+    max-width: 420px;
+}
+
 label {
     color: var(--brown-dark);
     font-size: 0.92rem;
@@ -858,6 +923,7 @@ tbody tr.is-selected {
 .btn:focus-visible,
 .icon-btn:focus-visible,
 .text-button:focus-visible,
+.date-time-summary:focus-visible,
 a:focus-visible,
 input:focus-visible,
 select:focus-visible {

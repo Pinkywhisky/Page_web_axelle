@@ -6,6 +6,7 @@ const state = {
   pets: [],
   selectedUserId: null,
   activeModal: null,
+  bookingTimeTarget: null,
 };
 
 const dom = {};
@@ -94,13 +95,26 @@ function bindDom() {
     "bookingManualAnimalFields",
     "bookingAnimalType",
     "bookingAnimalName",
+    "bookingStartDate",
     "bookingStartDateTime",
+    "bookingStartTimeBtn",
+    "bookingStartSummary",
+    "bookingEndDate",
     "bookingEndDateTime",
-    "bookingTime",
+    "bookingEndTimeBtn",
+    "bookingEndSummary",
     "bookingNotes",
     "bookingMessage",
     "bookingSuccessPanel",
     "closeBookingSuccessBtn",
+    "bookingTimeModal",
+    "bookingTimeForm",
+    "bookingTimeInput",
+    "bookingTimeMessage",
+    "bookingTimeModalTitle",
+    "bookingTimeModalText",
+    "closeBookingTimeBtn",
+    "cancelBookingTimeBtn",
     "contactForm",
     "contactFirstName",
     "contactLastName",
@@ -148,6 +162,8 @@ function bindEvents() {
   onClick(dom.closeProfileBtn, () => closeModal(dom.profileModal));
   onClick(dom.closeBookingBtn, () => closeModal(dom.bookingModal));
   onClick(dom.closeBookingSuccessBtn, () => closeModal(dom.bookingModal));
+  onClick(dom.closeBookingTimeBtn, closeBookingTimeModal);
+  onClick(dom.cancelBookingTimeBtn, closeBookingTimeModal);
   onClick(dom.closeContactBtn, () => closeModal(dom.contactModal));
   onClick(dom.closeContactSuccessBtn, () => closeModal(dom.contactModal));
   onClick(dom.closeManageEditBtn, () => closeModal(dom.manageEditModal));
@@ -167,11 +183,18 @@ function bindEvents() {
     });
   });
 
+  if (dom.bookingTimeModal) {
+    dom.bookingTimeModal.addEventListener("click", (event) => {
+      if (event.target === dom.bookingTimeModal) closeBookingTimeModal();
+    });
+  }
+
   onSubmit(dom.loginForm, handleLogin);
   onSubmit(dom.registerForm, handleRegister);
   onSubmit(dom.profileForm, handleProfileSave);
   onSubmit(dom.petForm, handlePetSave);
   onSubmit(dom.bookingForm, handleBookingSubmit);
+  onSubmit(dom.bookingTimeForm, handleBookingTimeSubmit);
   onSubmit(dom.contactForm, handleContactSubmit);
   onSubmit(dom.manageEditForm, handleManageSave);
   onEvent(dom.manageSearch, "input", renderUsersTable);
@@ -179,9 +202,18 @@ function bindEvents() {
   onEvent(dom.petsList, "click", handlePetsListClick);
   onEvent(dom.profileBookingsList, "click", handleProfileBookingsClick);
   onEvent(dom.manageBookingsList, "click", handleManageBookingsClick);
+  onEvent(dom.bookingStartDate, "change", () => handleBookingDateChange("start"));
+  onEvent(dom.bookingEndDate, "change", () => handleBookingDateChange("end"));
+  onClick(dom.bookingStartTimeBtn, () => openBookingTimeModal("start"));
+  onClick(dom.bookingEndTimeBtn, () => openBookingTimeModal("end"));
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && state.activeModal) closeModal(state.activeModal);
+    if (event.key !== "Escape") return;
+    if (dom.bookingTimeModal && !dom.bookingTimeModal.hidden) {
+      closeBookingTimeModal();
+      return;
+    }
+    if (state.activeModal) closeModal(state.activeModal);
   });
 }
 
@@ -447,6 +479,8 @@ function resetBookingModal() {
   dom.bookingForm.reset();
   setMessage(dom.bookingMessage, "");
   setMinBookingDateTimes();
+  updateBookingDateTimeSummary("start");
+  updateBookingDateTimeSummary("end");
 }
 
 function prefillBookingForm() {
@@ -493,18 +527,162 @@ function syncBookingAnimalFields() {
 }
 
 function setMinBookingDateTimes() {
-  if (!dom.bookingStartDateTime || !dom.bookingEndDateTime) return;
+  if (!dom.bookingStartDate || !dom.bookingEndDate) return;
 
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const minValue = now.toISOString().slice(0, 16);
-  dom.bookingStartDateTime.min = minValue;
-  dom.bookingEndDateTime.min = minValue;
+  const minValue = now.toISOString().slice(0, 10);
+  dom.bookingStartDate.min = minValue;
+  dom.bookingEndDate.min = minValue;
+  updateEndDateMinimum();
+}
+
+function bookingDateTimeNodes(target) {
+  const isStart = target === "start";
+
+  return {
+    dateInput: isStart ? dom.bookingStartDate : dom.bookingEndDate,
+    dateTimeInput: isStart ? dom.bookingStartDateTime : dom.bookingEndDateTime,
+    timeButton: isStart ? dom.bookingStartTimeBtn : dom.bookingEndTimeBtn,
+    summary: isStart ? dom.bookingStartSummary : dom.bookingEndSummary,
+    title: isStart ? "Début de garde" : "Fin de garde",
+    defaultTime: isStart ? "09:00" : "18:00",
+  };
+}
+
+function handleBookingDateChange(target) {
+  const nodes = bookingDateTimeNodes(target);
+  if (!nodes.dateInput || !nodes.dateTimeInput) return;
+
+  nodes.dateTimeInput.value = "";
+
+  if (target === "start") {
+    updateEndDateMinimum();
+  }
+
+  updateBookingDateTimeSummary(target);
+
+  if (nodes.dateInput.value) {
+    openBookingTimeModal(target);
+  }
+}
+
+function updateEndDateMinimum() {
+  if (!dom.bookingStartDate || !dom.bookingEndDate) return;
+
+  const minDate = dom.bookingStartDate.value || dom.bookingStartDate.min;
+  dom.bookingEndDate.min = minDate;
+
+  if (dom.bookingEndDate.value && dom.bookingEndDate.value < minDate) {
+    dom.bookingEndDate.value = "";
+    dom.bookingEndDateTime.value = "";
+    updateBookingDateTimeSummary("end");
+  }
+}
+
+function openBookingTimeModal(target) {
+  const nodes = bookingDateTimeNodes(target);
+  if (!nodes.dateInput?.value) {
+    setMessage(dom.bookingMessage, "Choisissez d’abord une date.", "error");
+    nodes.dateInput?.focus();
+    return;
+  }
+
+  state.bookingTimeTarget = target;
+  setMessage(dom.bookingTimeMessage, "");
+  dom.bookingTimeModalTitle.textContent = nodes.title;
+  dom.bookingTimeModalText.textContent = `Choisissez l’heure pour le ${formatDateOnly(nodes.dateInput.value)}.`;
+  dom.bookingTimeInput.value = extractTime(nodes.dateTimeInput.value) || nodes.defaultTime;
+  dom.bookingTimeModal.hidden = false;
+  document.body.classList.add("modal-open");
+  window.setTimeout(() => dom.bookingTimeInput.focus(), 0);
+}
+
+function closeBookingTimeModal() {
+  if (!dom.bookingTimeModal) return;
+
+  dom.bookingTimeModal.hidden = true;
+  state.bookingTimeTarget = null;
+
+  if (!document.querySelector(".modal-backdrop:not([hidden])")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function handleBookingTimeSubmit(event) {
+  event.preventDefault();
+  const target = state.bookingTimeTarget;
+  const nodes = bookingDateTimeNodes(target);
+  const time = dom.bookingTimeInput.value;
+
+  if (!target || !nodes.dateInput?.value) {
+    closeBookingTimeModal();
+    return;
+  }
+
+  if (!/^\d{2}:\d{2}$/.test(time)) {
+    setMessage(dom.bookingTimeMessage, "Merci de choisir une heure valide.", "error");
+    return;
+  }
+
+  nodes.dateTimeInput.value = `${nodes.dateInput.value}T${time}`;
+  updateBookingDateTimeSummary(target);
+  closeBookingTimeModal();
+}
+
+function updateBookingDateTimeSummary(target) {
+  const nodes = bookingDateTimeNodes(target);
+  if (!nodes.summary || !nodes.timeButton) return;
+
+  if (nodes.dateTimeInput.value) {
+    nodes.summary.textContent = formatDateTime(nodes.dateTimeInput.value);
+    nodes.timeButton.textContent = "Modifier l’heure";
+    nodes.timeButton.classList.add("is-complete");
+    return;
+  }
+
+  nodes.timeButton.classList.remove("is-complete");
+  nodes.timeButton.textContent = "Choisir l’heure";
+
+  if (nodes.dateInput.value) {
+    nodes.summary.textContent = `${formatDateOnly(nodes.dateInput.value)} - heure à choisir.`;
+    return;
+  }
+
+  nodes.summary.textContent = "Date et heure non renseignées.";
+}
+
+function bookingDateTimesAreComplete() {
+  if (!dom.bookingStartDateTime.value) {
+    setMessage(dom.bookingMessage, "Merci de choisir une date et une heure de début.", "error");
+    openBookingTimeModal("start");
+    return false;
+  }
+
+  if (!dom.bookingEndDateTime.value) {
+    setMessage(dom.bookingMessage, "Merci de choisir une date et une heure de fin.", "error");
+    openBookingTimeModal("end");
+    return false;
+  }
+
+  const start = new Date(dom.bookingStartDateTime.value);
+  const end = new Date(dom.bookingEndDateTime.value);
+
+  if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end <= start) {
+    setMessage(dom.bookingMessage, "La fin de garde doit être après le début.", "error");
+    return false;
+  }
+
+  return true;
 }
 
 async function handleBookingSubmit(event) {
   event.preventDefault();
   setMessage(dom.bookingMessage, "");
+
+  if (!bookingDateTimesAreComplete()) {
+    return;
+  }
 
   try {
     await requestJson("/api/bookings.php", {
@@ -515,7 +693,6 @@ async function handleBookingSubmit(event) {
         animal_name: dom.bookingAnimalName.value,
         start_datetime: dom.bookingStartDateTime.value,
         end_datetime: dom.bookingEndDateTime.value,
-        booking_time: dom.bookingTime.value,
         notes: dom.bookingNotes.value,
       },
     });
@@ -1004,10 +1181,7 @@ function bookingPetSummary(booking) {
 function formatBookingPeriod(booking) {
   const start = booking.startDateTime || booking.start_datetime || "";
   const end = booking.endDateTime || booking.end_datetime || "";
-  const time = booking.bookingTime || booking.booking_time || "";
-  const period = `${formatDateTime(start)} - ${formatDateTime(end)}`;
-
-  return time ? `${period} - Horaire souhaité : ${formatTimeOnly(time)}` : period;
+  return `Début : ${formatDateTime(start)} - Fin : ${formatDateTime(end)}`;
 }
 
 function formatDateTime(value) {
@@ -1028,9 +1202,24 @@ function formatDateTime(value) {
   }).format(date);
 }
 
-function formatTimeOnly(value) {
-  const match = String(value || "").match(/^(\d{2}):(\d{2})/);
-  return match ? `${match[1]}:${match[2]}` : String(value || "");
+function formatDateOnly(value) {
+  if (!value) return "";
+  const date = new Date(`${value}T12:00`);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
+function extractTime(value) {
+  const match = String(value || "").match(/T(\d{2}:\d{2})/);
+  return match ? match[1] : "";
 }
 
 function splitFullName(fullName) {

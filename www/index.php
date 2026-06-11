@@ -460,19 +460,32 @@ $user = currentUser();
             </div>
           </div>
 
-          <div class="inline-fields">
+          <section class="booking-period">
             <div>
-              <label for="bookingStartDateTime">Arrivée prévue</label>
-              <input id="bookingStartDateTime" type="datetime-local" required />
+              <h4>Période souhaitée</h4>
+              <p>Choisissez une date, puis l’heure associée dans la fenêtre qui s’ouvre.</p>
             </div>
-            <div>
-              <label for="bookingEndDateTime">Départ prévu</label>
-              <input id="bookingEndDateTime" type="datetime-local" required />
+            <div class="inline-fields booking-date-fields">
+              <div class="date-time-field">
+                <label for="bookingStartDate">Début de garde</label>
+                <input id="bookingStartDate" type="date" required />
+                <button class="date-time-summary" id="bookingStartTimeBtn" type="button">
+                  Choisir l’heure
+                </button>
+                <small id="bookingStartSummary">Date et heure non renseignées.</small>
+                <input id="bookingStartDateTime" type="hidden" />
+              </div>
+              <div class="date-time-field">
+                <label for="bookingEndDate">Fin de garde</label>
+                <input id="bookingEndDate" type="date" required />
+                <button class="date-time-summary" id="bookingEndTimeBtn" type="button">
+                  Choisir l’heure
+                </button>
+                <small id="bookingEndSummary">Date et heure non renseignées.</small>
+                <input id="bookingEndDateTime" type="hidden" />
+              </div>
             </div>
-          </div>
-
-          <label for="bookingTime">Horaire souhaité</label>
-          <input id="bookingTime" type="time" step="60" />
+          </section>
 
           <label for="bookingNotes">Informations complémentaires</label>
           <textarea
@@ -496,6 +509,30 @@ $user = currentUser();
             <button class="btn btn-primary" id="closeBookingSuccessBtn" type="button">Fermer</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop nested-modal" id="bookingTimeModal" hidden>
+      <div class="modal-card modal-compact" role="dialog" aria-modal="true" aria-labelledby="bookingTimeModalTitle">
+        <div class="modal-head">
+          <div>
+            <h3 id="bookingTimeModalTitle">Choisir l’heure</h3>
+            <p class="modal-copy" id="bookingTimeModalText">Sélectionnez l’heure souhaitée.</p>
+          </div>
+          <button class="icon-btn" id="closeBookingTimeBtn" type="button" aria-label="Fermer">×</button>
+        </div>
+
+        <form id="bookingTimeForm" class="stack-form">
+          <label for="bookingTimeInput">Heure</label>
+          <input id="bookingTimeInput" type="time" step="300" required />
+
+          <p class="inline-message" id="bookingTimeMessage"></p>
+
+          <div class="form-actions split-actions">
+            <button class="btn btn-secondary btn-sm" id="cancelBookingTimeBtn" type="button">Annuler</button>
+            <button class="btn btn-primary btn-sm" type="submit">Valider</button>
+          </div>
+        </form>
       </div>
     </div>
 
