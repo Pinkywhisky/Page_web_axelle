@@ -58,6 +58,10 @@ CREATE TABLE contact_requests (
     email VARCHAR(190) NOT NULL,
     phone VARCHAR(30) DEFAULT NULL,
     message TEXT NOT NULL,
-    status ENUM('new', 'handled') NOT NULL DEFAULT 'new',
+    admin_reply TEXT DEFAULT NULL,
+    client_reply TEXT DEFAULT NULL,
+    status ENUM('new', 'waiting', 'closed') NOT NULL DEFAULT 'new',
+    replied_at DATETIME DEFAULT NULL,
+    client_replied_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

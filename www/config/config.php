@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+date_default_timezone_set('Europe/Paris');
+
 const DB_HOST = 'localhost';
 const DB_NAME = 'club_des_pattes';
 const DB_USER = 'admin';

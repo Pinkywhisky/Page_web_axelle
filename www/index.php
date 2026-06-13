@@ -13,9 +13,9 @@ $user = currentUser();
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title><?= e(APP_NAME) ?> | Garde à domicile et pet-sitting</title>
+    <title><?= e(APP_NAME) ?> | Je garde vos animaux à domicile</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/style.css" />
+    <link rel="stylesheet" href="/assets/style.css?v=20260613-9" />
   </head>
 
   <body>
@@ -26,7 +26,7 @@ $user = currentUser();
             <span class="brand-badge">CP</span>
             <span class="brand-copy">
               <strong><?= e(APP_NAME) ?></strong>
-              <small>Garde à domicile • pet-sitting personnalisé</small>
+              <small>Pet-sitting à domicile • attentive et rassurante</small>
             </span>
           </a>
 
@@ -53,36 +53,22 @@ $user = currentUser();
           <section class="hero-section" id="home">
             <div class="hero-card">
               <div class="hero-copy">
-                <h1>Garde d'animaux à domicile, simple et rassurante.</h1>
+                <h1>Je garde vos animaux à domicile, avec douceur et sérénité.</h1>
                 <p class="hero-text">
-                  Une solution moderne pour suivre les informations de votre animal
-                  et organiser vos gardes en toute sérénité.
+                  Je vous propose un accompagnement moderne pour suivre les informations
+                  de votre animal et organiser vos gardes en toute sérénité.
                 </p>
 
-                <div class="hero-actions">
-                  <button class="btn btn-primary" id="heroRegisterBtn" type="button">
-                    Créer un compte
-                  </button>
-                  <button class="btn btn-secondary" id="heroLoginBtn" type="button">
-                    Accéder à mon espace
-                  </button>
-                  <button class="btn btn-secondary" id="heroBookingBtn" type="button">
-                    Prendre RDV
-                  </button>
-                  <button class="btn btn-primary" id="heroManageBtn" type="button" hidden>
-                    Gestion
-                  </button>
-                </div>
               </div>
             </div>
           </section>
 
           <section class="section-block trust-section" id="trust">
             <div class="section-center">
-              <h2>Pourquoi nous faire confiance ?</h2>
+              <h2>Pourquoi me faire confiance ?</h2>
               <p class="section-text">
-                Une expérience pensée pour accompagner les familles avec douceur,
-                clarté et sérieux.
+                J'accompagne les familles avec douceur, clarté et sérieux,
+                en restant attentive aux habitudes de chaque animal.
               </p>
             </div>
 
@@ -90,26 +76,26 @@ $user = currentUser();
               <article class="feature-card">
                 <span class="feature-icon" aria-hidden="true">🐾</span>
                 <h3>Informations centralisées</h3>
-                <p>Toutes les informations importantes de votre animal sont enregistrées au même endroit.</p>
+                <p>Je centralise les informations importantes de votre animal au même endroit.</p>
               </article>
               <article class="feature-card">
                 <span class="feature-icon" aria-hidden="true">🏡</span>
                 <h3>Organisation simplifiée</h3>
-                <p>Préparez facilement les gardes et les informations utiles.</p>
+                <p>Je vous aide à préparer facilement les gardes et les informations utiles.</p>
               </article>
               <article class="feature-card">
                 <span class="feature-icon" aria-hidden="true">📞</span>
                 <h3>Suivi personnalisé</h3>
-                <p>Gardez le contact et retrouvez l'historique des informations importantes.</p>
+                <p>Je reste disponible et vous retrouvez l'historique des informations importantes.</p>
               </article>
             </div>
           </section>
 
           <section class="section-block services-section" id="services">
             <div class="section-center">
-              <h2>Des services adaptés au quotidien de votre animal</h2>
+              <h2>Mes services pour le quotidien de votre animal</h2>
               <p class="section-text">
-                Une approche souple pour accompagner les chiens et chats dans leur environnement.
+                Je m'adapte au rythme des chiens et des chats, directement dans leur environnement.
               </p>
             </div>
 
@@ -118,21 +104,21 @@ $user = currentUser();
                 <div class="service-image service-image-walk" role="img" aria-label="Chien en promenade"></div>
                 <div class="service-content">
                   <h3>Promenade</h3>
-                  <p>Des sorties calmes et adaptées au rythme de votre chien, pour préserver ses repères.</p>
+                  <p>Je propose des sorties calmes, adaptées au rythme de votre chien, pour préserver ses repères.</p>
                 </div>
               </article>
               <article class="service-card">
                 <div class="service-image service-image-care" role="img" aria-label="Chien et chat dans un cadre naturel"></div>
                 <div class="service-content">
                   <h3>Garde chien & chat</h3>
-                  <p>Une présence rassurante à domicile, avec les informations utiles toujours disponibles.</p>
+                  <p>J'assure une présence rassurante à domicile, avec les informations utiles toujours disponibles.</p>
                 </div>
               </article>
               <article class="service-card">
                 <div class="service-image service-image-training" role="img" aria-label="Moment d'éducation canine"></div>
                 <div class="service-content">
                   <h3>Éducation canine</h3>
-                  <p>Un accompagnement bienveillant pour renforcer la confiance et les habitudes positives.</p>
+                  <p>Je propose un accompagnement bienveillant pour renforcer la confiance et les habitudes positives.</p>
                 </div>
               </article>
             </div>
@@ -146,7 +132,7 @@ $user = currentUser();
             <div class="testimonial-grid">
               <article class="testimonial-card">
                 <p class="stars" aria-label="5 étoiles">★★★★★</p>
-                <blockquote>"Très sérieux et rassurant. Mon chien a été parfaitement suivi."</blockquote>
+                <blockquote>"Très sérieuse et rassurante. Mon chien a été parfaitement suivi."</blockquote>
                 <strong>Camille R.</strong>
               </article>
               <article class="testimonial-card">
@@ -166,13 +152,13 @@ $user = currentUser();
             <div class="contact-cta">
               <h2>Un premier échange simple</h2>
               <p class="section-text">
-                Présentez votre besoin et échangeons ensemble pour trouver la solution adaptée à votre animal.
+                Présentez-moi votre besoin et je vous proposerai une solution adaptée à votre animal.
               </p>
               <div class="hero-actions contact-cta-actions">
                 <button class="btn btn-primary" id="contactButton" type="button">
-                  Nous contacter
+                  Me contacter
                 </button>
-                <button class="btn btn-secondary" id="contactBookingBtn" type="button">
+                <button class="btn btn-secondary" id="contactBookingBtn" type="button" hidden>
                   Prendre RDV
                 </button>
               </div>
@@ -183,47 +169,94 @@ $user = currentUser();
         <section class="section-block manage-view" id="manageView" hidden>
           <div class="section-row">
             <div>
-              <h2>Vue administration des membres</h2>
-              <p class="section-text">Recherchez, modifiez et supprimez les comptes clients.</p>
+              <h2>Vue administration</h2>
+              <p class="section-text">Suivez les gardes, les messages et les comptes clients.</p>
             </div>
             <button class="btn btn-secondary" id="backHomeBtn" type="button">Retour accueil</button>
           </div>
 
-          <article class="panel-card admin-panel-card bookings-admin-card">
-            <div class="panel-card-top">
-              <div>
-                <h3>Demandes de garde</h3>
-                <p class="panel-text" id="manageBookingsMessage"></p>
-              </div>
-            </div>
-            <div class="booking-list" id="manageBookingsList"></div>
-          </article>
+          <div class="admin-tabs" id="manageTabs" role="tablist" aria-label="Administration">
+            <button class="admin-tab is-active" id="adminBookingsTab" type="button" role="tab" aria-selected="true" aria-controls="adminBookingsPanel" data-admin-tab="bookings">
+              <span>Gardes</span>
+              <span class="tab-badge" id="adminBookingsBadge" hidden>0</span>
+            </button>
+            <button class="admin-tab" id="adminUsersTab" type="button" role="tab" aria-selected="false" aria-controls="adminUsersPanel" data-admin-tab="users">
+              <span>Membres</span>
+              <span class="tab-badge tab-badge-muted" id="adminUsersBadge" hidden>0</span>
+            </button>
+            <button class="admin-tab" id="adminContactsTab" type="button" role="tab" aria-selected="false" aria-controls="adminContactsPanel" data-admin-tab="contacts">
+              <span>Messages</span>
+              <span class="tab-badge" id="adminContactsBadge" hidden>0</span>
+            </button>
+            <button class="admin-tab" id="adminArchivesTab" type="button" role="tab" aria-selected="false" aria-controls="adminArchivesPanel" data-admin-tab="archives">
+              <span>Archives</span>
+              <span class="tab-badge tab-badge-muted" id="adminArchivesBadge" hidden>0</span>
+            </button>
+          </div>
 
-          <div class="admin-grid modal-admin-layout">
+          <div class="admin-tab-panel" id="adminBookingsPanel" role="tabpanel" aria-labelledby="adminBookingsTab">
+            <article class="panel-card admin-panel-card bookings-admin-card">
+              <div class="panel-card-top">
+                <div>
+                  <h3>Gardes</h3>
+                  <p class="panel-text" id="manageBookingsMessage"></p>
+                </div>
+              </div>
+              <div class="booking-list" id="manageBookingsList"></div>
+            </article>
+          </div>
+
+          <div class="admin-tab-panel" id="adminUsersPanel" role="tabpanel" aria-labelledby="adminUsersTab" hidden>
+            <div class="admin-grid modal-admin-layout">
+              <article class="panel-card admin-panel-card">
+                <div class="panel-card-top">
+                  <div>
+                    <h3>Comptes et profils</h3>
+                    <p class="panel-text" id="manageListMessage"></p>
+                  </div>
+                  <input id="manageSearch" type="search" class="compact-input" placeholder="Rechercher..." />
+                </div>
+
+                <div class="table-shell">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Nom</th>
+                        <th>E-mail</th>
+                        <th>Type d’animal</th>
+                        <th>Nom de l’animal</th>
+                        <th>Rôle</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="manageTableBody"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="admin-tab-panel" id="adminContactsPanel" role="tabpanel" aria-labelledby="adminContactsTab" hidden>
             <article class="panel-card admin-panel-card">
               <div class="panel-card-top">
                 <div>
-                  <h3>Comptes et profils</h3>
-                  <p class="panel-text" id="manageListMessage"></p>
+                  <h3>Messages</h3>
+                  <p class="panel-text" id="manageContactsMessage"></p>
                 </div>
-                <input id="manageSearch" type="search" class="compact-input" placeholder="Rechercher..." />
               </div>
+              <div class="booking-list" id="manageContactsList"></div>
+            </article>
+          </div>
 
-              <div class="table-shell">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Nom</th>
-                      <th>E-mail</th>
-                      <th>Type d’animal</th>
-                      <th>Nom de l’animal</th>
-                      <th>Rôle</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="manageTableBody"></tbody>
-                </table>
+          <div class="admin-tab-panel" id="adminArchivesPanel" role="tabpanel" aria-labelledby="adminArchivesTab" hidden>
+            <article class="panel-card admin-panel-card">
+              <div class="panel-card-top">
+                <div>
+                  <h3>Archives</h3>
+                  <p class="panel-text" id="manageArchivesMessage"></p>
+                </div>
               </div>
+              <div class="booking-list" id="manageArchivesList"></div>
             </article>
           </div>
         </section>
@@ -233,7 +266,7 @@ $user = currentUser();
         <div class="footer-inner">
           <div>
             <strong><?= e(APP_NAME) ?></strong>
-            <p>Garde d'animaux à domicile, simple et rassurante.</p>
+            <p>Je garde vos animaux à domicile, avec douceur et sérénité.</p>
           </div>
           <div class="footer-links">
             <a href="#">Mentions légales</a>
@@ -396,6 +429,16 @@ $user = currentUser();
             <button class="btn btn-secondary btn-sm" id="profileBookingBtn" type="button">Nouvelle demande</button>
           </div>
           <div class="booking-list" id="profileBookingsList"></div>
+        </section>
+
+        <section class="profile-bookings">
+          <div class="panel-card-top">
+            <div>
+              <h4>Mes messages</h4>
+              <p class="panel-text" id="profileContactsMessage"></p>
+            </div>
+          </div>
+          <div class="booking-list" id="profileContactsList"></div>
         </section>
 
         <form id="profileForm" class="stack-form">
@@ -588,8 +631,8 @@ $user = currentUser();
       <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="contactModalTitle">
         <div class="modal-head">
           <div>
-            <h3 id="contactModalTitle">Nous contacter</h3>
-            <p class="modal-copy">Présentez votre besoin et les informations importantes pour votre animal.</p>
+            <h3 id="contactModalTitle">Me contacter</h3>
+            <p class="modal-copy">Présentez-moi votre besoin et les informations importantes pour votre animal.</p>
           </div>
           <button class="icon-btn" id="closeContactBtn" type="button" aria-label="Fermer">×</button>
         </div>
@@ -630,7 +673,7 @@ $user = currentUser();
         <div class="modal-success" id="contactSuccessPanel" hidden>
           <div class="success-icon" aria-hidden="true">✓</div>
           <h4>Votre message a bien été envoyé.</h4>
-          <p>Nous reviendrons vers vous pour échanger sur la solution adaptée à votre animal.</p>
+          <p>Je reviendrai vers vous pour échanger sur la solution adaptée à votre animal.</p>
           <div class="form-actions">
             <button class="btn btn-primary" id="closeContactSuccessBtn" type="button">Fermer</button>
           </div>
@@ -641,6 +684,6 @@ $user = currentUser();
     <script>
       window.CDP_CURRENT_USER = <?= json_encode($user, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: 'null' ?>;
     </script>
-    <script src="/assets/script.js" defer></script>
+    <script src="/assets/script.js?v=20260613-5" defer></script>
   </body>
 </html>

@@ -59,6 +59,7 @@ textarea {
     padding: 12px 20px;
     border-bottom: 1px solid rgba(77, 55, 40, 0.08);
     background: rgba(252, 250, 247, 0.88);
+    -webkit-backdrop-filter: blur(18px);
     backdrop-filter: blur(18px);
 }
 
@@ -233,38 +234,42 @@ main {
 
 .hero-section {
     min-height: calc(100vh - 88px);
-    display: grid;
-    align-items: center;
-    padding: 26px 20px 42px;
-}
-
-.hero-card {
+    min-height: calc(100svh - 88px);
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    width: min(100%, var(--max-width));
-    min-height: min(720px, calc(100vh - 140px));
-    margin: 0 auto;
     display: grid;
     align-items: center;
-    padding: clamp(34px, 7vw, 88px);
-    border-radius: 38px;
+    padding: 0;
+    border-radius: 0;
     background:
-        linear-gradient(90deg, rgba(246, 241, 234, 0.92) 0%, rgba(246, 241, 234, 0.78) 42%, rgba(246, 241, 234, 0.34) 100%),
+        linear-gradient(90deg, rgba(246, 241, 234, 0.94) 0%, rgba(246, 241, 234, 0.78) 44%, rgba(246, 241, 234, 0.36) 100%),
         url("/assets/hero-pets.png") center / cover no-repeat;
-    box-shadow: var(--shadow-soft);
 }
 
-.hero-card::after {
+.hero-section::after {
     content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: rgba(234, 223, 204, 0.28);
+    background: rgba(234, 223, 204, 0.22);
+}
+
+.hero-card {
+    width: min(100%, var(--max-width));
+    min-height: clamp(520px, calc(100vh - 160px), 680px);
+    min-height: clamp(520px, calc(100svh - 160px), 680px);
+    margin: 0 auto;
+    display: grid;
+    align-items: center;
+    padding: clamp(46px, 7vw, 92px) 20px clamp(52px, 7vw, 96px);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .hero-copy {
-    max-width: 650px;
+    width: min(100%, 980px);
 }
 
 .hero-copy h1,
@@ -284,15 +289,16 @@ main {
 }
 
 .hero-copy h1 {
-    max-width: 11ch;
-    font-size: clamp(3rem, 6vw, 5.8rem);
+    width: 100%;
+    max-width: none;
+    font-size: 5.35rem;
 }
 
 .hero-text {
-    max-width: 58ch;
+    width: min(100%, 68ch);
     margin: 0;
     color: #5D4A3D;
-    font-size: clamp(1rem, 1.7vw, 1.18rem);
+    font-size: 1.18rem;
     line-height: 1.8;
 }
 
@@ -482,6 +488,66 @@ main {
     padding-top: 48px;
 }
 
+.admin-tabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 22px;
+    padding: 6px;
+    border: 1px solid rgba(77, 55, 40, 0.10);
+    border-radius: 999px;
+    background: rgba(252, 250, 247, 0.76);
+    box-shadow: var(--shadow-card);
+}
+
+.admin-tab {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 9px 16px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    color: var(--brown-dark);
+    background: transparent;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.admin-tab.is-active {
+    color: var(--off-white);
+    background: var(--brown-dark);
+    box-shadow: 0 10px 22px rgba(77, 55, 40, 0.16);
+}
+
+.tab-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 999px;
+    color: var(--brown-dark);
+    background: var(--beige-warm);
+    font-size: 0.78rem;
+    line-height: 1;
+}
+
+.admin-tab.is-active .tab-badge {
+    color: var(--brown-dark);
+    background: var(--off-white);
+}
+
+.tab-badge-muted {
+    background: rgba(234, 223, 204, 0.78);
+}
+
+.admin-tab-panel {
+    min-width: 0;
+}
+
 .admin-grid {
     grid-template-columns: minmax(0, 1fr);
     align-items: start;
@@ -537,6 +603,12 @@ main {
     line-height: 1.55;
 }
 
+.contact-reply-form {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
 .booking-item-head,
 .pet-item {
     display: flex;
@@ -585,6 +657,26 @@ main {
 .status-approved {
     background: #E5F3E8;
     color: #2F7A4F;
+}
+
+.status-new {
+    background: #FFF7DA;
+    color: #8A5E12;
+}
+
+.status-waiting {
+    background: #EEF3FF;
+    color: #3F5F9F;
+}
+
+.status-handled {
+    background: #E5F3E8;
+    color: #2F7A4F;
+}
+
+.status-closed {
+    background: #EFEAE3;
+    color: #766557;
 }
 
 .status-rejected,
@@ -832,6 +924,7 @@ tbody tr.is-selected {
     place-items: center;
     padding: 18px;
     background: rgba(77, 55, 40, 0.36);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
 }
 
@@ -945,11 +1038,19 @@ select:focus-visible {
         grid-template-columns: 1fr;
     }
 
-    .hero-card {
-        min-height: 660px;
+    .hero-section {
         background:
             linear-gradient(180deg, rgba(246, 241, 234, 0.94) 0%, rgba(246, 241, 234, 0.70) 55%, rgba(246, 241, 234, 0.28) 100%),
             url("/assets/hero-pets.png") center / cover no-repeat;
+    }
+
+    .hero-card {
+        min-height: clamp(540px, 72vh, 660px);
+        min-height: clamp(540px, 72svh, 660px);
+    }
+
+    .hero-copy h1 {
+        font-size: 4.25rem;
     }
 }
 
@@ -973,6 +1074,18 @@ select:focus-visible {
         grid-template-columns: 1fr;
     }
 
+    .admin-tabs {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: 100%;
+        border-radius: 22px;
+    }
+
+    .admin-tab {
+        width: 100%;
+        min-width: 0;
+    }
+
     .header-actions .btn,
     .user-summary .btn,
     .hero-actions .btn,
@@ -982,19 +1095,22 @@ select:focus-visible {
 
     .hero-section {
         min-height: auto;
-        padding: 18px 12px 32px;
+        padding: 0;
     }
 
     .hero-card {
-        min-height: 620px;
-        padding: 28px 20px;
-        border-radius: 28px;
+        min-height: clamp(480px, 68vh, 600px);
+        padding: 42px 20px 52px;
         align-items: start;
     }
 
     .hero-copy h1 {
         max-width: none;
-        font-size: clamp(2.5rem, 12vw, 3.6rem);
+        font-size: 3.2rem;
+    }
+
+    .hero-text {
+        font-size: 1rem;
     }
 
     .section-block {
@@ -1032,5 +1148,11 @@ select:focus-visible {
 
     .booking-admin-controls {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    .hero-copy h1 {
+        font-size: 2.55rem;
     }
 }

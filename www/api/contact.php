@@ -3,53 +3,244 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/auth.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    jsonResponse(['error' => 'Méthode non autorisée.'], 405);
+function publicContactRequest(array $request): array
+{
+    return [
+        'id' => (int) $request['id'],
+        'full_name' => $request['full_name'],
+        'fullName' => $request['full_name'],
+        'email' => $request['email'],
+        'phone' => $request['phone'] ?? '',
+        'message' => $request['message'],
+        'admin_reply' => $request['admin_reply'] ?? '',
+        'adminReply' => $request['admin_reply'] ?? '',
+        'client_reply' => $request['client_reply'] ?? '',
+        'clientReply' => $request['client_reply'] ?? '',
+        'status' => $request['status'],
+        'replied_at' => $request['replied_at'] ?? null,
+        'repliedAt' => $request['replied_at'] ?? null,
+        'client_replied_at' => $request['client_replied_at'] ?? null,
+        'clientRepliedAt' => $request['client_replied_at'] ?? null,
+        'created_at' => $request['created_at'],
+        'createdAt' => $request['created_at'],
+    ];
 }
 
-$data = readJsonBody();
-$fullName = cleanText($data['full_name'] ?? $data['fullName'] ?? '', 150);
-$email = strtolower(cleanText($data['email'] ?? '', 190));
-$phone = cleanText($data['phone'] ?? '', 30);
-$message = cleanText($data['message'] ?? '', 1200);
-
-if ($fullName === '') {
-    jsonResponse(['error' => 'Le nom complet est obligatoire.'], 400);
-}
-
-if (!isValidEmailStrict($email)) {
-    jsonResponse(['error' => 'Adresse e-mail invalide. Les accents ne sont pas autorisés.'], 400);
-}
-
-if ($message === '') {
-    jsonResponse(['error' => 'Le message est obligatoire.'], 400);
-}
-
-if (
-    strlen($fullName) > 150 ||
-    strlen($email) > 190 ||
-    strlen($phone) > 30 ||
-    strlen($message) > 1200
-) {
-    jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
-}
-
-try {
+function columnExists(string $tableName, string $columnName): bool
+{
     $statement = db()->prepare(
-        'INSERT INTO contact_requests (full_name, email, phone, message)
-         VALUES (:full_name, :email, :phone, :message)'
+        'SELECT COUNT(*) AS total
+         FROM information_schema.columns
+         WHERE table_schema = DATABASE()
+           AND table_name = :table_name
+           AND column_name = :column_name'
     );
     $statement->execute([
-        'full_name' => $fullName,
-        'email' => $email,
-        'phone' => $phone ?: null,
-        'message' => $message,
+        'table_name' => $tableName,
+        'column_name' => $columnName,
     ]);
 
-    jsonResponse(['message' => 'Votre message a bien été envoyé.'], 201);
+    return (int) $statement->fetch()['total'] > 0;
+}
+
+function ensureContactReplyColumns(): void
+{
+    db()->exec(
+        "ALTER TABLE contact_requests
+         MODIFY COLUMN status ENUM('new', 'waiting', 'closed', 'handled') NOT NULL DEFAULT 'new'"
+    );
+    db()->exec("UPDATE contact_requests SET status = 'closed' WHERE status = 'handled'");
+
+    if (!columnExists('contact_requests', 'admin_reply')) {
+        db()->exec('ALTER TABLE contact_requests ADD COLUMN admin_reply TEXT DEFAULT NULL');
+    }
+
+    if (!columnExists('contact_requests', 'client_reply')) {
+        db()->exec('ALTER TABLE contact_requests ADD COLUMN client_reply TEXT DEFAULT NULL');
+    }
+
+    if (!columnExists('contact_requests', 'replied_at')) {
+        db()->exec('ALTER TABLE contact_requests ADD COLUMN replied_at DATETIME DEFAULT NULL');
+    }
+
+    if (!columnExists('contact_requests', 'client_replied_at')) {
+        db()->exec('ALTER TABLE contact_requests ADD COLUMN client_replied_at DATETIME DEFAULT NULL');
+    }
+}
+
+function findContactRequestById(int $id): ?array
+{
+    $statement = db()->prepare('SELECT * FROM contact_requests WHERE id = :id LIMIT 1');
+    $statement->execute(['id' => $id]);
+    $request = $statement->fetch();
+
+    return $request ?: null;
+}
+
+$method = $_SERVER['REQUEST_METHOD'];
+
+try {
+    if ($method === 'GET') {
+        requireLogin();
+        ensureContactReplyColumns();
+
+        if (!isAdmin()) {
+            $user = currentUser();
+            $statement = db()->prepare(
+                'SELECT *
+                 FROM contact_requests
+                 WHERE email = :email
+                   AND admin_reply IS NOT NULL
+                   AND admin_reply <> ""
+                   AND status <> "closed"
+                 ORDER BY replied_at DESC, created_at DESC, id DESC'
+            );
+            $statement->execute(['email' => $user['email'] ?? '']);
+
+            jsonResponse(['contacts' => array_map('publicContactRequest', $statement->fetchAll())]);
+        }
+
+        $statement = db()->query(
+            'SELECT *
+             FROM contact_requests
+             ORDER BY
+                FIELD(status, "new", "handled"),
+                created_at DESC,
+                id DESC'
+        );
+
+        jsonResponse(['contacts' => array_map('publicContactRequest', $statement->fetchAll())]);
+    }
+
+    if ($method === 'POST') {
+        $data = readJsonBody();
+        $fullName = cleanText($data['full_name'] ?? $data['fullName'] ?? '', 150);
+        $email = strtolower(cleanText($data['email'] ?? '', 190));
+        $phone = cleanText($data['phone'] ?? '', 30);
+        $message = cleanText($data['message'] ?? '', 1200);
+
+        if ($fullName === '') {
+            jsonResponse(['error' => 'Le nom complet est obligatoire.'], 400);
+        }
+
+        if (!isValidEmailStrict($email)) {
+            jsonResponse(['error' => 'Adresse e-mail invalide. Les accents ne sont pas autorisés.'], 400);
+        }
+
+        if ($message === '') {
+            jsonResponse(['error' => 'Le message est obligatoire.'], 400);
+        }
+
+        if (
+            strlen($fullName) > 150 ||
+            strlen($email) > 190 ||
+            strlen($phone) > 30 ||
+            strlen($message) > 1200
+        ) {
+            jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
+        }
+
+        $statement = db()->prepare(
+            'INSERT INTO contact_requests (full_name, email, phone, message)
+             VALUES (:full_name, :email, :phone, :message)'
+        );
+        $statement->execute([
+            'full_name' => $fullName,
+            'email' => $email,
+            'phone' => $phone ?: null,
+            'message' => $message,
+        ]);
+
+        jsonResponse(['message' => 'Votre message a bien été envoyé.'], 201);
+    }
+
+    if ($method === 'PUT') {
+        requireLogin();
+        ensureContactReplyColumns();
+
+        $data = readJsonBody();
+        $id = (int) ($data['id'] ?? 0);
+        $contact = findContactRequestById($id);
+
+        if ($id <= 0 || !$contact) {
+            jsonResponse(['error' => 'Message introuvable.'], 404);
+        }
+
+        if (!isAdmin()) {
+            $user = currentUser();
+
+            if (($user['email'] ?? '') !== ($contact['email'] ?? '')) {
+                jsonResponse(['error' => 'Accès refusé.'], 403);
+            }
+
+            if (($contact['status'] ?? '') !== 'waiting') {
+                jsonResponse(['error' => 'Cette discussion n’attend pas de réponse client.'], 400);
+            }
+
+            $clientReply = cleanText($data['client_reply'] ?? $data['clientReply'] ?? '', 1200);
+
+            if ($clientReply === '') {
+                jsonResponse(['error' => 'Merci de saisir une réponse.'], 400);
+            }
+
+            if (strlen($clientReply) > 1200) {
+                jsonResponse(['error' => 'La réponse est trop longue.'], 400);
+            }
+
+            $statement = db()->prepare(
+                'UPDATE contact_requests
+                 SET status = "new",
+                     client_reply = :client_reply,
+                     client_replied_at = NOW()
+                 WHERE id = :id'
+            );
+            $statement->execute(['id' => $id, 'client_reply' => $clientReply]);
+
+            jsonResponse(['message' => 'Réponse envoyée.', 'contact' => publicContactRequest(findContactRequestById($id))]);
+        }
+
+        $status = cleanText($data['status'] ?? '', 20);
+        $adminReply = cleanText($data['admin_reply'] ?? $data['adminReply'] ?? '', 1200);
+
+        if (!in_array($status, ['new', 'waiting', 'closed'], true)) {
+            jsonResponse(['error' => 'Statut invalide.'], 400);
+        }
+
+        if ($status === 'waiting' && $adminReply === '') {
+            jsonResponse(['error' => 'Merci de saisir une réponse.'], 400);
+        }
+
+        if (strlen($adminReply) > 1200) {
+            jsonResponse(['error' => 'La réponse est trop longue.'], 400);
+        }
+
+        $statement = db()->prepare(
+            'UPDATE contact_requests
+             SET status = :status,
+                 admin_reply = CASE
+                    WHEN :admin_reply_for_value <> "" THEN :admin_reply
+                    ELSE admin_reply
+                 END,
+                 replied_at = CASE
+                    WHEN :admin_reply_for_date <> "" THEN NOW()
+                    ELSE replied_at
+                 END
+             WHERE id = :id'
+        );
+        $statement->execute([
+            'id' => $id,
+            'status' => $status,
+            'admin_reply' => $adminReply,
+            'admin_reply_for_value' => $adminReply,
+            'admin_reply_for_date' => $adminReply,
+        ]);
+
+        jsonResponse(['message' => 'Message mis à jour.', 'contact' => publicContactRequest(findContactRequestById($id))]);
+    }
+
+    jsonResponse(['error' => 'Méthode non autorisée.'], 405);
 } catch (PDOException $error) {
     jsonResponse(['error' => 'Erreur base de données.'], 500);
 }
-

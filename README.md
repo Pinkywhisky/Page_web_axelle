@@ -7,7 +7,7 @@ La racine fonctionnelle officielle se trouve dans le dossier `www/`.
 
 ## Technologies
 
-- PHP 8+
+- PHP 8.1+
 - MariaDB / MySQL
 - HTML
 - CSS
@@ -17,7 +17,7 @@ La racine fonctionnelle officielle se trouve dans le dossier `www/`.
 
 ### Prérequis
 
-- PHP 8+
+- PHP 8.1+
 - MariaDB ou MySQL
 
 ### Création de la base
@@ -78,6 +78,8 @@ Puis ouvrir :
 ```text
 http://localhost:8000
 ```
+
+Le dossier `www/` doit être utilisé comme racine web de l'application.
 
 ## Fonctionnalités
 

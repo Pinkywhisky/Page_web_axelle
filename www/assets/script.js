@@ -2,11 +2,14 @@ const state = {
   user: window.CDP_CURRENT_USER || null,
   users: [],
   bookings: [],
+  contacts: [],
   myBookings: [],
+  myContacts: [],
   pets: [],
   selectedUserId: null,
   activeModal: null,
   bookingTimeTarget: null,
+  adminTab: "bookings",
 };
 
 const dom = {};
@@ -30,15 +33,23 @@ function bindDom() {
     "openBookingBtn",
     "logoutBtn",
     "homeLink",
-    "heroRegisterBtn",
-    "heroLoginBtn",
-    "heroBookingBtn",
-    "heroManageBtn",
-    "contactRegisterBtn",
     "contactButton",
     "contactBookingBtn",
     "homeView",
     "manageView",
+    "manageTabs",
+    "adminBookingsTab",
+    "adminUsersTab",
+    "adminContactsTab",
+    "adminArchivesTab",
+    "adminBookingsPanel",
+    "adminUsersPanel",
+    "adminContactsPanel",
+    "adminArchivesPanel",
+    "adminBookingsBadge",
+    "adminUsersBadge",
+    "adminContactsBadge",
+    "adminArchivesBadge",
     "backHomeBtn",
     "loginModal",
     "registerModal",
@@ -89,6 +100,8 @@ function bindDom() {
     "profileBookingBtn",
     "profileBookingsMessage",
     "profileBookingsList",
+    "profileContactsMessage",
+    "profileContactsList",
     "bookingForm",
     "bookingPetsWrap",
     "bookingPetsList",
@@ -139,6 +152,10 @@ function bindDom() {
     "manageResetBtn",
     "manageBookingsMessage",
     "manageBookingsList",
+    "manageContactsMessage",
+    "manageContactsList",
+    "manageArchivesMessage",
+    "manageArchivesList",
   ].forEach((id) => {
     dom[id] = document.getElementById(id);
   });
@@ -147,11 +164,6 @@ function bindDom() {
 function bindEvents() {
   onClick(dom.openLoginBtn, () => openModal(dom.loginModal));
   onClick(dom.openRegisterBtn, () => openModal(dom.registerModal));
-  onClick(dom.heroLoginBtn, () => openModal(dom.loginModal));
-  onClick(dom.heroRegisterBtn, () => openModal(dom.registerModal));
-  onClick(dom.heroBookingBtn, openBooking);
-  onClick(dom.heroManageBtn, openManage);
-  onClick(dom.contactRegisterBtn, () => openModal(dom.registerModal));
   onClick(dom.contactButton, openContact);
   onClick(dom.contactBookingBtn, openBooking);
   onClick(dom.switchToRegisterBtn, () => switchModal(dom.loginModal, dom.registerModal));
@@ -198,9 +210,12 @@ function bindEvents() {
   onSubmit(dom.contactForm, handleContactSubmit);
   onSubmit(dom.manageEditForm, handleManageSave);
   onEvent(dom.manageSearch, "input", renderUsersTable);
+  onEvent(dom.manageTabs, "click", handleManageTabsClick);
   onEvent(dom.manageTableBody, "click", handleManageTableClick);
+  onEvent(dom.manageContactsList, "click", handleManageContactsClick);
   onEvent(dom.petsList, "click", handlePetsListClick);
   onEvent(dom.profileBookingsList, "click", handleProfileBookingsClick);
+  onEvent(dom.profileContactsList, "click", handleProfileContactsClick);
   onEvent(dom.manageBookingsList, "click", handleManageBookingsClick);
   onEvent(dom.bookingStartDate, "change", () => handleBookingDateChange("start"));
   onEvent(dom.bookingEndDate, "change", () => handleBookingDateChange("end"));
@@ -250,25 +265,25 @@ async function requestJson(url, options = {}) {
 
 function renderSession() {
   const loggedIn = Boolean(state.user);
+  const adminUser = loggedIn && state.user?.role === "admin";
   dom.publicActions.hidden = loggedIn;
   dom.userArea.hidden = !loggedIn;
-  dom.heroRegisterBtn.hidden = loggedIn;
-  dom.heroLoginBtn.hidden = loggedIn;
+  dom.contactBookingBtn.hidden = !loggedIn || adminUser;
 
   if (!loggedIn) {
     dom.openManageBtn.hidden = true;
-    dom.heroBookingBtn.hidden = false;
-    dom.heroManageBtn.hidden = true;
     showHome();
     return;
   }
 
   dom.userInfoText.textContent = state.user.fullName || state.user.full_name || state.user.email;
-  dom.userRoleText.textContent = state.user.role === "admin" ? "Admin" : "Client";
-  dom.openManageBtn.hidden = state.user.role !== "admin";
-  dom.openBookingBtn.hidden = state.user.role === "admin";
-  dom.heroBookingBtn.hidden = state.user.role === "admin";
-  dom.heroManageBtn.hidden = state.user.role !== "admin";
+  dom.userRoleText.textContent = adminUser ? "Admin" : "Client";
+  dom.openManageBtn.hidden = !adminUser;
+  dom.openBookingBtn.hidden = adminUser;
+
+  if (adminUser) {
+    openManage();
+  }
 }
 
 async function handleLogin(event) {
@@ -330,7 +345,7 @@ async function openProfile() {
   fillProfileForm(state.user);
   setMessage(dom.profileModalMessage, "");
   openModal(dom.profileModal);
-  await Promise.all([loadPets(), loadMyBookings()]);
+  await Promise.all([loadPets(), loadMyBookings(), loadMyContacts()]);
 }
 
 function fillProfileForm(user) {
@@ -773,6 +788,87 @@ async function loadMyBookings() {
   }
 }
 
+async function loadMyContacts() {
+  if (!state.user || state.user.role === "admin") return;
+  setMessage(dom.profileContactsMessage, "Chargement...");
+
+  try {
+    const data = await requestJson("/api/contact.php");
+    state.myContacts = data.contacts || [];
+    setMessage(dom.profileContactsMessage, "");
+    renderProfileContacts();
+  } catch (error) {
+    state.myContacts = [];
+    renderProfileContacts();
+    setMessage(dom.profileContactsMessage, error.message, "error");
+  }
+}
+
+function renderProfileContacts() {
+  if (!dom.profileContactsList) return;
+
+  if (!state.myContacts.length) {
+    dom.profileContactsList.innerHTML =
+      "<div class='booking-item'><p>Aucune réponse à afficher pour le moment.</p></div>";
+    return;
+  }
+
+  dom.profileContactsList.innerHTML = state.myContacts
+    .map(
+      (contact) => `
+        <article class="booking-item">
+          <div class="booking-item-head">
+            <div>
+              <h5>Votre message</h5>
+              <p>${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
+            </div>
+            <span class="status-pill status-handled">Répondu</span>
+          </div>
+          <p>${escapeHtml(contact.message)}</p>
+          <p class="admin-note">Réponse : ${escapeHtml(contact.adminReply || contact.admin_reply)}</p>
+          ${
+            contact.clientReply || contact.client_reply
+              ? `<p class="admin-note">Votre réponse : ${escapeHtml(contact.clientReply || contact.client_reply)}</p>`
+              : ""
+          }
+          ${
+            contact.status === "waiting"
+              ? `<div class="contact-reply-form">
+                  <label for="clientReply${contact.id}">Votre réponse</label>
+                  <textarea id="clientReply${contact.id}" data-role="client-contact-reply" data-id="${contact.id}" rows="3" placeholder="Votre message retour."></textarea>
+                  <div class="form-actions">
+                    <button class="btn btn-primary btn-sm" data-action="reply-contact-client" data-id="${contact.id}" type="button">Répondre</button>
+                  </div>
+                </div>`
+              : ""
+          }
+        </article>
+      `
+    )
+    .join("");
+}
+
+async function handleProfileContactsClick(event) {
+  const button = event.target.closest("button[data-action='reply-contact-client'][data-id]");
+  if (!button) return;
+
+  const id = Number(button.dataset.id);
+  const replyInput = dom.profileContactsList.querySelector(`[data-role="client-contact-reply"][data-id="${id}"]`);
+
+  try {
+    await requestJson("/api/contact.php", {
+      method: "PUT",
+      body: {
+        id,
+        client_reply: replyInput?.value || "",
+      },
+    });
+    await loadMyContacts();
+  } catch (error) {
+    setMessage(dom.profileContactsMessage, error.message, "error");
+  }
+}
+
 function renderProfileBookings() {
   if (!dom.profileBookingsList) return;
 
@@ -853,12 +949,61 @@ async function openManage() {
   if (!state.user || state.user.role !== "admin") return;
   dom.homeView.hidden = true;
   dom.manageView.hidden = false;
-  await Promise.all([loadUsers(), loadAdminBookings()]);
+  setAdminTab(state.adminTab || "bookings");
+  await Promise.all([loadUsers(), loadAdminBookings(), loadAdminContacts()]);
+  updateAdminBadges();
 }
 
 function showHome() {
   if (dom.homeView) dom.homeView.hidden = false;
   if (dom.manageView) dom.manageView.hidden = true;
+}
+
+function handleManageTabsClick(event) {
+  const tabButton = event.target.closest("button[data-admin-tab]");
+  if (!tabButton) return;
+  setAdminTab(tabButton.dataset.adminTab);
+}
+
+function setAdminTab(tabName) {
+  const nextTab = ["bookings", "users", "contacts", "archives"].includes(tabName) ? tabName : "bookings";
+  state.adminTab = nextTab;
+
+  const isBookings = nextTab === "bookings";
+  const isUsers = nextTab === "users";
+  const isContacts = nextTab === "contacts";
+  const isArchives = nextTab === "archives";
+  if (dom.adminBookingsPanel) dom.adminBookingsPanel.hidden = !isBookings;
+  if (dom.adminUsersPanel) dom.adminUsersPanel.hidden = !isUsers;
+  if (dom.adminContactsPanel) dom.adminContactsPanel.hidden = !isContacts;
+  if (dom.adminArchivesPanel) dom.adminArchivesPanel.hidden = !isArchives;
+
+  updateAdminTabButton(dom.adminBookingsTab, isBookings);
+  updateAdminTabButton(dom.adminUsersTab, isUsers);
+  updateAdminTabButton(dom.adminContactsTab, isContacts);
+  updateAdminTabButton(dom.adminArchivesTab, isArchives);
+}
+
+function updateAdminTabButton(button, active) {
+  if (!button) return;
+  button.classList.toggle("is-active", active);
+  button.setAttribute("aria-selected", active ? "true" : "false");
+}
+
+function updateAdminBadges() {
+  const pendingBookings = state.bookings.filter((booking) => booking.status === "pending").length;
+  const newContacts = state.contacts.filter((contact) => contact.status === "new").length;
+  const closedContacts = state.contacts.filter((contact) => contact.status === "closed").length;
+  setBadge(dom.adminBookingsBadge, pendingBookings);
+  setBadge(dom.adminUsersBadge, state.users.length);
+  setBadge(dom.adminContactsBadge, newContacts);
+  setBadge(dom.adminArchivesBadge, closedContacts);
+}
+
+function setBadge(node, count) {
+  if (!node) return;
+  node.textContent = String(count);
+  node.hidden = count <= 0;
 }
 
 async function loadUsers() {
@@ -869,9 +1014,11 @@ async function loadUsers() {
     state.users = data.users || [];
     setMessage(dom.manageListMessage, "");
     renderUsersTable();
+    updateAdminBadges();
   } catch (error) {
     state.users = [];
     renderUsersTable();
+    updateAdminBadges();
     setMessage(dom.manageListMessage, error.message, "error");
   }
 }
@@ -885,10 +1032,130 @@ async function loadAdminBookings() {
     state.bookings = data.bookings || [];
     setMessage(dom.manageBookingsMessage, "");
     renderAdminBookings();
+    updateAdminBadges();
   } catch (error) {
     state.bookings = [];
     renderAdminBookings();
+    updateAdminBadges();
     setMessage(dom.manageBookingsMessage, error.message, "error");
+  }
+}
+
+async function loadAdminContacts() {
+  if (!state.user || state.user.role !== "admin") return;
+  setMessage(dom.manageContactsMessage, "Chargement...");
+
+  try {
+    const data = await requestJson("/api/contact.php");
+    state.contacts = data.contacts || [];
+    setMessage(dom.manageContactsMessage, "");
+    renderAdminContacts();
+    renderAdminArchives();
+    updateAdminBadges();
+  } catch (error) {
+    state.contacts = [];
+    renderAdminContacts();
+    renderAdminArchives();
+    updateAdminBadges();
+    setMessage(dom.manageContactsMessage, error.message, "error");
+  }
+}
+
+function renderAdminContacts() {
+  if (!dom.manageContactsList) return;
+
+  const contacts = state.contacts.filter((contact) => contact.status !== "closed");
+
+  if (!contacts.length) {
+    dom.manageContactsList.innerHTML = "<div class='booking-item'><p>Aucun message pour le moment.</p></div>";
+    return;
+  }
+
+  dom.manageContactsList.innerHTML = contacts.map((contact) => renderAdminContactItem(contact, false)).join("");
+}
+
+function renderAdminArchives() {
+  if (!dom.manageArchivesList) return;
+
+  const contacts = state.contacts.filter((contact) => contact.status === "closed");
+
+  if (!contacts.length) {
+    dom.manageArchivesList.innerHTML = "<div class='booking-item'><p>Aucune discussion archivée.</p></div>";
+    return;
+  }
+
+  dom.manageArchivesList.innerHTML = contacts.map((contact) => renderAdminContactItem(contact, true)).join("");
+}
+
+function renderAdminContactItem(contact, archived) {
+  return `
+    <article class="booking-item contact-item">
+      <div class="booking-item-head">
+        <div>
+          <h5>${escapeHtml(contact.fullName || contact.full_name)}</h5>
+          <p>${escapeHtml(contact.email)}${contact.phone ? ` - ${escapeHtml(contact.phone)}` : ""}</p>
+        </div>
+        <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
+      </div>
+      <p>${escapeHtml(contact.message)}</p>
+      ${
+        contact.clientReply || contact.client_reply
+          ? `<p class="admin-note">Réponse client : ${escapeHtml(contact.clientReply || contact.client_reply)}</p>`
+          : ""
+      }
+      ${
+        contact.adminReply || contact.admin_reply
+          ? `<p class="admin-note">Réponse actuelle : ${escapeHtml(contact.adminReply || contact.admin_reply)}</p>`
+          : ""
+      }
+      <p class="panel-text">${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
+      ${
+        archived
+          ? ""
+          : `<div class="contact-reply-form">
+              <label for="contactReply${contact.id}">Réponse</label>
+              <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
+            </div>`
+      }
+      <div class="table-actions">
+        ${
+          archived
+            ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>`
+            : `<button class="btn btn-primary btn-sm" data-action="reply-contact" data-id="${contact.id}" type="button">Répondre</button>
+               <button class="btn btn-secondary btn-sm" data-action="close-contact" data-id="${contact.id}" type="button">Fermer</button>`
+        }
+      </div>
+    </article>
+  `;
+}
+    .join("");
+}
+
+async function handleManageContactsClick(event) {
+  const button = event.target.closest("button[data-action][data-id]");
+  if (!button) return;
+
+  const id = Number(button.dataset.id);
+  const replyInput = dom.manageContactsList.querySelector(`[data-role="contact-reply"][data-id="${id}"]`);
+  const action = button.dataset.action;
+
+  try {
+    await requestJson("/api/contact.php", {
+      method: "PUT",
+      body: {
+        id,
+        status:
+          action === "reply-contact"
+            ? "waiting"
+            : action === "close-contact"
+              ? "closed"
+              : "new",
+        admin_reply: action === "reply-contact" ? replyInput?.value || "" : "",
+      },
+    });
+    await loadAdminContacts();
+  } catch (error) {
+    setMessage(dom.manageContactsMessage, error.message, "error");
   }
 }
 
@@ -1153,6 +1420,15 @@ function statusLabel(status) {
     approved: "Confirmée",
     rejected: "Refusée",
     cancelled: "Annulée",
+  }[status] || status;
+}
+
+function contactStatusLabel(status) {
+  return {
+    new: "Nouveau",
+    waiting: "En attente",
+    closed: "Fermé",
+    handled: "Fermé",
   }[status] || status;
 }
 
