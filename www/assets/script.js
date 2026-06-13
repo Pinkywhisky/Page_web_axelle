@@ -1365,6 +1365,8 @@ function renderAdminArchives() {
 }
 
 function renderAdminContactItem(contact, archived) {
+  const canReply = Boolean(contact.isRegisteredUser ?? contact.is_registered_user);
+
   return `
     <article class="booking-item contact-item">
       <div class="booking-item-head">
@@ -1376,18 +1378,25 @@ function renderAdminContactItem(contact, archived) {
       </div>
       ${renderContactThread(contact)}
       <p class="panel-text">${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
-      <div class="contact-reply-form" data-role="contact-reply-form" data-id="${contact.id}" hidden>
-        <label for="contactReply${contact.id}">Réponse</label>
-        <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
-        <div class="form-actions">
-          <button class="btn btn-primary btn-sm" data-action="send-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
-        </div>
-      </div>
+      ${
+        canReply
+          ? `<div class="contact-reply-form" data-role="contact-reply-form" data-id="${contact.id}" hidden>
+              <label for="contactReply${contact.id}">Réponse</label>
+              <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" data-action="send-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
+              </div>
+            </div>`
+          : `<p class="inline-message contact-disabled-hint">Réponse impossible : cette adresse e-mail n'est pas associée à un compte.</p>`
+      }
       <div class="table-actions">
         ${
           archived
             ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>`
-            : `<button class="btn btn-primary btn-sm" data-action="open-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
+            : `${canReply
+                ? `<button class="btn btn-primary btn-sm" data-action="open-contact-reply" data-id="${contact.id}" type="button">Répondre</button>`
+                : `<button class="btn btn-secondary btn-sm" type="button" disabled>Répondre</button>`
+              }
                <button class="btn btn-secondary btn-sm" data-action="close-contact" data-id="${contact.id}" type="button">Fermer</button>`
         }
       </div>
@@ -1436,6 +1445,14 @@ async function handleManageContactsClick(event) {
 
   if (action === "open-contact-reply") {
     const replyForm = dom.manageContactsList.querySelector(`[data-role="contact-reply-form"][data-id="${id}"]`);
+    if (!replyForm) {
+      setMessage(
+        dom.manageContactsMessage,
+        "Réponse impossible : cette adresse e-mail n'est pas associée à un compte.",
+        "error"
+      );
+      return;
+    }
     if (replyForm) replyForm.hidden = !replyForm.hidden;
     if (replyForm && !replyForm.hidden) replyInput?.focus();
     return;

@@ -23,6 +23,8 @@ function publicContactRequest(array $request): array
         'repliedAt' => $request['replied_at'] ?? null,
         'client_replied_at' => $request['client_replied_at'] ?? null,
         'clientRepliedAt' => $request['client_replied_at'] ?? null,
+        'is_registered_user' => (bool) ($request['is_registered_user'] ?? false),
+        'isRegisteredUser' => (bool) ($request['is_registered_user'] ?? false),
         'created_at' => $request['created_at'],
         'createdAt' => $request['created_at'],
     ];
@@ -83,6 +85,14 @@ function findContactRequestById(int $id): ?array
     return $request ?: null;
 }
 
+function contactEmailHasUser(string $email): bool
+{
+    $statement = db()->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+    $statement->execute(['email' => strtolower(trim($email))]);
+
+    return (bool) $statement->fetch();
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
@@ -97,7 +107,7 @@ try {
         if (!isAdmin()) {
             $user = currentUser();
             $statement = db()->prepare(
-                'SELECT *
+                'SELECT contact_requests.*, 1 AS is_registered_user
                  FROM contact_requests
                  WHERE email = :email
                    AND admin_reply IS NOT NULL
@@ -111,7 +121,12 @@ try {
         }
 
         $statement = db()->query(
-            'SELECT *
+            'SELECT contact_requests.*,
+                    EXISTS(
+                        SELECT 1
+                        FROM users
+                        WHERE users.email = contact_requests.email
+                    ) AS is_registered_user
              FROM contact_requests
              ORDER BY
                 FIELD(status, "new", "waiting", "closed"),
@@ -222,6 +237,12 @@ try {
 
         if (strlen($adminReply) > 1200) {
             jsonResponse(['error' => 'La réponse est trop longue.'], 400);
+        }
+
+        if ($adminReply !== '' && !contactEmailHasUser((string) $contact['email'])) {
+            jsonResponse([
+                'error' => "Réponse impossible : cette adresse e-mail n'est pas associée à un compte.",
+            ], 409);
         }
 
         $statement = db()->prepare(

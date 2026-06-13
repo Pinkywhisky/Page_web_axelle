@@ -169,6 +169,14 @@ textarea {
     transform: translateY(-2px);
 }
 
+.btn:disabled,
+.btn[disabled] {
+    cursor: not-allowed;
+    opacity: 0.56;
+    box-shadow: none;
+    transform: none;
+}
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -740,6 +748,14 @@ main {
     display: grid;
     gap: 8px;
     margin-top: 14px;
+}
+
+.contact-disabled-hint {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(138, 101, 74, 0.16);
+    border-radius: 14px;
+    background: rgba(234, 223, 204, 0.32);
 }
 
 .message-thread {
