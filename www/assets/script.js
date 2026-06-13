@@ -9,7 +9,10 @@ const state = {
   selectedUserId: null,
   activeModal: null,
   bookingTimeTarget: null,
-  adminTab: "bookings",
+  editingBookingId: null,
+  editingProfile: false,
+  profileTab: "pets",
+  adminTab: "dashboard",
 };
 
 const dom = {};
@@ -38,10 +41,12 @@ function bindDom() {
     "homeView",
     "manageView",
     "manageTabs",
+    "adminDashboardTab",
     "adminBookingsTab",
     "adminUsersTab",
     "adminContactsTab",
     "adminArchivesTab",
+    "adminDashboardPanel",
     "adminBookingsPanel",
     "adminUsersPanel",
     "adminContactsPanel",
@@ -50,6 +55,12 @@ function bindDom() {
     "adminUsersBadge",
     "adminContactsBadge",
     "adminArchivesBadge",
+    "statClients",
+    "statPets",
+    "statPendingBookings",
+    "statApprovedBookings",
+    "statNewMessages",
+    "adminCalendarList",
     "backHomeBtn",
     "loginModal",
     "registerModal",
@@ -89,6 +100,18 @@ function bindDom() {
     "profileAnimalType",
     "profileAnimalName",
     "profileModalMessage",
+    "profileReadonly",
+    "profileDetailsPanel",
+    "editProfileBtn",
+    "cancelProfileEditBtn",
+    "profileTabs",
+    "profilePetsTab",
+    "profileBookingsTab",
+    "profileContactsTab",
+    "profileDetailsTab",
+    "profilePetsPanel",
+    "profileBookingsPanel",
+    "profileContactsPanel",
     "petForm",
     "petId",
     "petName",
@@ -96,6 +119,7 @@ function bindDom() {
     "petNotes",
     "petMessage",
     "petResetBtn",
+    "openPetFormBtn",
     "petsList",
     "profileBookingBtn",
     "profileBookingsMessage",
@@ -118,6 +142,7 @@ function bindDom() {
     "bookingEndSummary",
     "bookingNotes",
     "bookingMessage",
+    "bookingSubmitBtn",
     "bookingSuccessPanel",
     "closeBookingSuccessBtn",
     "bookingTimeModal",
@@ -156,6 +181,7 @@ function bindDom() {
     "manageContactsList",
     "manageArchivesMessage",
     "manageArchivesList",
+    "toastRegion",
   ].forEach((id) => {
     dom[id] = document.getElementById(id);
   });
@@ -187,6 +213,9 @@ function bindEvents() {
   onClick(dom.homeLink, showHome);
   onClick(dom.manageResetBtn, resetManageForm);
   onClick(dom.petResetBtn, resetPetForm);
+  onClick(dom.openPetFormBtn, () => openPetForm());
+  onClick(dom.editProfileBtn, () => setProfileEditMode(true));
+  onClick(dom.cancelProfileEditBtn, () => setProfileEditMode(false));
 
   [dom.loginModal, dom.registerModal, dom.profileModal, dom.bookingModal, dom.contactModal, dom.manageEditModal].forEach((modal) => {
     if (!modal) return;
@@ -211,6 +240,7 @@ function bindEvents() {
   onSubmit(dom.manageEditForm, handleManageSave);
   onEvent(dom.manageSearch, "input", renderUsersTable);
   onEvent(dom.manageTabs, "click", handleManageTabsClick);
+  onEvent(dom.profileTabs, "click", handleProfileTabsClick);
   onEvent(dom.manageTableBody, "click", handleManageTableClick);
   onEvent(dom.manageContactsList, "click", handleManageContactsClick);
   onEvent(dom.manageArchivesList, "click", handleManageContactsClick);
@@ -231,6 +261,14 @@ function bindEvents() {
     }
     if (state.activeModal) closeModal(state.activeModal);
   });
+
+  window.addEventListener("error", () => {
+    showToast("Une erreur inattendue est survenue.", "error");
+  });
+
+  window.addEventListener("unhandledrejection", () => {
+    showToast("Une erreur inattendue est survenue.", "error");
+  });
 }
 
 function onClick(node, handler) {
@@ -248,6 +286,11 @@ function onEvent(node, eventName, handler) {
 async function requestJson(url, options = {}) {
   const config = { ...options };
   config.headers = { ...(config.headers || {}) };
+  const method = String(config.method || "GET").toUpperCase();
+
+  if (method !== "GET" && window.CDP_CSRF_TOKEN) {
+    config.headers["X-CSRF-Token"] = window.CDP_CSRF_TOKEN;
+  }
 
   if (config.body && typeof config.body !== "string") {
     config.headers["Content-Type"] = "application/json";
@@ -285,6 +328,20 @@ function renderSession() {
   if (adminUser) {
     openManage();
   }
+}
+
+function showToast(message, type = "info") {
+  if (!dom.toastRegion || !message) return;
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  dom.toastRegion.appendChild(toast);
+
+  window.setTimeout(() => {
+    toast.classList.add("is-hiding");
+    window.setTimeout(() => toast.remove(), 220);
+  }, 3600);
 }
 
 async function handleLogin(event) {
@@ -344,9 +401,46 @@ async function openProfile() {
   }
 
   fillProfileForm(state.user);
+  renderProfileReadonly();
+  setProfileEditMode(false);
+  resetPetForm();
   setMessage(dom.profileModalMessage, "");
+  setProfileTab(state.profileTab || "pets");
   openModal(dom.profileModal);
   await Promise.all([loadPets(), loadMyBookings(), loadMyContacts()]);
+}
+
+function handleProfileTabsClick(event) {
+  const tabButton = event.target.closest("button[data-profile-tab]");
+  if (!tabButton) return;
+  setProfileTab(tabButton.dataset.profileTab);
+}
+
+function setProfileTab(tabName) {
+  const nextTab = ["pets", "bookings", "contacts", "details"].includes(tabName) ? tabName : "pets";
+  state.profileTab = nextTab;
+
+  const panels = {
+    pets: dom.profilePetsPanel,
+    bookings: dom.profileBookingsPanel,
+    contacts: dom.profileContactsPanel,
+    details: dom.profileDetailsPanel,
+  };
+
+  const tabs = {
+    pets: dom.profilePetsTab,
+    bookings: dom.profileBookingsTab,
+    contacts: dom.profileContactsTab,
+    details: dom.profileDetailsTab,
+  };
+
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (panel) panel.hidden = name !== nextTab;
+  });
+
+  Object.entries(tabs).forEach(([name, button]) => {
+    updateAdminTabButton(button, name === nextTab);
+  });
 }
 
 function fillProfileForm(user) {
@@ -356,6 +450,49 @@ function fillProfileForm(user) {
   dom.profilePhone.value = user.phone || "";
   dom.profileAnimalType.value = user.animalType || user.animal_type || "";
   dom.profileAnimalName.value = user.animalName || user.animal_name || "";
+}
+
+function renderProfileReadonly() {
+  if (!dom.profileReadonly || !state.user) return;
+
+  const user = state.user;
+  const rows = [
+    ["Nom complet", user.fullName || user.full_name || "Non renseigné"],
+    ["E-mail", user.email || "Non renseigné"],
+    ["Téléphone", user.phone || "Non renseigné"],
+    ["Animal par défaut", profileAnimalFallbackLabel(user)],
+  ];
+
+  dom.profileReadonly.innerHTML = rows
+    .map(
+      ([label, value]) => `
+        <div class="readonly-row">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(value)}</strong>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function profileAnimalFallbackLabel(user) {
+  const animalName = user.animalName || user.animal_name || "";
+  const animalType = user.animalType || user.animal_type || "";
+
+  if (!animalName && !animalType) return "Non renseigné";
+  return `${animalName || "Animal"}${animalType ? ` (${animalLabel(animalType)})` : ""}`;
+}
+
+function setProfileEditMode(active) {
+  state.editingProfile = active;
+  if (dom.profileForm) dom.profileForm.hidden = !active;
+  if (dom.profileReadonly) dom.profileReadonly.hidden = active;
+  if (dom.editProfileBtn) dom.editProfileBtn.hidden = active;
+
+  if (active) {
+    fillProfileForm(state.user);
+    setMessage(dom.profileModalMessage, "");
+  }
 }
 
 async function loadPets() {
@@ -444,11 +581,18 @@ function editPet(petId) {
   const pet = state.pets.find((item) => Number(item.id) === Number(petId));
   if (!pet) return;
 
+  openPetForm();
   dom.petId.value = pet.id;
   dom.petName.value = pet.name || "";
   dom.petSpecies.value = pet.species || "";
   dom.petNotes.value = pet.notes || "";
   setMessage(dom.petMessage, "");
+}
+
+function openPetForm() {
+  dom.petForm.hidden = false;
+  if (dom.openPetFormBtn) dom.openPetFormBtn.hidden = true;
+  window.setTimeout(() => dom.petName?.focus(), 0);
 }
 
 async function deletePet(petId) {
@@ -469,6 +613,8 @@ async function deletePet(petId) {
 function resetPetForm() {
   dom.petForm.reset();
   dom.petId.value = "";
+  dom.petForm.hidden = true;
+  if (dom.openPetFormBtn) dom.openPetFormBtn.hidden = false;
   setMessage(dom.petMessage, "");
 }
 
@@ -493,6 +639,8 @@ function resetBookingModal() {
   dom.bookingForm.hidden = false;
   dom.bookingSuccessPanel.hidden = true;
   dom.bookingForm.reset();
+  state.editingBookingId = null;
+  if (dom.bookingSubmitBtn) dom.bookingSubmitBtn.textContent = "Envoyer la demande";
   setMessage(dom.bookingMessage, "");
   setMinBookingDateTimes();
   updateBookingDateTimeSummary("start");
@@ -701,9 +849,11 @@ async function handleBookingSubmit(event) {
   }
 
   try {
+    const editingBookingId = state.editingBookingId;
     await requestJson("/api/bookings.php", {
-      method: "POST",
+      method: editingBookingId ? "PUT" : "POST",
       body: {
+        id: editingBookingId || undefined,
         pet_ids: selectedBookingPetIds(),
         animal_type: dom.bookingAnimalType.value,
         animal_name: dom.bookingAnimalName.value,
@@ -713,12 +863,58 @@ async function handleBookingSubmit(event) {
       },
     });
 
-    dom.bookingForm.hidden = true;
-    dom.bookingSuccessPanel.hidden = false;
+    if (editingBookingId) {
+      closeModal(dom.bookingModal);
+      setMessage(dom.profileBookingsMessage, "Garde mise à jour.", "success");
+    } else {
+      dom.bookingForm.hidden = true;
+      dom.bookingSuccessPanel.hidden = false;
+    }
+    state.editingBookingId = null;
     await loadMyBookings();
   } catch (error) {
     setMessage(dom.bookingMessage, error.message, "error");
   }
+}
+
+async function editBooking(bookingId) {
+  const booking = state.myBookings.find((item) => Number(item.id) === Number(bookingId));
+  if (!booking) return;
+
+  resetBookingModal();
+  await loadPets();
+  state.editingBookingId = Number(booking.id);
+  if (dom.bookingSubmitBtn) dom.bookingSubmitBtn.textContent = "Enregistrer les modifications";
+  fillBookingFormFromBooking(booking);
+  openModal(dom.bookingModal);
+}
+
+function fillBookingFormFromBooking(booking) {
+  syncBookingAnimalFields();
+
+  const bookingPets = booking.pets || [];
+  const petIds = bookingPets.map((pet) => Number(pet.id));
+
+  if (petIds.length) {
+    dom.bookingPetsList
+      ?.querySelectorAll("input[data-role='booking-pet']")
+      .forEach((input) => {
+        input.checked = petIds.includes(Number(input.value));
+      });
+  } else {
+    dom.bookingAnimalType.value = booking.animalType || booking.animal_type || "";
+    dom.bookingAnimalName.value = booking.animalName || booking.animal_name || "";
+  }
+
+  const startValue = booking.startDateTime || booking.start_datetime || "";
+  const endValue = booking.endDateTime || booking.end_datetime || "";
+  dom.bookingStartDateTime.value = normalizeDateTimeInput(startValue);
+  dom.bookingEndDateTime.value = normalizeDateTimeInput(endValue);
+  dom.bookingStartDate.value = dom.bookingStartDateTime.value.slice(0, 10);
+  dom.bookingEndDate.value = dom.bookingEndDateTime.value.slice(0, 10);
+  dom.bookingNotes.value = booking.notes || "";
+  updateBookingDateTimeSummary("start");
+  updateBookingDateTimeSummary("end");
 }
 
 function selectedBookingPetIds() {
@@ -823,23 +1019,20 @@ function renderProfileContacts() {
               <h5>Votre message</h5>
               <p>${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
             </div>
-            <span class="status-pill status-handled">Répondu</span>
+            <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
           </div>
-          <p>${escapeHtml(contact.message)}</p>
-          <p class="admin-note">Réponse : ${escapeHtml(contact.adminReply || contact.admin_reply)}</p>
-          ${
-            contact.clientReply || contact.client_reply
-              ? `<p class="admin-note">Votre réponse : ${escapeHtml(contact.clientReply || contact.client_reply)}</p>`
-              : ""
-          }
+          ${renderContactThread(contact)}
           ${
             contact.status === "waiting"
-              ? `<div class="contact-reply-form">
+              ? `<div class="contact-reply-form" data-role="client-contact-reply-form" data-id="${contact.id}" hidden>
                   <label for="clientReply${contact.id}">Votre réponse</label>
                   <textarea id="clientReply${contact.id}" data-role="client-contact-reply" data-id="${contact.id}" rows="3" placeholder="Votre message retour."></textarea>
                   <div class="form-actions">
                     <button class="btn btn-primary btn-sm" data-action="reply-contact-client" data-id="${contact.id}" type="button">Répondre</button>
                   </div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-secondary btn-sm" data-action="open-contact-client-reply" data-id="${contact.id}" type="button">Répondre</button>
                 </div>`
               : ""
           }
@@ -851,7 +1044,17 @@ function renderProfileContacts() {
 
 async function handleProfileContactsClick(event) {
   const button = event.target.closest("button[data-action='reply-contact-client'][data-id]");
-  if (!button) return;
+  const opener = event.target.closest("button[data-action='open-contact-client-reply'][data-id]");
+  if (!button && !opener) return;
+
+  if (opener) {
+    const id = Number(opener.dataset.id);
+    const replyForm = dom.profileContactsList.querySelector(`[data-role="client-contact-reply-form"][data-id="${id}"]`);
+    const replyInput = dom.profileContactsList.querySelector(`[data-role="client-contact-reply"][data-id="${id}"]`);
+    if (replyForm) replyForm.hidden = !replyForm.hidden;
+    if (replyForm && !replyForm.hidden) replyInput?.focus();
+    return;
+  }
 
   const id = Number(button.dataset.id);
   const replyInput = dom.profileContactsList.querySelector(`[data-role="client-contact-reply"][data-id="${id}"]`);
@@ -894,7 +1097,10 @@ function renderProfileBookings() {
           ${booking.adminNote || booking.admin_note ? `<p class="admin-note">Réponse : ${escapeHtml(booking.adminNote || booking.admin_note)}</p>` : ""}
           ${
             ["pending", "approved"].includes(booking.status)
-              ? `<button class="text-button" data-action="cancel-booking" data-id="${booking.id}" type="button">Annuler cette demande</button>`
+              ? `<div class="table-actions">
+                  <button class="btn btn-secondary btn-sm" data-action="edit-booking" data-id="${booking.id}" type="button">Modifier</button>
+                  <button class="btn btn-danger btn-sm" data-action="cancel-booking" data-id="${booking.id}" type="button">Annuler</button>
+                </div>`
               : ""
           }
         </article>
@@ -904,9 +1110,15 @@ function renderProfileBookings() {
 }
 
 async function handleProfileBookingsClick(event) {
-  const button = event.target.closest("button[data-action='cancel-booking'][data-id]");
+  const button = event.target.closest("button[data-action][data-id]");
   if (!button) return;
 
+  if (button.dataset.action === "edit-booking") {
+    await editBooking(Number(button.dataset.id));
+    return;
+  }
+
+  if (button.dataset.action !== "cancel-booking") return;
   if (!window.confirm("Annuler cette demande de garde ?")) return;
 
   try {
@@ -940,6 +1152,8 @@ async function handleProfileSave(event) {
 
     state.user = data.user;
     renderSession();
+    renderProfileReadonly();
+    setProfileEditMode(false);
     setMessage(dom.profileModalMessage, "Profil mis à jour.", "success");
   } catch (error) {
     setMessage(dom.profileModalMessage, error.message, "error");
@@ -950,9 +1164,10 @@ async function openManage() {
   if (!state.user || state.user.role !== "admin") return;
   dom.homeView.hidden = true;
   dom.manageView.hidden = false;
-  setAdminTab(state.adminTab || "bookings");
+  setAdminTab(state.adminTab || "dashboard");
   await Promise.all([loadUsers(), loadAdminBookings(), loadAdminContacts()]);
   updateAdminBadges();
+  renderAdminDashboard();
 }
 
 function showHome() {
@@ -967,18 +1182,21 @@ function handleManageTabsClick(event) {
 }
 
 function setAdminTab(tabName) {
-  const nextTab = ["bookings", "users", "contacts", "archives"].includes(tabName) ? tabName : "bookings";
+  const nextTab = ["dashboard", "bookings", "users", "contacts", "archives"].includes(tabName) ? tabName : "dashboard";
   state.adminTab = nextTab;
 
+  const isDashboard = nextTab === "dashboard";
   const isBookings = nextTab === "bookings";
   const isUsers = nextTab === "users";
   const isContacts = nextTab === "contacts";
   const isArchives = nextTab === "archives";
+  if (dom.adminDashboardPanel) dom.adminDashboardPanel.hidden = !isDashboard;
   if (dom.adminBookingsPanel) dom.adminBookingsPanel.hidden = !isBookings;
   if (dom.adminUsersPanel) dom.adminUsersPanel.hidden = !isUsers;
   if (dom.adminContactsPanel) dom.adminContactsPanel.hidden = !isContacts;
   if (dom.adminArchivesPanel) dom.adminArchivesPanel.hidden = !isArchives;
 
+  updateAdminTabButton(dom.adminDashboardTab, isDashboard);
   updateAdminTabButton(dom.adminBookingsTab, isBookings);
   updateAdminTabButton(dom.adminUsersTab, isUsers);
   updateAdminTabButton(dom.adminContactsTab, isContacts);
@@ -999,6 +1217,64 @@ function updateAdminBadges() {
   setBadge(dom.adminUsersBadge, state.users.length);
   setBadge(dom.adminContactsBadge, newContacts);
   setBadge(dom.adminArchivesBadge, closedContacts);
+  renderAdminDashboard();
+}
+
+function renderAdminDashboard() {
+  const clients = state.users.filter((user) => user.role === "client").length;
+  const pets = state.users.reduce((total, user) => total + (Array.isArray(user.pets) ? user.pets.length : 0), 0);
+  const pendingBookings = state.bookings.filter((booking) => booking.status === "pending").length;
+  const approvedBookings = state.bookings.filter((booking) => booking.status === "approved").length;
+  const newContacts = state.contacts.filter((contact) => contact.status === "new").length;
+
+  setStat(dom.statClients, clients);
+  setStat(dom.statPets, pets);
+  setStat(dom.statPendingBookings, pendingBookings);
+  setStat(dom.statApprovedBookings, approvedBookings);
+  setStat(dom.statNewMessages, newContacts);
+  renderAdminCalendar();
+}
+
+function setStat(node, value) {
+  if (node) node.textContent = String(value);
+}
+
+function renderAdminCalendar() {
+  if (!dom.adminCalendarList) return;
+
+  const items = state.bookings
+    .filter((booking) => ["pending", "approved"].includes(booking.status))
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(normalizeDateTimeInput(a.startDateTime || a.start_datetime)) -
+        new Date(normalizeDateTimeInput(b.startDateTime || b.start_datetime))
+    )
+    .slice(0, 8);
+
+  if (!items.length) {
+    dom.adminCalendarList.innerHTML = "<div class='calendar-empty'>Aucune garde à venir.</div>";
+    return;
+  }
+
+  dom.adminCalendarList.innerHTML = items
+    .map(
+      (booking) => `
+        <article class="calendar-item">
+          <time datetime="${escapeHtml(normalizeDateTimeInput(booking.startDateTime || booking.start_datetime))}">
+            <strong>${escapeHtml(formatCalendarDay(booking.startDateTime || booking.start_datetime))}</strong>
+            <span>${escapeHtml(formatCalendarMonth(booking.startDateTime || booking.start_datetime))}</span>
+          </time>
+          <div>
+            <h5>${escapeHtml(booking.fullName || booking.full_name)}</h5>
+            <p>${escapeHtml(bookingPetSummary(booking))}</p>
+            <p>${escapeHtml(formatBookingPeriod(booking))}</p>
+          </div>
+          <span class="status-pill status-${escapeHtml(booking.status)}">${escapeHtml(statusLabel(booking.status))}</span>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function setBadge(node, count) {
@@ -1098,35 +1374,54 @@ function renderAdminContactItem(contact, archived) {
         </div>
         <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
       </div>
-      <p>${escapeHtml(contact.message)}</p>
-      ${
-        contact.clientReply || contact.client_reply
-          ? `<p class="admin-note">Réponse client : ${escapeHtml(contact.clientReply || contact.client_reply)}</p>`
-          : ""
-      }
-      ${
-        contact.adminReply || contact.admin_reply
-          ? `<p class="admin-note">Réponse actuelle : ${escapeHtml(contact.adminReply || contact.admin_reply)}</p>`
-          : ""
-      }
+      ${renderContactThread(contact)}
       <p class="panel-text">${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
-      ${
-        archived
-          ? ""
-          : `<div class="contact-reply-form">
-              <label for="contactReply${contact.id}">Réponse</label>
-              <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
-            </div>`
-      }
+      <div class="contact-reply-form" data-role="contact-reply-form" data-id="${contact.id}" hidden>
+        <label for="contactReply${contact.id}">Réponse</label>
+        <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" data-action="send-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
+        </div>
+      </div>
       <div class="table-actions">
         ${
           archived
             ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>`
-            : `<button class="btn btn-primary btn-sm" data-action="reply-contact" data-id="${contact.id}" type="button">Répondre</button>
+            : `<button class="btn btn-primary btn-sm" data-action="open-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
                <button class="btn btn-secondary btn-sm" data-action="close-contact" data-id="${contact.id}" type="button">Fermer</button>`
         }
       </div>
     </article>
+  `;
+}
+
+function renderContactThread(contact) {
+  const adminReply = contact.adminReply || contact.admin_reply || "";
+  const clientReply = contact.clientReply || contact.client_reply || "";
+
+  return `
+    <div class="message-thread">
+      <div class="thread-message thread-client">
+        <span>Client</span>
+        <p>${escapeHtml(contact.message)}</p>
+      </div>
+      ${
+        adminReply
+          ? `<div class="thread-message thread-admin">
+              <span>Réponse</span>
+              <p>${escapeHtml(adminReply)}</p>
+            </div>`
+          : ""
+      }
+      ${
+        clientReply
+          ? `<div class="thread-message thread-client">
+              <span>Retour client</span>
+              <p>${escapeHtml(clientReply)}</p>
+            </div>`
+          : ""
+      }
+    </div>
   `;
 }
 
@@ -1139,18 +1434,25 @@ async function handleManageContactsClick(event) {
   const replyInput = dom.manageContactsList.querySelector(`[data-role="contact-reply"][data-id="${id}"]`);
   const action = button.dataset.action;
 
+  if (action === "open-contact-reply") {
+    const replyForm = dom.manageContactsList.querySelector(`[data-role="contact-reply-form"][data-id="${id}"]`);
+    if (replyForm) replyForm.hidden = !replyForm.hidden;
+    if (replyForm && !replyForm.hidden) replyInput?.focus();
+    return;
+  }
+
   try {
     await requestJson("/api/contact.php", {
       method: "PUT",
       body: {
         id,
         status:
-          action === "reply-contact"
+          action === "send-contact-reply"
             ? "waiting"
             : action === "close-contact"
               ? "closed"
               : "new",
-        admin_reply: action === "reply-contact" ? replyInput?.value || "" : "",
+        admin_reply: action === "send-contact-reply" ? replyInput?.value || "" : "",
       },
     });
     await loadAdminContacts();
@@ -1182,15 +1484,20 @@ function renderAdminBookings() {
           <p><strong>${escapeHtml(bookingPetSummary(booking))}</strong></p>
           <p>${escapeHtml(formatBookingPeriod(booking))}</p>
           ${booking.notes ? `<p>${escapeHtml(booking.notes)}</p>` : ""}
-          <div class="booking-admin-controls">
+          ${booking.adminNote || booking.admin_note ? `<p class="admin-note">Note admin : ${escapeHtml(booking.adminNote || booking.admin_note)}</p>` : ""}
+          <div class="table-actions" data-role="admin-booking-readonly" data-id="${booking.id}">
+            <button class="btn btn-secondary btn-sm" data-action="edit-admin-booking" data-id="${booking.id}" type="button">Modifier</button>
+            <button class="btn btn-danger btn-sm" data-action="delete-booking" data-id="${booking.id}" type="button">Supprimer</button>
+          </div>
+          <div class="booking-admin-controls" data-role="admin-booking-edit" data-id="${booking.id}" hidden>
             <select data-role="booking-status" data-id="${booking.id}">
               ${["pending", "approved", "rejected", "cancelled"]
                 .map((status) => `<option value="${status}" ${booking.status === status ? "selected" : ""}>${statusLabel(status)}</option>`)
                 .join("")}
             </select>
             <input data-role="booking-note" data-id="${booking.id}" type="text" value="${escapeHtml(booking.adminNote || booking.admin_note || "")}" placeholder="Note admin" />
-            <button class="btn btn-primary btn-sm" data-action="save-booking" data-id="${booking.id}" type="button">Mettre à jour</button>
-            <button class="btn btn-danger btn-sm" data-action="delete-booking" data-id="${booking.id}" type="button">Supprimer</button>
+            <button class="btn btn-primary btn-sm" data-action="save-booking" data-id="${booking.id}" type="button">Enregistrer</button>
+            <button class="btn btn-secondary btn-sm" data-action="cancel-admin-booking-edit" data-id="${booking.id}" type="button">Annuler</button>
           </div>
         </article>
       `
@@ -1203,8 +1510,19 @@ async function handleManageBookingsClick(event) {
   if (!button) return;
 
   const id = Number(button.dataset.id);
+  const action = button.dataset.action;
 
-  if (button.dataset.action === "delete-booking") {
+  if (action === "edit-admin-booking") {
+    toggleAdminBookingEdit(id, true);
+    return;
+  }
+
+  if (action === "cancel-admin-booking-edit") {
+    toggleAdminBookingEdit(id, false);
+    return;
+  }
+
+  if (action === "delete-booking") {
     if (!window.confirm("Supprimer cette demande de garde ?")) return;
     try {
       await requestJson("/api/bookings.php", {
@@ -1218,7 +1536,7 @@ async function handleManageBookingsClick(event) {
     return;
   }
 
-  if (button.dataset.action === "save-booking") {
+  if (action === "save-booking") {
     const statusInput = dom.manageBookingsList.querySelector(`[data-role="booking-status"][data-id="${id}"]`);
     const noteInput = dom.manageBookingsList.querySelector(`[data-role="booking-note"][data-id="${id}"]`);
 
@@ -1231,11 +1549,19 @@ async function handleManageBookingsClick(event) {
           admin_note: noteInput?.value || "",
         },
       });
+      setMessage(dom.manageBookingsMessage, "Garde mise à jour.", "success");
       await loadAdminBookings();
     } catch (error) {
       setMessage(dom.manageBookingsMessage, error.message, "error");
     }
   }
+}
+
+function toggleAdminBookingEdit(id, editing) {
+  const readonly = dom.manageBookingsList.querySelector(`[data-role="admin-booking-readonly"][data-id="${id}"]`);
+  const edit = dom.manageBookingsList.querySelector(`[data-role="admin-booking-edit"][data-id="${id}"]`);
+  if (readonly) readonly.hidden = editing;
+  if (edit) edit.hidden = !editing;
 }
 
 function renderUsersTable() {
@@ -1403,6 +1729,10 @@ function setMessage(node, message, kind = "") {
   node.textContent = message || "";
   node.classList.toggle("is-error", kind === "error");
   node.classList.toggle("is-success", kind === "success");
+
+  if (message && (kind === "error" || kind === "success")) {
+    showToast(message, kind);
+  }
 }
 
 function escapeHtml(value) {
@@ -1438,6 +1768,11 @@ function animalLabel(value) {
     chat: "Chat",
     plusieurs: "Plusieurs animaux",
   }[value] || value || "Animal";
+}
+
+function normalizeDateTimeInput(value) {
+  if (!value) return "";
+  return String(value).replace(" ", "T").slice(0, 16);
 }
 
 function bookingPetSummary(booking) {
@@ -1490,6 +1825,32 @@ function formatDateOnly(value) {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  }).format(date);
+}
+
+function formatCalendarDay(value) {
+  const normalized = normalizeDateTimeInput(value);
+  const date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+  }).format(date);
+}
+
+function formatCalendarMonth(value) {
+  const normalized = normalizeDateTimeInput(value);
+  const date = new Date(normalized);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("fr-FR", {
+    month: "short",
   }).format(date);
 }
 

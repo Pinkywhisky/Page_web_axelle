@@ -9,6 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(['error' => 'Méthode non autorisée.'], 405);
 }
 
+requireCsrfToken();
+
 $data = readJsonBody();
 $email = strtolower(trim((string) ($data['email'] ?? '')));
 $password = (string) ($data['password'] ?? '');
@@ -29,4 +31,3 @@ session_regenerate_id(true);
 refreshSessionUser($user);
 
 jsonResponse(['user' => currentUser()]);
-

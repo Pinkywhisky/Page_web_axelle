@@ -45,8 +45,21 @@ function readJsonBody(): array
 function cleanText(mixed $value, int $maxLength): string
 {
     $text = trim((string) $value);
+    $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text) ?? $text;
 
     return $text;
+}
+
+function sendSecurityHeaders(): void
+{
+    if (headers_sent()) {
+        return;
+    }
+
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=()');
 }
 
 function publicUser(array $user): array
@@ -65,4 +78,8 @@ function publicUser(array $user): array
         'created_at' => $user['created_at'] ?? null,
         'createdAt' => $user['created_at'] ?? null,
     ];
+}
+
+if (PHP_SAPI !== 'cli') {
+    sendSecurityHeaders();
 }

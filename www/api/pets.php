@@ -19,6 +19,37 @@ function publicPet(array $pet): array
     ];
 }
 
+function ensurePetTables(): void
+{
+    db()->exec(
+        "CREATE TABLE IF NOT EXISTS pets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            species ENUM('chien', 'chat') NOT NULL,
+            notes TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_pet_user
+                FOREIGN KEY (user_id) REFERENCES users(id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    db()->exec(
+        "CREATE TABLE IF NOT EXISTS booking_request_pets (
+            booking_request_id INT NOT NULL,
+            pet_id INT NOT NULL,
+            PRIMARY KEY (booking_request_id, pet_id),
+            CONSTRAINT fk_booking_request_pet_booking
+                FOREIGN KEY (booking_request_id) REFERENCES booking_requests(id)
+                ON DELETE CASCADE,
+            CONSTRAINT fk_booking_request_pet_pet
+                FOREIGN KEY (pet_id) REFERENCES pets(id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}
+
 function findPetForUser(int $petId, int $userId): ?array
 {
     $statement = db()->prepare('SELECT * FROM pets WHERE id = :id AND user_id = :user_id LIMIT 1');
@@ -57,6 +88,7 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     requireLogin();
+    ensurePetTables();
 
     if (isAdmin()) {
         jsonResponse(['error' => 'La gestion des animaux est réservée aux comptes clients.'], 403);
@@ -70,6 +102,8 @@ try {
         $statement->execute(['user_id' => $userId]);
         jsonResponse(['pets' => array_map('publicPet', $statement->fetchAll())]);
     }
+
+    requireCsrfToken();
 
     if ($method === 'POST') {
         $payload = validatePetPayload(readJsonBody());
@@ -130,4 +164,3 @@ try {
 } catch (PDOException $error) {
     jsonResponse(['error' => 'Erreur base de données.'], 500);
 }
-

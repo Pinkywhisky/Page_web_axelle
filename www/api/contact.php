@@ -52,6 +52,10 @@ function ensureContactReplyColumns(): void
          MODIFY COLUMN status ENUM('new', 'waiting', 'closed', 'handled') NOT NULL DEFAULT 'new'"
     );
     db()->exec("UPDATE contact_requests SET status = 'closed' WHERE status = 'handled'");
+    db()->exec(
+        "ALTER TABLE contact_requests
+         MODIFY COLUMN status ENUM('new', 'waiting', 'closed') NOT NULL DEFAULT 'new'"
+    );
 
     if (!columnExists('contact_requests', 'admin_reply')) {
         db()->exec('ALTER TABLE contact_requests ADD COLUMN admin_reply TEXT DEFAULT NULL');
@@ -82,6 +86,10 @@ function findContactRequestById(int $id): ?array
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
+    if ($method !== 'GET') {
+        requireCsrfToken();
+    }
+
     if ($method === 'GET') {
         requireLogin();
         ensureContactReplyColumns();
@@ -106,7 +114,7 @@ try {
             'SELECT *
              FROM contact_requests
              ORDER BY
-                FIELD(status, "new", "handled"),
+                FIELD(status, "new", "waiting", "closed"),
                 created_at DESC,
                 id DESC'
         );

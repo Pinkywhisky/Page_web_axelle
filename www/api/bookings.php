@@ -35,6 +35,41 @@ function columnExists(string $tableName, string $columnName): bool
     return (int) $statement->fetch()['total'] > 0;
 }
 
+function ensurePetTablesForBookings(): void
+{
+    db()->exec(
+        "CREATE TABLE IF NOT EXISTS pets (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            species ENUM('chien', 'chat') NOT NULL,
+            notes TEXT DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_pet_user
+                FOREIGN KEY (user_id) REFERENCES users(id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    if (!tableExists('booking_requests')) {
+        return;
+    }
+
+    db()->exec(
+        "CREATE TABLE IF NOT EXISTS booking_request_pets (
+            booking_request_id INT NOT NULL,
+            pet_id INT NOT NULL,
+            PRIMARY KEY (booking_request_id, pet_id),
+            CONSTRAINT fk_booking_request_pet_booking
+                FOREIGN KEY (booking_request_id) REFERENCES booking_requests(id)
+                ON DELETE CASCADE,
+            CONSTRAINT fk_booking_request_pet_pet
+                FOREIGN KEY (pet_id) REFERENCES pets(id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+}
+
 function publicBooking(array $booking): array
 {
     $pets = bookingPets((int) $booking['id']);
@@ -147,9 +182,112 @@ function parseBookingTime(mixed $value): string|false|null
     return $time->format('H:i:s');
 }
 
+function resolveBookingPayload(array $data, int $userId): array
+{
+    $animalType = cleanText($data['animal_type'] ?? $data['animalType'] ?? '', 50);
+    $animalName = cleanText($data['animal_name'] ?? $data['animalName'] ?? '', 100);
+    $petIds = array_values(array_unique(array_map('intval', $data['pet_ids'] ?? $data['petIds'] ?? [])));
+    $startDatetime = parseBookingDateTime($data['start_datetime'] ?? $data['startDateTime'] ?? '');
+    $endDatetime = parseBookingDateTime($data['end_datetime'] ?? $data['endDateTime'] ?? '');
+    $bookingTime = parseBookingTime($data['booking_time'] ?? $data['bookingTime'] ?? '');
+    $notes = cleanText($data['notes'] ?? '', 1200);
+    $selectedPets = [];
+
+    if ($petIds && (!tableExists('pets') || !tableExists('booking_request_pets'))) {
+        jsonResponse(['error' => 'La sélection des animaux n’est pas encore installée en base.'], 500);
+    }
+
+    if ($petIds) {
+        $placeholders = implode(',', array_fill(0, count($petIds), '?'));
+        $statement = db()->prepare(
+            "SELECT * FROM pets WHERE user_id = ? AND id IN ($placeholders) ORDER BY name ASC, id ASC"
+        );
+        $statement->execute([$userId, ...$petIds]);
+        $selectedPets = $statement->fetchAll();
+
+        if (count($selectedPets) !== count($petIds)) {
+            jsonResponse(['error' => 'Un animal sélectionné est introuvable.'], 404);
+        }
+
+        $animalName = implode(', ', array_map(fn(array $pet): string => $pet['name'], $selectedPets));
+        $species = array_unique(array_map(fn(array $pet): string => $pet['species'], $selectedPets));
+        $animalType = count($species) === 1 ? $species[0] : 'plusieurs';
+    }
+
+    if (!$petIds && !in_array($animalType, ['chien', 'chat'], true)) {
+        jsonResponse(['error' => 'Merci de choisir chien ou chat.'], 400);
+    }
+
+    if ($animalName === '') {
+        jsonResponse(['error' => 'Merci de sélectionner ou renseigner un animal.'], 400);
+    }
+
+    if (strlen($animalName) > 100 || strlen($animalType) > 50 || strlen($notes) > 1200) {
+        jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
+    }
+
+    if (!$startDatetime || !$endDatetime) {
+        jsonResponse(['error' => 'Merci de renseigner une arrivée et un départ valides.'], 400);
+    }
+
+    if ($bookingTime === false) {
+        jsonResponse(['error' => 'Merci de renseigner un horaire au format HH:mm.'], 400);
+    }
+
+    if (strtotime($endDatetime) <= strtotime($startDatetime)) {
+        jsonResponse(['error' => 'Le départ doit être après l’arrivée.'], 400);
+    }
+
+    if (strtotime($startDatetime) < time() - 60) {
+        jsonResponse(['error' => 'La date d’arrivée doit être à venir.'], 400);
+    }
+
+    return [
+        'animal_type' => $animalType,
+        'animal_name' => $animalName,
+        'start_datetime' => $startDatetime,
+        'end_datetime' => $endDatetime,
+        'booking_time' => $bookingTime,
+        'notes' => $notes,
+        'selected_pets' => $selectedPets,
+    ];
+}
+
+function replaceBookingPets(int $bookingId, array $selectedPets): void
+{
+    if (!tableExists('booking_request_pets')) {
+        return;
+    }
+
+    $delete = db()->prepare('DELETE FROM booking_request_pets WHERE booking_request_id = :booking_id');
+    $delete->execute(['booking_id' => $bookingId]);
+
+    if (!$selectedPets) {
+        return;
+    }
+
+    $linkInsert = db()->prepare(
+        'INSERT INTO booking_request_pets (booking_request_id, pet_id)
+         VALUES (:booking_request_id, :pet_id)'
+    );
+
+    foreach ($selectedPets as $pet) {
+        $linkInsert->execute([
+            'booking_request_id' => $bookingId,
+            'pet_id' => (int) $pet['id'],
+        ]);
+    }
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
+    ensurePetTablesForBookings();
+
+    if ($method !== 'GET') {
+        requireCsrfToken();
+    }
+
     if ($method === 'GET') {
         requireLogin();
         $user = currentUser();
@@ -303,23 +441,90 @@ try {
     }
 
     if ($method === 'PUT') {
-        requireAdmin();
-
+        requireLogin();
         $data = readJsonBody();
         $id = (int) ($data['id'] ?? 0);
-        $status = cleanText($data['status'] ?? '', 20);
-        $adminNote = cleanText($data['admin_note'] ?? $data['adminNote'] ?? '', 1200);
 
         if ($id <= 0) {
             jsonResponse(['error' => 'Demande de garde introuvable.'], 400);
         }
 
+        $booking = findBookingById($id);
+
+        if (!$booking) {
+            jsonResponse(['error' => 'Demande de garde introuvable.'], 404);
+        }
+
+        if (!isAdmin()) {
+            $user = currentUser();
+
+            if ((int) $booking['user_id'] !== (int) $user['id']) {
+                jsonResponse(['error' => 'Accès refusé.'], 403);
+            }
+
+            if (!in_array($booking['status'], ['pending', 'approved'], true)) {
+                jsonResponse(['error' => 'Cette garde ne peut plus être modifiée.'], 409);
+            }
+
+            $payload = resolveBookingPayload($data, (int) $user['id']);
+            $hasBookingTime = columnExists('booking_requests', 'booking_time');
+
+            $pdo = db();
+            $pdo->beginTransaction();
+
+            $updateSql = $hasBookingTime
+                ? 'UPDATE booking_requests
+                   SET animal_type = :animal_type,
+                       animal_name = :animal_name,
+                       start_datetime = :start_datetime,
+                       end_datetime = :end_datetime,
+                       booking_time = :booking_time,
+                       notes = :notes,
+                       status = "pending",
+                       admin_note = NULL
+                   WHERE id = :id AND user_id = :user_id'
+                : 'UPDATE booking_requests
+                   SET animal_type = :animal_type,
+                       animal_name = :animal_name,
+                       start_datetime = :start_datetime,
+                       end_datetime = :end_datetime,
+                       notes = :notes,
+                       status = "pending",
+                       admin_note = NULL
+                   WHERE id = :id AND user_id = :user_id';
+
+            $updatePayload = [
+                'id' => $id,
+                'user_id' => (int) $user['id'],
+                'animal_type' => $payload['animal_type'],
+                'animal_name' => $payload['animal_name'],
+                'start_datetime' => $payload['start_datetime'],
+                'end_datetime' => $payload['end_datetime'],
+                'notes' => $payload['notes'] ?: null,
+            ];
+
+            if ($hasBookingTime) {
+                $updatePayload['booking_time'] = $payload['booking_time'];
+            }
+
+            $update = $pdo->prepare($updateSql);
+            $update->execute($updatePayload);
+            replaceBookingPets($id, $payload['selected_pets']);
+
+            $pdo->commit();
+
+            jsonResponse(['message' => 'Garde mise à jour.', 'booking' => publicBooking(findBookingById($id))]);
+        }
+
+        $status = cleanText($data['status'] ?? '', 20);
+        $adminNote = cleanText($data['admin_note'] ?? $data['adminNote'] ?? '', 1200);
+
         if (!in_array($status, ['pending', 'approved', 'rejected', 'cancelled'], true)) {
             jsonResponse(['error' => 'Statut invalide.'], 400);
         }
 
-        if (!findBookingById($id)) {
-            jsonResponse(['error' => 'Demande de garde introuvable.'], 404);
+        if (strlen($adminNote) > 1200) {
+            jsonResponse(['error' => 'La note admin est trop longue.'], 400);
         }
 
         $update = db()->prepare(

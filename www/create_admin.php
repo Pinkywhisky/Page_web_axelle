@@ -16,6 +16,11 @@ if (PHP_SAPI !== 'cli') {
     exit;
 }
 
+if (ALLOW_CREATE_ADMIN !== 'true') {
+    echo "Création admin désactivée. Passez ALLOW_CREATE_ADMIN=\"true\" dans .env le temps du bootstrap.\n";
+    exit(1);
+}
+
 $email = strtolower(trim($argv[1] ?? ''));
 $password = (string) ($argv[2] ?? '');
 $fullName = trim($argv[3] ?? 'Administrateur');

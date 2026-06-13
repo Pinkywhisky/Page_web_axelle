@@ -15,7 +15,7 @@ $user = currentUser();
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= e(APP_NAME) ?> | Je garde vos animaux à domicile</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/style.css?v=20260613-9" />
+    <link rel="stylesheet" href="/assets/style.css?v=20260614-1" />
   </head>
 
   <body>
@@ -176,7 +176,10 @@ $user = currentUser();
           </div>
 
           <div class="admin-tabs" id="manageTabs" role="tablist" aria-label="Administration">
-            <button class="admin-tab is-active" id="adminBookingsTab" type="button" role="tab" aria-selected="true" aria-controls="adminBookingsPanel" data-admin-tab="bookings">
+            <button class="admin-tab is-active" id="adminDashboardTab" type="button" role="tab" aria-selected="true" aria-controls="adminDashboardPanel" data-admin-tab="dashboard">
+              <span>Tableau de bord</span>
+            </button>
+            <button class="admin-tab" id="adminBookingsTab" type="button" role="tab" aria-selected="false" aria-controls="adminBookingsPanel" data-admin-tab="bookings">
               <span>Gardes</span>
               <span class="tab-badge" id="adminBookingsBadge" hidden>0</span>
             </button>
@@ -194,7 +197,49 @@ $user = currentUser();
             </button>
           </div>
 
-          <div class="admin-tab-panel" id="adminBookingsPanel" role="tabpanel" aria-labelledby="adminBookingsTab">
+          <div class="admin-tab-panel" id="adminDashboardPanel" role="tabpanel" aria-labelledby="adminDashboardTab">
+            <article class="panel-card admin-panel-card">
+              <div class="panel-card-top">
+                <div>
+                  <h3>Tableau de bord</h3>
+                  <p class="panel-text">Vue rapide de l’activité du site.</p>
+                </div>
+              </div>
+              <div class="stats-grid" id="adminStatsGrid">
+                <div class="stat-card">
+                  <span>Clients</span>
+                  <strong id="statClients">0</strong>
+                </div>
+                <div class="stat-card">
+                  <span>Animaux</span>
+                  <strong id="statPets">0</strong>
+                </div>
+                <div class="stat-card">
+                  <span>Gardes en attente</span>
+                  <strong id="statPendingBookings">0</strong>
+                </div>
+                <div class="stat-card">
+                  <span>Gardes confirmées</span>
+                  <strong id="statApprovedBookings">0</strong>
+                </div>
+                <div class="stat-card">
+                  <span>Messages non traités</span>
+                  <strong id="statNewMessages">0</strong>
+                </div>
+              </div>
+              <div class="dashboard-calendar">
+                <div class="panel-card-top">
+                  <div>
+                    <h4>Calendrier des gardes</h4>
+                    <p class="panel-text">Prochaines gardes en attente ou confirmées.</p>
+                  </div>
+                </div>
+                <div class="calendar-list" id="adminCalendarList"></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="admin-tab-panel" id="adminBookingsPanel" role="tabpanel" aria-labelledby="adminBookingsTab" hidden>
             <article class="panel-card admin-panel-card bookings-admin-card">
               <div class="panel-card-top">
                 <div>
@@ -384,15 +429,23 @@ $user = currentUser();
           <button class="icon-btn" id="closeProfileBtn" type="button" aria-label="Fermer">×</button>
         </div>
 
-        <section class="profile-pets">
+        <div class="admin-tabs profile-tabs" id="profileTabs" role="tablist" aria-label="Profil client">
+          <button class="admin-tab is-active" id="profilePetsTab" type="button" role="tab" aria-selected="true" aria-controls="profilePetsPanel" data-profile-tab="pets">Animaux</button>
+          <button class="admin-tab" id="profileBookingsTab" type="button" role="tab" aria-selected="false" aria-controls="profileBookingsPanel" data-profile-tab="bookings">Gardes</button>
+          <button class="admin-tab" id="profileContactsTab" type="button" role="tab" aria-selected="false" aria-controls="profileContactsPanel" data-profile-tab="contacts">Messages</button>
+          <button class="admin-tab" id="profileDetailsTab" type="button" role="tab" aria-selected="false" aria-controls="profileDetailsPanel" data-profile-tab="details">Coordonnées</button>
+        </div>
+
+        <section class="profile-pets profile-tab-panel" id="profilePetsPanel" role="tabpanel" aria-labelledby="profilePetsTab">
           <div class="panel-card-top">
             <div>
               <h4>Mes animaux</h4>
               <p class="panel-text">Ajoutez les animaux à prendre en compte pour vos demandes de garde.</p>
             </div>
+            <button class="btn btn-secondary btn-sm" id="openPetFormBtn" type="button">Ajouter un animal</button>
           </div>
 
-          <form id="petForm" class="stack-form compact-form">
+          <form id="petForm" class="stack-form compact-form" hidden>
             <input id="petId" type="hidden" />
             <div class="inline-fields">
               <div>
@@ -413,14 +466,14 @@ $user = currentUser();
             <p class="inline-message" id="petMessage"></p>
             <div class="form-actions split-actions">
               <button class="btn btn-primary btn-sm" type="submit">Enregistrer</button>
-              <button class="btn btn-secondary btn-sm" id="petResetBtn" type="button">Nouvel animal</button>
+              <button class="btn btn-secondary btn-sm" id="petResetBtn" type="button">Annuler</button>
             </div>
           </form>
 
           <div class="pet-list" id="petsList"></div>
         </section>
 
-        <section class="profile-bookings">
+        <section class="profile-bookings profile-tab-panel" id="profileBookingsPanel" role="tabpanel" aria-labelledby="profileBookingsTab" hidden>
           <div class="panel-card-top">
             <div>
               <h4>Mes demandes de garde</h4>
@@ -431,7 +484,7 @@ $user = currentUser();
           <div class="booking-list" id="profileBookingsList"></div>
         </section>
 
-        <section class="profile-bookings">
+        <section class="profile-bookings profile-tab-panel" id="profileContactsPanel" role="tabpanel" aria-labelledby="profileContactsTab" hidden>
           <div class="panel-card-top">
             <div>
               <h4>Mes messages</h4>
@@ -441,7 +494,13 @@ $user = currentUser();
           <div class="booking-list" id="profileContactsList"></div>
         </section>
 
-        <form id="profileForm" class="stack-form">
+        <section class="profile-details profile-tab-panel" id="profileDetailsPanel" role="tabpanel" aria-labelledby="profileDetailsTab" hidden>
+          <div class="profile-readonly" id="profileReadonly"></div>
+          <div class="form-actions">
+            <button class="btn btn-secondary btn-sm" id="editProfileBtn" type="button">Modifier</button>
+          </div>
+
+          <form id="profileForm" class="stack-form" hidden>
           <input id="profileId" type="hidden" />
 
           <label for="profileFullName">Nom complet</label>
@@ -465,10 +524,12 @@ $user = currentUser();
 
           <p class="inline-message" id="profileModalMessage"></p>
 
-          <div class="form-actions">
+          <div class="form-actions split-actions">
             <button class="btn btn-primary" type="submit">Enregistrer</button>
+            <button class="btn btn-secondary" id="cancelProfileEditBtn" type="button">Annuler</button>
           </div>
-        </form>
+          </form>
+        </section>
       </div>
     </div>
 
@@ -540,7 +601,7 @@ $user = currentUser();
           <p class="inline-message" id="bookingMessage"></p>
 
           <div class="form-actions">
-            <button class="btn btn-primary" type="submit">Envoyer la demande</button>
+            <button class="btn btn-primary" id="bookingSubmitBtn" type="submit">Envoyer la demande</button>
           </div>
         </form>
 
@@ -681,9 +742,12 @@ $user = currentUser();
       </div>
     </div>
 
+    <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
     <script>
       window.CDP_CURRENT_USER = <?= json_encode($user, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: 'null' ?>;
+      window.CDP_CSRF_TOKEN = <?= json_encode(csrfToken(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
     </script>
-    <script src="/assets/script.js?v=20260613-5" defer></script>
+    <script src="/assets/script.js?v=20260614-1" defer></script>
   </body>
 </html>

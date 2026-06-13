@@ -2,11 +2,45 @@
 
 declare(strict_types=1);
 
-date_default_timezone_set('Europe/Paris');
+function loadEnvFile(string $path): void
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return;
+    }
 
-const DB_HOST = 'localhost';
-const DB_NAME = 'club_des_pattes';
-const DB_USER = 'admin';
-const DB_PASS = 'Burg3rK!n//007';
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
-const APP_NAME = 'Club des Pattes';
+    foreach ($lines ?: [] as $line) {
+        $line = trim($line);
+
+        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+            continue;
+        }
+
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        $value = trim($value, "\"'");
+
+        if ($key !== '' && getenv($key) === false) {
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
+        }
+    }
+}
+
+function envValue(string $key, string $default = ''): string
+{
+    $value = getenv($key);
+    return $value === false ? $default : (string) $value;
+}
+
+loadEnvFile(dirname(__DIR__, 2) . '/.env');
+
+date_default_timezone_set(envValue('APP_TIMEZONE', 'Europe/Paris'));
+
+define('DB_HOST', envValue('DB_HOST', 'localhost'));
+define('DB_NAME', envValue('DB_NAME', 'club_des_pattes'));
+define('DB_USER', envValue('DB_USER', 'root'));
+define('DB_PASS', envValue('DB_PASS', ''));
+
+define('APP_NAME', envValue('APP_NAME', 'Club des Pattes'));
+define('ALLOW_CREATE_ADMIN', envValue('ALLOW_CREATE_ADMIN', 'false'));
