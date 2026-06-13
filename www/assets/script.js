@@ -213,6 +213,7 @@ function bindEvents() {
   onEvent(dom.manageTabs, "click", handleManageTabsClick);
   onEvent(dom.manageTableBody, "click", handleManageTableClick);
   onEvent(dom.manageContactsList, "click", handleManageContactsClick);
+  onEvent(dom.manageArchivesList, "click", handleManageContactsClick);
   onEvent(dom.petsList, "click", handlePetsListClick);
   onEvent(dom.profileBookingsList, "click", handleProfileBookingsClick);
   onEvent(dom.profileContactsList, "click", handleProfileContactsClick);
@@ -1128,8 +1129,7 @@ function renderAdminContactItem(contact, archived) {
     </article>
   `;
 }
-    .join("");
-}
+
 
 async function handleManageContactsClick(event) {
   const button = event.target.closest("button[data-action][data-id]");
