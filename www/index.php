@@ -15,7 +15,7 @@ $user = currentUser();
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title><?= e(APP_NAME) ?> | Je garde vos animaux à domicile</title>
     <link rel="icon" type="image/x-icon" href="/assets/favicon.ico" />
-    <link rel="stylesheet" href="/assets/style.css?v=20260614-1" />
+    <link rel="stylesheet" href="/assets/style.css?v=20260614-3" />
   </head>
 
   <body>

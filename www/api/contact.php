@@ -25,6 +25,7 @@ function publicContactRequest(array $request): array
         'clientRepliedAt' => $request['client_replied_at'] ?? null,
         'is_registered_user' => (bool) ($request['is_registered_user'] ?? false),
         'isRegisteredUser' => (bool) ($request['is_registered_user'] ?? false),
+        'messages' => contactMessages($request),
         'created_at' => $request['created_at'],
         'createdAt' => $request['created_at'],
     ];
@@ -74,6 +75,10 @@ function ensureContactReplyColumns(): void
     if (!columnExists('contact_requests', 'client_replied_at')) {
         db()->exec('ALTER TABLE contact_requests ADD COLUMN client_replied_at DATETIME DEFAULT NULL');
     }
+
+    if (!columnExists('contact_requests', 'conversation')) {
+        db()->exec('ALTER TABLE contact_requests ADD COLUMN conversation TEXT DEFAULT NULL');
+    }
 }
 
 function findContactRequestById(int $id): ?array
@@ -91,6 +96,67 @@ function contactEmailHasUser(string $email): bool
     $statement->execute(['email' => strtolower(trim($email))]);
 
     return (bool) $statement->fetch();
+}
+
+function contactMessages(array $contact): array
+{
+    $conversation = trim((string) ($contact['conversation'] ?? ''));
+    $decoded = $conversation !== '' ? json_decode($conversation, true) : null;
+
+    if (is_array($decoded)) {
+        return array_values(array_filter($decoded, fn(mixed $message): bool => is_array($message)));
+    }
+
+    $messages = [[
+        'author' => 'client',
+        'authorName' => $contact['full_name'] ?? '',
+        'message' => $contact['message'] ?? '',
+        'createdAt' => $contact['created_at'] ?? null,
+    ]];
+
+    if (!empty($contact['admin_reply'])) {
+        $messages[] = [
+            'author' => 'admin',
+            'authorName' => 'Axelle',
+            'message' => $contact['admin_reply'],
+            'createdAt' => $contact['replied_at'] ?? null,
+        ];
+    }
+
+    if (!empty($contact['client_reply'])) {
+        $messages[] = [
+            'author' => 'client',
+            'authorName' => $contact['full_name'] ?? '',
+            'message' => $contact['client_reply'],
+            'createdAt' => $contact['client_replied_at'] ?? null,
+        ];
+    }
+
+    return $messages;
+}
+
+function appendLegacyMessage(?string $existing, string $message): string
+{
+    $existing = trim((string) $existing);
+
+    if ($existing === '') {
+        return $message;
+    }
+
+    return $existing . "\n\n" . $message;
+}
+
+function encodeContactMessages(array $contact, string $author, string $authorName, string $message): string
+{
+    $messages = contactMessages($contact);
+    $messages[] = [
+        'author' => $author,
+        'authorName' => $authorName,
+        'message' => $message,
+        'createdAt' => date('Y-m-d H:i:s'),
+    ];
+
+    return json_encode($messages, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
@@ -138,6 +204,8 @@ try {
     }
 
     if ($method === 'POST') {
+        ensureContactReplyColumns();
+
         $data = readJsonBody();
         $fullName = cleanText($data['full_name'] ?? $data['fullName'] ?? '', 150);
         $email = strtolower(cleanText($data['email'] ?? '', 190));
@@ -169,15 +237,23 @@ try {
             jsonResponse(['error' => 'Numéro de téléphone invalide.'], 400);
         }
 
+        $conversation = json_encode([[
+            'author' => 'client',
+            'authorName' => $fullName,
+            'message' => $message,
+            'createdAt' => date('Y-m-d H:i:s'),
+        ]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         $statement = db()->prepare(
-            'INSERT INTO contact_requests (full_name, email, phone, message)
-             VALUES (:full_name, :email, :phone, :message)'
+            'INSERT INTO contact_requests (full_name, email, phone, message, conversation)
+             VALUES (:full_name, :email, :phone, :message, :conversation)'
         );
         $statement->execute([
             'full_name' => $fullName,
             'email' => $email,
             'phone' => $phone ?: null,
             'message' => $message,
+            'conversation' => $conversation,
         ]);
 
         jsonResponse(['message' => 'Votre message a bien été envoyé.'], 201);
@@ -202,8 +278,12 @@ try {
                 jsonResponse(['error' => 'Accès refusé.'], 403);
             }
 
-            if (($contact['status'] ?? '') !== 'waiting') {
-                jsonResponse(['error' => 'Cette discussion n’attend pas de réponse client.'], 400);
+            if (($contact['status'] ?? '') === 'closed') {
+                jsonResponse(['error' => 'Cette discussion est fermée.'], 400);
+            }
+
+            if (trim((string) ($contact['admin_reply'] ?? '')) === '') {
+                jsonResponse(['error' => 'Cette discussion n’a pas encore reçu de réponse.'], 400);
             }
 
             $clientReply = cleanText($data['client_reply'] ?? $data['clientReply'] ?? '', 1200);
@@ -220,10 +300,15 @@ try {
                 'UPDATE contact_requests
                  SET status = "new",
                      client_reply = :client_reply,
-                     client_replied_at = NOW()
+                     client_replied_at = NOW(),
+                     conversation = :conversation
                  WHERE id = :id'
             );
-            $statement->execute(['id' => $id, 'client_reply' => $clientReply]);
+            $statement->execute([
+                'id' => $id,
+                'client_reply' => appendLegacyMessage($contact['client_reply'] ?? '', $clientReply),
+                'conversation' => encodeContactMessages($contact, 'client', $contact['full_name'] ?? '', $clientReply),
+            ]);
 
             jsonResponse(['message' => 'Réponse envoyée.', 'contact' => publicContactRequest(findContactRequestById($id))]);
         }
@@ -249,25 +334,31 @@ try {
             ], 409);
         }
 
+        $adminName = currentUser()['full_name'] ?? 'Axelle';
+        $nextAdminReply = $adminReply !== ''
+            ? appendLegacyMessage($contact['admin_reply'] ?? '', $adminReply)
+            : ($contact['admin_reply'] ?? null);
+        $nextConversation = $adminReply !== ''
+            ? encodeContactMessages($contact, 'admin', $adminName, $adminReply)
+            : ($contact['conversation'] ?? null);
+
         $statement = db()->prepare(
             'UPDATE contact_requests
              SET status = :status,
-                 admin_reply = CASE
-                    WHEN :admin_reply_for_value <> "" THEN :admin_reply
-                    ELSE admin_reply
-                 END,
+                 admin_reply = :admin_reply,
                  replied_at = CASE
                     WHEN :admin_reply_for_date <> "" THEN NOW()
                     ELSE replied_at
-                 END
+                 END,
+                 conversation = :conversation
              WHERE id = :id'
         );
         $statement->execute([
             'id' => $id,
             'status' => $status,
-            'admin_reply' => $adminReply,
-            'admin_reply_for_value' => $adminReply,
+            'admin_reply' => $nextAdminReply,
             'admin_reply_for_date' => $adminReply,
+            'conversation' => $nextConversation,
         ]);
 
         jsonResponse(['message' => 'Message mis à jour.', 'contact' => publicContactRequest(findContactRequestById($id))]);

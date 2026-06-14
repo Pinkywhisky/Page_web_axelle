@@ -1016,20 +1016,20 @@ function renderProfileContacts() {
               <h5>Votre message</h5>
               <p>${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
             </div>
-            <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
+            <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(clientContactStatusLabel(contact))}</span>
           </div>
           ${renderContactThread(contact)}
           ${
-            contact.status === "waiting"
+            contact.status !== "closed"
               ? `<div class="contact-reply-form" data-role="client-contact-reply-form" data-id="${contact.id}" hidden>
-                  <label for="clientReply${contact.id}">Votre réponse</label>
+                  <label for="clientReply${contact.id}">Votre message</label>
                   <textarea id="clientReply${contact.id}" data-role="client-contact-reply" data-id="${contact.id}" rows="3" placeholder="Votre message retour."></textarea>
                   <div class="form-actions">
                     <button class="btn btn-primary btn-sm" data-action="reply-contact-client" data-id="${contact.id}" type="button">Répondre</button>
                   </div>
                 </div>
                 <div class="form-actions">
-                  <button class="btn btn-secondary btn-sm" data-action="open-contact-client-reply" data-id="${contact.id}" type="button">Répondre</button>
+                  <button class="btn btn-secondary btn-sm" data-action="open-contact-client-reply" data-id="${contact.id}" type="button">Ajouter un message</button>
                 </div>`
               : ""
           }
@@ -1049,7 +1049,10 @@ async function handleProfileContactsClick(event) {
     const replyForm = dom.profileContactsList.querySelector(`[data-role="client-contact-reply-form"][data-id="${id}"]`);
     const replyInput = dom.profileContactsList.querySelector(`[data-role="client-contact-reply"][data-id="${id}"]`);
     if (replyForm) replyForm.hidden = !replyForm.hidden;
-    if (replyForm && !replyForm.hidden) replyInput?.focus();
+    if (replyForm && !replyForm.hidden) {
+      opener.hidden = true;
+      replyInput?.focus();
+    }
     return;
   }
 
@@ -1409,33 +1412,66 @@ function renderAdminContactItem(contact, archived) {
 }
 
 function renderContactThread(contact) {
-  const adminReply = contact.adminReply || contact.admin_reply || "";
-  const clientReply = contact.clientReply || contact.client_reply || "";
+  const messages = contactMessages(contact);
 
   return `
     <div class="message-thread">
-      <div class="thread-message thread-client">
-        <span>Client</span>
-        <p>${escapeHtml(contact.message)}</p>
-      </div>
-      ${
-        adminReply
-          ? `<div class="thread-message thread-admin">
-              <span>Réponse</span>
-              <p>${escapeHtml(adminReply)}</p>
-            </div>`
-          : ""
-      }
-      ${
-        clientReply
-          ? `<div class="thread-message thread-client">
-              <span>Retour client</span>
-              <p>${escapeHtml(clientReply)}</p>
-            </div>`
-          : ""
-      }
+      ${messages
+        .map(
+          (message) => `
+            <div class="thread-message thread-${escapeHtml(message.author || "client")}">
+              <span>${escapeHtml(threadAuthorName(message, contact))}</span>
+              <p>${escapeHtml(message.message || "")}</p>
+            </div>
+          `
+        )
+        .join("")}
     </div>
   `;
+}
+
+function contactMessages(contact) {
+  if (Array.isArray(contact.messages) && contact.messages.length) {
+    return contact.messages;
+  }
+
+  const messages = [{
+    author: "client",
+    authorName: contact.fullName || contact.full_name || "",
+    message: contact.message || "",
+  }];
+
+  if (contact.adminReply || contact.admin_reply) {
+    messages.push({
+      author: "admin",
+      authorName: "Axelle",
+      message: contact.adminReply || contact.admin_reply,
+    });
+  }
+
+  if (contact.clientReply || contact.client_reply) {
+    messages.push({
+      author: "client",
+      authorName: contact.fullName || contact.full_name || "",
+      message: contact.clientReply || contact.client_reply,
+    });
+  }
+
+  return messages;
+}
+
+function threadAuthorName(message, contact) {
+  const rawName = message.authorName || message.author_name || "";
+
+  if (rawName) {
+    return firstName(rawName);
+  }
+
+  if (message.author === "admin") {
+    return "Axelle";
+  }
+
+  return firstName(contact.fullName || contact.full_name || "Client");
 }
 
 
@@ -1458,7 +1494,10 @@ async function handleManageContactsClick(event) {
       return;
     }
     if (replyForm) replyForm.hidden = !replyForm.hidden;
-    if (replyForm && !replyForm.hidden) replyInput?.focus();
+    if (replyForm && !replyForm.hidden) {
+      button.hidden = true;
+      replyInput?.focus();
+    }
     return;
   }
 
@@ -1786,6 +1825,24 @@ function contactStatusLabel(status) {
     closed: "Fermé",
     handled: "Fermé",
   }[status] || status;
+}
+
+function clientContactStatusLabel(contact) {
+  if (contact.status === "closed") return "Fermé";
+  if (contact.status === "waiting") return "En attente de votre réponse";
+
+  const messages = contactMessages(contact);
+  const lastMessage = messages[messages.length - 1];
+
+  if (lastMessage?.author === "client") {
+    return "Envoyé";
+  }
+
+  return contactStatusLabel(contact.status);
+}
+
+function firstName(value) {
+  return String(value || "").trim().split(/\s+/)[0] || "Message";
 }
 
 function animalLabel(value) {

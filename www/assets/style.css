@@ -1025,9 +1025,11 @@ textarea {
 
 input:focus,
 select:focus,
-textarea:focus {
-    outline: 3px solid rgba(138, 101, 74, 0.20);
-    border-color: rgba(138, 101, 74, 0.38);
+textarea:focus,
+.date-time-summary:focus {
+    outline: none;
+    border-color: rgba(138, 101, 74, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(138, 101, 74, 0.72);
 }
 
 .form-actions {
@@ -1270,9 +1272,9 @@ tbody tr.is-selected {
 .date-time-summary:focus-visible,
 a:focus-visible,
 input:focus-visible,
-select:focus-visible {
-    outline: 3px solid rgba(138, 101, 74, 0.28);
-    outline-offset: 3px;
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
 }
 
 @media (max-width: 980px) {
