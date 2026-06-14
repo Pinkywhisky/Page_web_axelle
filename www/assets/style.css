@@ -758,6 +758,39 @@ main {
     background: rgba(234, 223, 204, 0.32);
 }
 
+.tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.tooltip-wrap::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 10px);
+    z-index: 20;
+    width: min(280px, 72vw);
+    padding: 10px 12px;
+    border: 1px solid rgba(77, 55, 40, 0.12);
+    border-radius: 14px;
+    color: var(--brown-dark);
+    background: var(--off-white);
+    box-shadow: var(--shadow-card);
+    font-size: 0.82rem;
+    font-weight: 900;
+    line-height: 1.35;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.tooltip-wrap:hover::after,
+.tooltip-wrap:focus-within::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 .message-thread {
     display: grid;
     gap: 10px;

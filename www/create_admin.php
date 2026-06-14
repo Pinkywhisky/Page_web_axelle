@@ -25,9 +25,17 @@ $email = strtolower(trim($argv[1] ?? ''));
 $password = (string) ($argv[2] ?? '');
 $fullName = trim($argv[3] ?? 'Administrateur');
 
-if (!isValidEmailStrict($email) || strlen($password) < 8 || $fullName === '') {
+if (!isValidEmailStrict($email) || strlen($password) < 8 || strlen($password) > 255 || strlen($fullName) > 150 || $fullName === '') {
     echo "Usage: php create_admin.php admin@example.com motdepasse \"Nom Admin\"\n";
-    echo "Le mot de passe doit contenir au moins 8 caractères.\n";
+    echo "Le mot de passe doit contenir entre 8 et 255 caractères.\n";
+    exit(1);
+}
+
+$existing = db()->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+$existing->execute(['email' => $email]);
+
+if ($existing->fetch()) {
+    echo "Un compte existe déjà avec cet e-mail.\n";
     exit(1);
 }
 

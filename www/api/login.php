@@ -15,7 +15,7 @@ $data = readJsonBody();
 $email = strtolower(trim((string) ($data['email'] ?? '')));
 $password = (string) ($data['password'] ?? '');
 
-if (!isValidEmailStrict($email) || $password === '') {
+if (!isValidEmailStrict($email) || $password === '' || strlen($password) > 255) {
     jsonResponse(['error' => 'Adresse e-mail ou mot de passe invalide.'], 400);
 }
 

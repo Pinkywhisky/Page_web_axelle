@@ -38,20 +38,21 @@ mysql -u admin -p club_des_pattes < www/schema.sql
 
 ### Configuration
 
-Modifier le fichier :
+Copier le modèle d'environnement :
 
-```text
-www/config/config.php
+```bash
+cp .env.example .env
 ```
 
-Renseigner les constantes :
+Puis renseigner les variables :
 
-```php
+```text
 DB_HOST
 DB_NAME
 DB_USER
 DB_PASS
 APP_NAME
+APP_TIMEZONE
 ```
 
 ### Création du premier administrateur
@@ -59,10 +60,12 @@ APP_NAME
 Depuis le dossier `www/` :
 
 ```bash
+ALLOW_CREATE_ADMIN="true" # dans .env le temps du bootstrap
 php create_admin.php admin@example.com motdepasse "Administrateur"
 ```
 
-Le script `create_admin.php` est un outil de bootstrap local. Il doit être supprimé ou désactivé en production.
+Le script `create_admin.php` est un outil de bootstrap local. Il est désactivé par défaut et nécessite `ALLOW_CREATE_ADMIN="true"` dans `.env`.
+Remettre `ALLOW_CREATE_ADMIN="false"` après la création du compte.
 
 ### Lancement local
 
@@ -131,6 +134,15 @@ www/
 - Un administrateur ne peut pas supprimer son propre compte.
 - Les réponses API sont au format JSON.
 - Les e-mails invalides ou contenant des accents sont refusés.
+- Les requêtes `POST`, `PUT` et `DELETE` sont protégées par jeton CSRF.
+- Les cookies de session sont `HttpOnly` et `SameSite=Lax`.
+- Le vrai fichier `.env` ne doit pas être suivi par Git.
+
+## Migrations automatiques
+
+Le schéma de référence est `www/schema.sql`.
+Pour garder les anciennes installations compatibles, certaines API créent automatiquement les tables manquantes liées aux animaux et complètent les colonnes de messagerie nécessaires.
+Pour une installation neuve, importer d'abord `www/schema.sql`.
 
 ## Déploiement
 
@@ -138,6 +150,6 @@ Pour un hébergement PHP/MySQL classique :
 
 1. Copier le contenu de `www/` dans la racine web de l'hébergement.
 2. Importer `www/schema.sql` dans la base MariaDB/MySQL.
-3. Configurer `www/config/config.php`.
-4. Créer le premier administrateur.
-5. Supprimer ou désactiver `www/create_admin.php`.
+3. Créer et configurer `.env`.
+4. Créer le premier administrateur avec `ALLOW_CREATE_ADMIN="true"`.
+5. Remettre `ALLOW_CREATE_ADMIN="false"`.

@@ -122,12 +122,20 @@ function validateUserPayload(array $data, bool $requirePassword = false): array
         jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
     }
 
+    if (!isValidFrenchPhone($phone)) {
+        jsonResponse(['error' => 'Numéro de téléphone invalide.'], 400);
+    }
+
     if (!isValidEmailStrict($email)) {
         jsonResponse(['error' => 'Adresse e-mail invalide. Les accents ne sont pas autorisés.'], 400);
     }
 
     if ($requirePassword && strlen($password) < 6) {
         jsonResponse(['error' => 'Le mot de passe doit contenir au moins 6 caractères.'], 400);
+    }
+
+    if ($password !== '' && strlen($password) > 255) {
+        jsonResponse(['error' => 'Le mot de passe est trop long.'], 400);
     }
 
     if ($animalType !== '' && !in_array($animalType, ['chien', 'chat'], true)) {
@@ -241,7 +249,7 @@ try {
         }
 
         $payload = validateUserPayload($data, false);
-        $nextRole = isAdmin() ? $payload['role'] : $existing['role'];
+        $nextRole = isAdmin() && !$isSelfUpdate ? $payload['role'] : $existing['role'];
 
         $statement = db()->prepare('SELECT id FROM users WHERE email = :email AND id <> :id LIMIT 1');
         $statement->execute(['email' => $payload['email'], 'id' => $id]);

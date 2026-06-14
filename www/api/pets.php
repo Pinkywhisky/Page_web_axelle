@@ -35,6 +35,18 @@ function ensurePetTables(): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
+    $statement = db()->prepare(
+        'SELECT COUNT(*) AS total
+         FROM information_schema.tables
+         WHERE table_schema = DATABASE()
+           AND table_name = "booking_requests"'
+    );
+    $statement->execute();
+
+    if ((int) $statement->fetch()['total'] <= 0) {
+        return;
+    }
+
     db()->exec(
         "CREATE TABLE IF NOT EXISTS booking_request_pets (
             booking_request_id INT NOT NULL,

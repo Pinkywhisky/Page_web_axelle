@@ -50,6 +50,26 @@ function cleanText(mixed $value, int $maxLength): string
     return $text;
 }
 
+function isValidFrenchPhone(?string $phone): bool
+{
+    $phone = trim((string) $phone);
+
+    if ($phone === '') {
+        return true;
+    }
+
+    if (strlen($phone) > 20 || !preg_match('/^\+?[0-9 ]+$/', $phone)) {
+        return false;
+    }
+
+    $compact = preg_replace('/\s+/', '', $phone) ?? $phone;
+
+    return (bool) (
+        preg_match('/^0[67][0-9]{8}$/', $compact) ||
+        preg_match('/^\+33[67][0-9]{8}$/', $compact)
+    );
+}
+
 function sendSecurityHeaders(): void
 {
     if (headers_sent()) {

@@ -383,7 +383,7 @@ $user = currentUser();
           <p class="field-hint">6 caractères minimum.</p>
 
           <label for="registerPhone">Téléphone</label>
-          <input id="registerPhone" type="tel" />
+          <input id="registerPhone" type="tel" inputmode="tel" />
 
           <label for="registerAnimalType">Type d’animal</label>
           <select id="registerAnimalType">
@@ -510,17 +510,7 @@ $user = currentUser();
           <input id="profileEmail" type="email" required />
 
           <label for="profilePhone">Téléphone</label>
-          <input id="profilePhone" type="tel" />
-
-          <label for="profileAnimalType">Type d’animal</label>
-          <select id="profileAnimalType">
-            <option value="">Non renseigné</option>
-            <option value="chien">Chien</option>
-            <option value="chat">Chat</option>
-          </select>
-
-          <label for="profileAnimalName">Nom de l’animal</label>
-          <input id="profileAnimalName" type="text" />
+          <input id="profilePhone" type="tel" inputmode="tel" />
 
           <p class="inline-message" id="profileModalMessage"></p>
 
@@ -660,7 +650,7 @@ $user = currentUser();
           <input id="manageEmail" type="email" required />
 
           <label for="managePhone">Téléphone</label>
-          <input id="managePhone" type="tel" />
+          <input id="managePhone" type="tel" inputmode="tel" />
 
           <label for="manageRole">Rôle</label>
           <select id="manageRole">
@@ -714,7 +704,7 @@ $user = currentUser();
           <input id="contactEmail" type="email" required />
 
           <label for="contactPhone">Téléphone</label>
-          <input id="contactPhone" type="tel" />
+          <input id="contactPhone" type="tel" inputmode="tel" />
 
           <label for="contactMessage">Message</label>
           <textarea

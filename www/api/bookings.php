@@ -182,11 +182,34 @@ function parseBookingTime(mixed $value): string|false|null
     return $time->format('H:i:s');
 }
 
+function parsePositiveIntList(mixed $value): array
+{
+    if ($value === null || $value === '') {
+        return [];
+    }
+
+    if (!is_array($value)) {
+        jsonResponse(['error' => 'La liste des animaux est invalide.'], 400);
+    }
+
+    $ids = [];
+
+    foreach ($value as $item) {
+        if (!is_numeric($item) || (int) $item <= 0) {
+            jsonResponse(['error' => 'La liste des animaux contient un identifiant invalide.'], 400);
+        }
+
+        $ids[] = (int) $item;
+    }
+
+    return array_values(array_unique($ids));
+}
+
 function resolveBookingPayload(array $data, int $userId): array
 {
     $animalType = cleanText($data['animal_type'] ?? $data['animalType'] ?? '', 50);
     $animalName = cleanText($data['animal_name'] ?? $data['animalName'] ?? '', 100);
-    $petIds = array_values(array_unique(array_map('intval', $data['pet_ids'] ?? $data['petIds'] ?? [])));
+    $petIds = parsePositiveIntList($data['pet_ids'] ?? $data['petIds'] ?? []);
     $startDatetime = parseBookingDateTime($data['start_datetime'] ?? $data['startDateTime'] ?? '');
     $endDatetime = parseBookingDateTime($data['end_datetime'] ?? $data['endDateTime'] ?? '');
     $bookingTime = parseBookingTime($data['booking_time'] ?? $data['bookingTime'] ?? '');
@@ -334,59 +357,7 @@ try {
 
         $data = readJsonBody();
         $user = currentUser();
-        $animalType = cleanText($data['animal_type'] ?? $data['animalType'] ?? '', 50);
-        $animalName = cleanText($data['animal_name'] ?? $data['animalName'] ?? '', 100);
-        $petIds = array_values(array_unique(array_map('intval', $data['pet_ids'] ?? $data['petIds'] ?? [])));
-        $startDatetime = parseBookingDateTime($data['start_datetime'] ?? $data['startDateTime'] ?? '');
-        $endDatetime = parseBookingDateTime($data['end_datetime'] ?? $data['endDateTime'] ?? '');
-        $bookingTime = parseBookingTime($data['booking_time'] ?? $data['bookingTime'] ?? '');
-        $notes = cleanText($data['notes'] ?? '', 1200);
-        $selectedPets = [];
-
-        if ($petIds && (!tableExists('pets') || !tableExists('booking_request_pets'))) {
-            jsonResponse(['error' => 'La sélection des animaux n’est pas encore installée en base.'], 500);
-        }
-
-        if ($petIds) {
-            $placeholders = implode(',', array_fill(0, count($petIds), '?'));
-            $statement = db()->prepare(
-                "SELECT * FROM pets WHERE user_id = ? AND id IN ($placeholders) ORDER BY name ASC, id ASC"
-            );
-            $statement->execute([(int) $user['id'], ...$petIds]);
-            $selectedPets = $statement->fetchAll();
-
-            if (count($selectedPets) !== count($petIds)) {
-                jsonResponse(['error' => 'Un animal sélectionné est introuvable.'], 404);
-            }
-
-            $animalName = implode(', ', array_map(fn(array $pet): string => $pet['name'], $selectedPets));
-            $species = array_unique(array_map(fn(array $pet): string => $pet['species'], $selectedPets));
-            $animalType = count($species) === 1 ? $species[0] : 'plusieurs';
-        }
-
-        if (!$petIds && !in_array($animalType, ['chien', 'chat'], true)) {
-            jsonResponse(['error' => 'Merci de choisir chien ou chat.'], 400);
-        }
-
-        if ($animalName === '') {
-            jsonResponse(['error' => 'Merci de sélectionner ou renseigner un animal.'], 400);
-        }
-
-        if (!$startDatetime || !$endDatetime) {
-            jsonResponse(['error' => 'Merci de renseigner une arrivée et un départ valides.'], 400);
-        }
-
-        if ($bookingTime === false) {
-            jsonResponse(['error' => 'Merci de renseigner un horaire au format HH:mm.'], 400);
-        }
-
-        if (strtotime($endDatetime) <= strtotime($startDatetime)) {
-            jsonResponse(['error' => 'Le départ doit être après l’arrivée.'], 400);
-        }
-
-        if (strtotime($startDatetime) < time() - 60) {
-            jsonResponse(['error' => 'La date d’arrivée doit être à venir.'], 400);
-        }
+        $payload = resolveBookingPayload($data, (int) $user['id']);
 
         $pdo = db();
         $pdo->beginTransaction();
@@ -404,15 +375,15 @@ try {
 
         $insertPayload = [
             'user_id' => (int) $user['id'],
-            'animal_type' => $animalType,
-            'animal_name' => $animalName,
-            'start_datetime' => $startDatetime,
-            'end_datetime' => $endDatetime,
-            'notes' => $notes ?: null,
+            'animal_type' => $payload['animal_type'],
+            'animal_name' => $payload['animal_name'],
+            'start_datetime' => $payload['start_datetime'],
+            'end_datetime' => $payload['end_datetime'],
+            'notes' => $payload['notes'] ?: null,
         ];
 
         if ($hasBookingTime) {
-            $insertPayload['booking_time'] = $bookingTime;
+            $insertPayload['booking_time'] = $payload['booking_time'];
         }
 
         $insert = $pdo->prepare($insertSql);
@@ -420,13 +391,13 @@ try {
 
         $bookingId = (int) $pdo->lastInsertId();
 
-        if ($selectedPets) {
+        if ($payload['selected_pets']) {
             $linkInsert = $pdo->prepare(
                 'INSERT INTO booking_request_pets (booking_request_id, pet_id)
                  VALUES (:booking_request_id, :pet_id)'
             );
 
-            foreach ($selectedPets as $pet) {
+            foreach ($payload['selected_pets'] as $pet) {
                 $linkInsert->execute([
                     'booking_request_id' => $bookingId,
                     'pet_id' => (int) $pet['id'],

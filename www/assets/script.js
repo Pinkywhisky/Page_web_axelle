@@ -97,8 +97,6 @@ function bindDom() {
     "profileFullName",
     "profileEmail",
     "profilePhone",
-    "profileAnimalType",
-    "profileAnimalName",
     "profileModalMessage",
     "profileReadonly",
     "profileDetailsPanel",
@@ -371,6 +369,11 @@ async function handleRegister(event) {
   setMessage(dom.registerMessage, "");
   setMessage(dom.registerSuccess, "");
 
+  if (!isValidPhoneInput(dom.registerPhone.value)) {
+    setMessage(dom.registerMessage, "Numéro de téléphone invalide.", "error");
+    return;
+  }
+
   try {
     await requestJson("/api/users.php", {
       method: "POST",
@@ -448,8 +451,6 @@ function fillProfileForm(user) {
   dom.profileFullName.value = user.fullName || user.full_name || "";
   dom.profileEmail.value = user.email || "";
   dom.profilePhone.value = user.phone || "";
-  dom.profileAnimalType.value = user.animalType || user.animal_type || "";
-  dom.profileAnimalName.value = user.animalName || user.animal_name || "";
 }
 
 function renderProfileReadonly() {
@@ -460,7 +461,6 @@ function renderProfileReadonly() {
     ["Nom complet", user.fullName || user.full_name || "Non renseigné"],
     ["E-mail", user.email || "Non renseigné"],
     ["Téléphone", user.phone || "Non renseigné"],
-    ["Animal par défaut", profileAnimalFallbackLabel(user)],
   ];
 
   dom.profileReadonly.innerHTML = rows
@@ -473,14 +473,6 @@ function renderProfileReadonly() {
       `
     )
     .join("");
-}
-
-function profileAnimalFallbackLabel(user) {
-  const animalName = user.animalName || user.animal_name || "";
-  const animalType = user.animalType || user.animal_type || "";
-
-  if (!animalName && !animalType) return "Non renseigné";
-  return `${animalName || "Animal"}${animalType ? ` (${animalLabel(animalType)})` : ""}`;
 }
 
 function setProfileEditMode(active) {
@@ -951,6 +943,11 @@ async function handleContactSubmit(event) {
   event.preventDefault();
   setMessage(dom.contactMessageBox, "");
 
+  if (!isValidPhoneInput(dom.contactPhone.value)) {
+    setMessage(dom.contactMessageBox, "Numéro de téléphone invalide.", "error");
+    return;
+  }
+
   try {
     await requestJson("/api/contact.php", {
       method: "POST",
@@ -1136,6 +1133,11 @@ async function handleProfileSave(event) {
   event.preventDefault();
   setMessage(dom.profileModalMessage, "");
 
+  if (!isValidPhoneInput(dom.profilePhone.value)) {
+    setMessage(dom.profileModalMessage, "Numéro de téléphone invalide.", "error");
+    return;
+  }
+
   try {
     const data = await requestJson("/api/users.php", {
       method: "PUT",
@@ -1144,8 +1146,8 @@ async function handleProfileSave(event) {
         full_name: dom.profileFullName.value,
         email: dom.profileEmail.value,
         phone: dom.profilePhone.value,
-        animal_type: dom.profileAnimalType.value,
-        animal_name: dom.profileAnimalName.value,
+        animal_type: state.user.animalType || state.user.animal_type || "",
+        animal_name: state.user.animalName || state.user.animal_name || "",
         role: state.user.role,
       },
     });
@@ -1387,7 +1389,7 @@ function renderAdminContactItem(contact, archived) {
                 <button class="btn btn-primary btn-sm" data-action="send-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
               </div>
             </div>`
-          : `<p class="inline-message contact-disabled-hint">Réponse impossible : cette adresse e-mail n'est pas associée à un compte.</p>`
+          : ""
       }
       <div class="table-actions">
         ${
@@ -1395,7 +1397,9 @@ function renderAdminContactItem(contact, archived) {
             ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>`
             : `${canReply
                 ? `<button class="btn btn-primary btn-sm" data-action="open-contact-reply" data-id="${contact.id}" type="button">Répondre</button>`
-                : `<button class="btn btn-secondary btn-sm" type="button" disabled>Répondre</button>`
+                : `<span class="tooltip-wrap" data-tooltip="Réponse impossible : cette adresse e-mail n'est pas associée à un compte.">
+                    <button class="btn btn-secondary btn-sm" type="button" disabled>Répondre</button>
+                  </span>`
               }
                <button class="btn btn-secondary btn-sm" data-action="close-contact" data-id="${contact.id}" type="button">Fermer</button>`
         }
@@ -1661,6 +1665,11 @@ async function handleManageSave(event) {
     return;
   }
 
+  if (!isValidPhoneInput(dom.managePhone.value)) {
+    setMessage(dom.manageEditMessage, "Numéro de téléphone invalide.", "error");
+    return;
+  }
+
   try {
     await requestJson("/api/users.php", {
       method: "PUT",
@@ -1790,6 +1799,16 @@ function animalLabel(value) {
 function normalizeDateTimeInput(value) {
   if (!value) return "";
   return String(value).replace(" ", "T").slice(0, 16);
+}
+
+function isValidPhoneInput(value) {
+  const phone = String(value || "").trim();
+
+  if (!phone) return true;
+  if (phone.length > 20 || !/^\+?[0-9 ]+$/.test(phone)) return false;
+
+  const compact = phone.replace(/\s+/g, "");
+  return /^0[67][0-9]{8}$/.test(compact) || /^\+33[67][0-9]{8}$/.test(compact);
 }
 
 function bookingPetSummary(booking) {

@@ -165,6 +165,10 @@ try {
             jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
         }
 
+        if (!isValidFrenchPhone($phone)) {
+            jsonResponse(['error' => 'Numéro de téléphone invalide.'], 400);
+        }
+
         $statement = db()->prepare(
             'INSERT INTO contact_requests (full_name, email, phone, message)
              VALUES (:full_name, :email, :phone, :message)'
