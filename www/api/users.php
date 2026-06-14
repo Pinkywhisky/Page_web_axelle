@@ -98,6 +98,55 @@ function enrichUserWithPets(array $user): array
     return $publicUser;
 }
 
+function deleteUserCascade(array $user): void
+{
+    $pdo = db();
+    $userId = (int) $user['id'];
+    $email = (string) $user['email'];
+
+    $pdo->beginTransaction();
+
+    if (tableExists('booking_request_pets') && tableExists('booking_requests')) {
+        $statement = $pdo->prepare(
+            'DELETE booking_request_pets
+             FROM booking_request_pets
+             JOIN booking_requests ON booking_requests.id = booking_request_pets.booking_request_id
+             WHERE booking_requests.user_id = :user_id'
+        );
+        $statement->execute(['user_id' => $userId]);
+    }
+
+    if (tableExists('booking_request_pets') && tableExists('pets')) {
+        $statement = $pdo->prepare(
+            'DELETE booking_request_pets
+             FROM booking_request_pets
+             JOIN pets ON pets.id = booking_request_pets.pet_id
+             WHERE pets.user_id = :user_id'
+        );
+        $statement->execute(['user_id' => $userId]);
+    }
+
+    if (tableExists('booking_requests')) {
+        $statement = $pdo->prepare('DELETE FROM booking_requests WHERE user_id = :user_id');
+        $statement->execute(['user_id' => $userId]);
+    }
+
+    if (tableExists('pets')) {
+        $statement = $pdo->prepare('DELETE FROM pets WHERE user_id = :user_id');
+        $statement->execute(['user_id' => $userId]);
+    }
+
+    if (tableExists('contact_requests')) {
+        $statement = $pdo->prepare('DELETE FROM contact_requests WHERE email = :email');
+        $statement->execute(['email' => $email]);
+    }
+
+    $statement = $pdo->prepare('DELETE FROM users WHERE id = :id');
+    $statement->execute(['id' => $userId]);
+
+    $pdo->commit();
+}
+
 function validateUserPayload(array $data, bool $requirePassword = false): array
 {
     $fullName = cleanText($data['full_name'] ?? $data['fullName'] ?? '', 150);
@@ -306,8 +355,7 @@ try {
             jsonResponse(['error' => 'Utilisateur introuvable.'], 404);
         }
 
-        $delete = db()->prepare('DELETE FROM users WHERE id = :id');
-        $delete->execute(['id' => $id]);
+        deleteUserCascade($existing);
 
         jsonResponse(['message' => 'Utilisateur supprimé.']);
     }

@@ -13,6 +13,8 @@ const state = {
   editingProfile: false,
   profileTab: "pets",
   adminTab: "dashboard",
+  selectedContactId: null,
+  selectedArchiveContactId: null,
 };
 
 const dom = {};
@@ -1001,13 +1003,14 @@ async function loadMyContacts() {
 function renderProfileContacts() {
   if (!dom.profileContactsList) return;
 
-  if (!state.myContacts.length) {
-    dom.profileContactsList.innerHTML =
-      "<div class='booking-item'><p>Aucune réponse à afficher pour le moment.</p></div>";
+  const contacts = sortContactsByLastMessage(state.myContacts);
+
+  if (!contacts.length) {
+    dom.profileContactsList.innerHTML = renderClientNewContactCard();
     return;
   }
 
-  dom.profileContactsList.innerHTML = state.myContacts
+  dom.profileContactsList.innerHTML = contacts
     .map(
       (contact) => `
         <article class="booking-item">
@@ -1018,7 +1021,7 @@ function renderProfileContacts() {
             </div>
             <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(clientContactStatusLabel(contact))}</span>
           </div>
-          ${renderContactThread(contact)}
+          ${renderContactThread(contact, { newestFirst: true })}
           ${
             contact.status !== "closed"
               ? `<div class="contact-reply-form" data-role="client-contact-reply-form" data-id="${contact.id}" hidden>
@@ -1039,10 +1042,68 @@ function renderProfileContacts() {
     .join("");
 }
 
+function renderClientNewContactCard() {
+  return `
+    <article class="booking-item">
+      <div class="booking-item-head">
+        <div>
+          <h5>Nouveau message</h5>
+          <p>Envoyez un message pour démarrer une nouvelle conversation.</p>
+        </div>
+      </div>
+      <div class="contact-reply-form" data-role="client-new-contact-form" hidden>
+        <label for="clientNewContactMessage">Votre message</label>
+        <textarea id="clientNewContactMessage" data-role="client-new-contact-message" rows="3" placeholder="Votre message."></textarea>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" data-action="send-new-contact-client" type="button">Envoyer</button>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary btn-sm" data-action="open-new-contact-client" type="button">Nouveau message</button>
+      </div>
+    </article>
+  `;
+}
+
 async function handleProfileContactsClick(event) {
   const button = event.target.closest("button[data-action='reply-contact-client'][data-id]");
   const opener = event.target.closest("button[data-action='open-contact-client-reply'][data-id]");
-  if (!button && !opener) return;
+  const newMessageOpener = event.target.closest("button[data-action='open-new-contact-client']");
+  const newMessageSender = event.target.closest("button[data-action='send-new-contact-client']");
+  if (!button && !opener && !newMessageOpener && !newMessageSender) return;
+
+  if (newMessageOpener) {
+    const replyForm = dom.profileContactsList.querySelector("[data-role='client-new-contact-form']");
+    const replyInput = dom.profileContactsList.querySelector("[data-role='client-new-contact-message']");
+    if (replyForm) replyForm.hidden = !replyForm.hidden;
+    if (replyForm && !replyForm.hidden) {
+      if (replyInput) replyInput.value = "";
+      newMessageOpener.hidden = true;
+      replyInput?.focus();
+    }
+    return;
+  }
+
+  if (newMessageSender) {
+    const replyInput = dom.profileContactsList.querySelector("[data-role='client-new-contact-message']");
+    const fullName = state.user?.fullName || state.user?.full_name || state.user?.email || "";
+
+    try {
+      await requestJson("/api/contact.php", {
+        method: "POST",
+        body: {
+          full_name: fullName,
+          email: state.user?.email || "",
+          phone: state.user?.phone || "",
+          message: replyInput?.value || "",
+        },
+      });
+      await loadMyContacts();
+    } catch (error) {
+      setMessage(dom.profileContactsMessage, error.message, "error");
+    }
+    return;
+  }
 
   if (opener) {
     const id = Number(opener.dataset.id);
@@ -1050,6 +1111,7 @@ async function handleProfileContactsClick(event) {
     const replyInput = dom.profileContactsList.querySelector(`[data-role="client-contact-reply"][data-id="${id}"]`);
     if (replyForm) replyForm.hidden = !replyForm.hidden;
     if (replyForm && !replyForm.hidden) {
+      if (replyInput) replyInput.value = "";
       opener.hidden = true;
       replyInput?.focus();
     }
@@ -1346,30 +1408,73 @@ async function loadAdminContacts() {
 function renderAdminContacts() {
   if (!dom.manageContactsList) return;
 
-  const contacts = state.contacts.filter((contact) => contact.status !== "closed");
+  const contacts = sortContactsByLastMessage(state.contacts.filter((contact) => contact.status !== "closed"));
 
   if (!contacts.length) {
     dom.manageContactsList.innerHTML = "<div class='booking-item'><p>Aucun message pour le moment.</p></div>";
+    state.selectedContactId = null;
     return;
   }
 
-  dom.manageContactsList.innerHTML = contacts.map((contact) => renderAdminContactItem(contact, false)).join("");
+  if (!contacts.some((contact) => Number(contact.id) === Number(state.selectedContactId))) {
+    state.selectedContactId = contacts[0].id;
+  }
+
+  dom.manageContactsList.innerHTML = renderAdminContactWorkspace(contacts, false, state.selectedContactId);
 }
 
 function renderAdminArchives() {
   if (!dom.manageArchivesList) return;
 
-  const contacts = state.contacts.filter((contact) => contact.status === "closed");
+  const contacts = sortContactsByLastMessage(state.contacts.filter((contact) => contact.status === "closed"));
 
   if (!contacts.length) {
     dom.manageArchivesList.innerHTML = "<div class='booking-item'><p>Aucune discussion archivée.</p></div>";
+    state.selectedArchiveContactId = null;
     return;
   }
 
-  dom.manageArchivesList.innerHTML = contacts.map((contact) => renderAdminContactItem(contact, true)).join("");
+  if (!contacts.some((contact) => Number(contact.id) === Number(state.selectedArchiveContactId))) {
+    state.selectedArchiveContactId = contacts[0].id;
+  }
+
+  dom.manageArchivesList.innerHTML = renderAdminContactWorkspace(contacts, true, state.selectedArchiveContactId);
 }
 
-function renderAdminContactItem(contact, archived) {
+function renderAdminContactWorkspace(contacts, archived, selectedId) {
+  const selectedContact = contacts.find((contact) => Number(contact.id) === Number(selectedId)) || contacts[0];
+
+  return `
+    <div class="admin-messenger" data-role="admin-contact-workspace" data-archived="${archived ? "1" : "0"}">
+      <div class="conversation-list" aria-label="${archived ? "Discussions archivées" : "Conversations"}">
+        ${contacts.map((contact) => renderConversationPreview(contact, Number(contact.id) === Number(selectedContact.id))).join("")}
+      </div>
+      <div class="conversation-detail">
+        ${renderAdminConversationDetail(selectedContact, archived)}
+      </div>
+    </div>
+  `;
+}
+
+function renderConversationPreview(contact, selected) {
+  const lastMessage = lastContactMessage(contact);
+  const preview = lastMessage?.message || contact.message || "";
+  const previewDate = contactLastMessageDate(contact) || contact.createdAt || contact.created_at;
+
+  return `
+    <button class="conversation-preview ${selected ? "is-selected" : ""}" data-action="select-contact" data-id="${contact.id}" type="button">
+      <span class="conversation-preview-head">
+        <strong>${escapeHtml(contact.fullName || contact.full_name || "Contact")}</strong>
+        <small>${escapeHtml(formatDateTime(previewDate))}</small>
+      </span>
+      <span>${escapeHtml(contact.email || "")}</span>
+      <span class="conversation-preview-text">${escapeHtml(preview)}</span>
+      <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
+    </button>
+  `;
+}
+
+function renderAdminConversationDetail(contact, archived) {
   const canReply = Boolean(contact.isRegisteredUser ?? contact.is_registered_user);
 
   return `
@@ -1382,12 +1487,11 @@ function renderAdminContactItem(contact, archived) {
         <span class="status-pill status-${escapeHtml(contact.status)}">${escapeHtml(contactStatusLabel(contact.status))}</span>
       </div>
       ${renderContactThread(contact)}
-      <p class="panel-text">${escapeHtml(formatDateTime(contact.createdAt || contact.created_at))}</p>
       ${
-        canReply
+        canReply && !archived
           ? `<div class="contact-reply-form" data-role="contact-reply-form" data-id="${contact.id}" hidden>
               <label for="contactReply${contact.id}">Réponse</label>
-              <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client.">${escapeHtml(contact.adminReply || contact.admin_reply || "")}</textarea>
+              <textarea id="contactReply${contact.id}" data-role="contact-reply" data-id="${contact.id}" rows="3" placeholder="Message retour visible dans l'espace client."></textarea>
               <div class="form-actions">
                 <button class="btn btn-primary btn-sm" data-action="send-contact-reply" data-id="${contact.id}" type="button">Répondre</button>
               </div>
@@ -1397,7 +1501,8 @@ function renderAdminContactItem(contact, archived) {
       <div class="table-actions">
         ${
           archived
-            ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>`
+            ? `<button class="btn btn-primary btn-sm" data-action="reopen-contact" data-id="${contact.id}" type="button">Rouvrir</button>
+               <button class="btn btn-danger btn-sm" data-action="delete-contact" data-id="${contact.id}" type="button">Supprimer</button>`
             : `${canReply
                 ? `<button class="btn btn-primary btn-sm" data-action="open-contact-reply" data-id="${contact.id}" type="button">Répondre</button>`
                 : `<span class="tooltip-wrap" data-tooltip="Réponse impossible : cette adresse e-mail n'est pas associée à un compte.">
@@ -1411,8 +1516,8 @@ function renderAdminContactItem(contact, archived) {
   `;
 }
 
-function renderContactThread(contact) {
-  const messages = contactMessages(contact);
+function renderContactThread(contact, options = {}) {
+  const messages = options.newestFirst ? [...contactMessages(contact)].reverse() : contactMessages(contact);
 
   return `
     <div class="message-thread">
@@ -1421,6 +1526,7 @@ function renderContactThread(contact) {
           (message) => `
             <div class="thread-message thread-${escapeHtml(message.author || "client")}">
               <span>${escapeHtml(threadAuthorName(message, contact))}</span>
+              ${message.createdAt || message.created_at ? `<small>${escapeHtml(formatDateTime(message.createdAt || message.created_at))}</small>` : ""}
               <p>${escapeHtml(message.message || "")}</p>
             </div>
           `
@@ -1439,6 +1545,7 @@ function contactMessages(contact) {
     author: "client",
     authorName: contact.fullName || contact.full_name || "",
     message: contact.message || "",
+    createdAt: contact.createdAt || contact.created_at || "",
   }];
 
   if (contact.adminReply || contact.admin_reply) {
@@ -1446,6 +1553,7 @@ function contactMessages(contact) {
       author: "admin",
       authorName: "Axelle",
       message: contact.adminReply || contact.admin_reply,
+      createdAt: contact.repliedAt || contact.replied_at || "",
     });
   }
 
@@ -1454,10 +1562,29 @@ function contactMessages(contact) {
       author: "client",
       authorName: contact.fullName || contact.full_name || "",
       message: contact.clientReply || contact.client_reply,
+      createdAt: contact.clientRepliedAt || contact.client_replied_at || "",
     });
   }
 
   return messages;
+}
+
+function lastContactMessage(contact) {
+  const messages = contactMessages(contact);
+  return messages[messages.length - 1] || null;
+}
+
+function contactLastMessageDate(contact) {
+  const lastMessage = lastContactMessage(contact);
+  return lastMessage?.createdAt || lastMessage?.created_at || contact.repliedAt || contact.replied_at || contact.createdAt || contact.created_at || "";
+}
+
+function sortContactsByLastMessage(contacts) {
+  return [...contacts].sort((a, b) => {
+    const dateA = new Date(String(contactLastMessageDate(a)).replace(" ", "T")).getTime() || 0;
+    const dateB = new Date(String(contactLastMessageDate(b)).replace(" ", "T")).getTime() || 0;
+    return dateB - dateA || Number(b.id || 0) - Number(a.id || 0);
+  });
 }
 
 function threadAuthorName(message, contact) {
@@ -1480,11 +1607,25 @@ async function handleManageContactsClick(event) {
   if (!button) return;
 
   const id = Number(button.dataset.id);
-  const replyInput = dom.manageContactsList.querySelector(`[data-role="contact-reply"][data-id="${id}"]`);
+  const root = button.closest("[data-role='admin-contact-workspace']");
+  const isArchive = root?.dataset.archived === "1";
+  const listRoot = isArchive ? dom.manageArchivesList : dom.manageContactsList;
+  const replyInput = listRoot.querySelector(`[data-role="contact-reply"][data-id="${id}"]`);
   const action = button.dataset.action;
 
+  if (action === "select-contact") {
+    if (isArchive) {
+      state.selectedArchiveContactId = id;
+      renderAdminArchives();
+    } else {
+      state.selectedContactId = id;
+      renderAdminContacts();
+    }
+    return;
+  }
+
   if (action === "open-contact-reply") {
-    const replyForm = dom.manageContactsList.querySelector(`[data-role="contact-reply-form"][data-id="${id}"]`);
+    const replyForm = listRoot.querySelector(`[data-role="contact-reply-form"][data-id="${id}"]`);
     if (!replyForm) {
       setMessage(
         dom.manageContactsMessage,
@@ -1495,8 +1636,24 @@ async function handleManageContactsClick(event) {
     }
     if (replyForm) replyForm.hidden = !replyForm.hidden;
     if (replyForm && !replyForm.hidden) {
+      if (replyInput) replyInput.value = "";
       button.hidden = true;
       replyInput?.focus();
+    }
+    return;
+  }
+
+  if (action === "delete-contact") {
+    if (!window.confirm("Supprimer définitivement cette conversation archivée ?")) return;
+
+    try {
+      await requestJson("/api/contact.php", {
+        method: "DELETE",
+        body: { id },
+      });
+      await loadAdminContacts();
+    } catch (error) {
+      setMessage(dom.manageArchivesMessage || dom.manageContactsMessage, error.message, "error");
     }
     return;
   }
@@ -1732,7 +1889,7 @@ async function handleManageSave(event) {
 }
 
 async function deleteManagedUser(id) {
-  if (!window.confirm("Supprimer ce membre ?")) return;
+  if (!window.confirm("Supprimer ce membre et toutes ses données associées ?")) return;
 
   try {
     await requestJson("/api/users.php", {
@@ -1741,7 +1898,7 @@ async function deleteManagedUser(id) {
     });
 
     if (state.selectedUserId === id) resetManageForm();
-    await loadUsers();
+    await Promise.all([loadUsers(), loadAdminBookings(), loadAdminContacts()]);
   } catch (error) {
     setMessage(dom.manageEditMessage, error.message, "error");
   }

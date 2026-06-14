@@ -176,10 +176,8 @@ try {
                 'SELECT contact_requests.*, 1 AS is_registered_user
                  FROM contact_requests
                  WHERE email = :email
-                   AND admin_reply IS NOT NULL
-                   AND admin_reply <> ""
                    AND status <> "closed"
-                 ORDER BY replied_at DESC, created_at DESC, id DESC'
+                 ORDER BY created_at DESC, id DESC'
             );
             $statement->execute(['email' => $user['email'] ?? '']);
 
@@ -282,10 +280,6 @@ try {
                 jsonResponse(['error' => 'Cette discussion est fermée.'], 400);
             }
 
-            if (trim((string) ($contact['admin_reply'] ?? '')) === '') {
-                jsonResponse(['error' => 'Cette discussion n’a pas encore reçu de réponse.'], 400);
-            }
-
             $clientReply = cleanText($data['client_reply'] ?? $data['clientReply'] ?? '', 1200);
 
             if ($clientReply === '') {
@@ -322,6 +316,10 @@ try {
 
         if ($status === 'waiting' && $adminReply === '') {
             jsonResponse(['error' => 'Merci de saisir une réponse.'], 400);
+        }
+
+        if (($contact['status'] ?? '') === 'closed' && $adminReply !== '') {
+            jsonResponse(['error' => 'Cette discussion est fermée.'], 400);
         }
 
         if (strlen($adminReply) > 1200) {
@@ -362,6 +360,28 @@ try {
         ]);
 
         jsonResponse(['message' => 'Message mis à jour.', 'contact' => publicContactRequest(findContactRequestById($id))]);
+    }
+
+    if ($method === 'DELETE') {
+        requireAdmin();
+        ensureContactReplyColumns();
+
+        $data = readJsonBody();
+        $id = (int) ($data['id'] ?? $_GET['id'] ?? 0);
+        $contact = findContactRequestById($id);
+
+        if ($id <= 0 || !$contact) {
+            jsonResponse(['error' => 'Message introuvable.'], 404);
+        }
+
+        if (($contact['status'] ?? '') !== 'closed') {
+            jsonResponse(['error' => 'Seules les conversations archivées peuvent être supprimées.'], 400);
+        }
+
+        $statement = db()->prepare('DELETE FROM contact_requests WHERE id = :id');
+        $statement->execute(['id' => $id]);
+
+        jsonResponse(['message' => 'Conversation supprimée.']);
     }
 
     jsonResponse(['error' => 'Méthode non autorisée.'], 405);

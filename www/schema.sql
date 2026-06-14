@@ -60,6 +60,7 @@ CREATE TABLE contact_requests (
     message TEXT NOT NULL,
     admin_reply TEXT DEFAULT NULL,
     client_reply TEXT DEFAULT NULL,
+    conversation TEXT DEFAULT NULL,
     status ENUM('new', 'waiting', 'closed') NOT NULL DEFAULT 'new',
     replied_at DATETIME DEFAULT NULL,
     client_replied_at DATETIME DEFAULT NULL,
