@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/pets_schema.php';
 
 function tableExists(string $tableName): bool
 {
@@ -37,37 +38,7 @@ function columnExists(string $tableName, string $columnName): bool
 
 function ensurePetTablesForBookings(): void
 {
-    db()->exec(
-        "CREATE TABLE IF NOT EXISTS pets (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            name VARCHAR(100) NOT NULL,
-            species ENUM('chien', 'chat') NOT NULL,
-            notes TEXT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_pet_user
-                FOREIGN KEY (user_id) REFERENCES users(id)
-                ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
-
-    if (!tableExists('booking_requests')) {
-        return;
-    }
-
-    db()->exec(
-        "CREATE TABLE IF NOT EXISTS booking_request_pets (
-            booking_request_id INT NOT NULL,
-            pet_id INT NOT NULL,
-            PRIMARY KEY (booking_request_id, pet_id),
-            CONSTRAINT fk_booking_request_pet_booking
-                FOREIGN KEY (booking_request_id) REFERENCES booking_requests(id)
-                ON DELETE CASCADE,
-            CONSTRAINT fk_booking_request_pet_pet
-                FOREIGN KEY (pet_id) REFERENCES pets(id)
-                ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+    cdpEnsurePetTables();
 }
 
 function publicBooking(array $booking): array
@@ -109,7 +80,7 @@ function bookingPets(int $bookingId): array
     }
 
     $statement = db()->prepare(
-        'SELECT pets.id, pets.user_id, pets.name, pets.species, pets.notes
+        'SELECT pets.id, pets.user_id, pets.name, pets.species
          FROM booking_request_pets
          JOIN pets ON pets.id = booking_request_pets.pet_id
          WHERE booking_request_pets.booking_request_id = :booking_id
@@ -124,7 +95,6 @@ function bookingPets(int $bookingId): array
             'userId' => (int) $pet['user_id'],
             'name' => $pet['name'],
             'species' => $pet['species'],
-            'notes' => $pet['notes'] ?? '',
         ],
         $statement->fetchAll()
     );

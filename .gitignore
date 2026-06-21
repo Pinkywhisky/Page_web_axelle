@@ -1,19 +1,22 @@
-# Local databases and dumps
+# Bases locales et exports
 *.db
 *.sqlite
 *.sqlite3
 
-# Local environment files
+# Fichiers d'environnement locaux
 .env
 .env.*
 !.env.example
 
-# Logs and temporary files
+# Journaux et fichiers temporaires
 *.log
 tmp/
 temp/
 
-# OS metadata
+# Métadonnées du système
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
+
+# Photos privée
+axelle.jpg
