@@ -75,6 +75,7 @@
 * [ ] Vérification des conflits de réservation
     [ ] 2 chiens et 2 chats en même temps
     [ ] Si chien ou chat non sociable alors bloqué à 1 chien ou chat
+    [ ] L'administrateur doit pouvoir modifier la réservation si elle est en attente
 
 ## Calendrier
 

@@ -328,8 +328,7 @@ $user = currentUser();
                     <tr>
                       <th>Nom</th>
                       <th>E-mail</th>
-                      <th>Type d’animal</th>
-                      <th>Nom de l’animal</th>
+                      <th>Animaux</th>
                       <th>Rôle</th>
                       <th>Actions</th>
                     </tr>
@@ -445,16 +444,6 @@ $user = currentUser();
         <label for="registerPhone">Téléphone</label>
         <input id="registerPhone" type="tel" inputmode="tel" />
 
-        <label for="registerAnimalType">Type d’animal</label>
-        <select id="registerAnimalType">
-          <option value="">Sélectionner</option>
-          <option value="chien">Chien</option>
-          <option value="chat">Chat</option>
-        </select>
-
-        <label for="registerAnimalName">Nom de l’animal</label>
-        <input id="registerAnimalName" type="text" />
-
         <p class="inline-message" id="registerMessage"></p>
         <p class="inline-message success-message" id="registerSuccess"></p>
 
@@ -510,27 +499,149 @@ $user = currentUser();
           <button class="btn btn-secondary btn-sm" id="openPetFormBtn" type="button">Ajouter un animal</button>
         </div>
 
-        <form id="petForm" class="stack-form compact-form" hidden>
+        <form id="petForm" class="stack-form compact-form pet-wizard" hidden>
           <input id="petId" type="hidden" />
-          <div class="inline-fields">
-            <div>
-              <label for="petName">Nom de l’animal</label>
-              <input id="petName" type="text" required />
+
+          <div class="pet-progress" aria-live="polite">
+            <div class="pet-progress-head">
+              <strong id="petStepText">Étape 1/4</strong>
+              <span id="petStepTitle">Informations générales</span>
             </div>
-            <div>
-              <label for="petSpecies">Espèce</label>
-              <select id="petSpecies" required>
-                <option value="">Sélectionner</option>
-                <option value="chien">Chien</option>
-                <option value="chat">Chat</option>
-              </select>
+            <div class="pet-progress-track" aria-hidden="true">
+              <span id="petProgressBar"></span>
+            </div>
+            <div class="pet-step-dots" aria-hidden="true">
+              <span class="is-active"></span>
+              <span></span>
+              <span></span>
+              <span></span>
             </div>
           </div>
-          <label for="petNotes">Informations utiles</label>
-          <textarea id="petNotes" rows="3" placeholder="Habitudes, traitement, alimentation, comportement."></textarea>
+
+          <section class="pet-step" data-pet-step="1">
+            <div class="inline-fields">
+              <div>
+                <label for="petName">Nom</label>
+                <input id="petName" type="text" maxlength="100" required />
+              </div>
+              <div>
+                <label for="petSpecies">Espèce</label>
+                <select id="petSpecies" required>
+                  <option value="">Sélectionner</option>
+                  <option value="chien">Chien</option>
+                  <option value="chat">Chat</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="inline-fields">
+              <div>
+                <label for="petRace">Race</label>
+                <input id="petRace" type="text" maxlength="100" />
+              </div>
+              <div>
+                <label for="petSexe">Sexe</label>
+                <select id="petSexe">
+                  <option value="">Non renseigné</option>
+                  <option value="male">Mâle</option>
+                  <option value="femelle">Femelle</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="inline-fields">
+              <div>
+                <label for="petBirthDate">Date de naissance</label>
+                <input id="petBirthDate" type="date" />
+              </div>
+              <div>
+                <label for="petWeight">Poids</label>
+                <input id="petWeight" type="number" min="0.1" step="0.1" inputmode="decimal" placeholder="kg" />
+              </div>
+            </div>
+
+            <label class="check-row" for="petSterilise">
+              <input id="petSterilise" type="checkbox" />
+              <span>Stérilisé / Castré</span>
+            </label>
+          </section>
+
+          <section class="pet-step" data-pet-step="2" hidden>
+            <div class="compatibility-grid">
+              <div>
+                <label for="petCompatibleChiens">Compatible chiens</label>
+                <select id="petCompatibleChiens">
+                  <option value="oui">Oui</option>
+                  <option value="non">Non</option>
+                  <option value="a_tester" selected>À tester</option>
+                </select>
+              </div>
+              <div>
+                <label for="petCompatibleChats">Compatible chats</label>
+                <select id="petCompatibleChats">
+                  <option value="oui">Oui</option>
+                  <option value="non">Non</option>
+                  <option value="a_tester" selected>À tester</option>
+                </select>
+              </div>
+              <div>
+                <label for="petCompatibleEnfants">Compatible enfants</label>
+                <select id="petCompatibleEnfants">
+                  <option value="oui">Oui</option>
+                  <option value="non">Non</option>
+                  <option value="a_tester" selected>À tester</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="pet-step" data-pet-step="3" hidden>
+            <div class="pet-checkbox-grid">
+              <label class="check-row" for="petCraintif">
+                <input id="petCraintif" type="checkbox" />
+                <span>Craintif</span>
+              </label>
+              <label class="check-row" for="petFugueur">
+                <input id="petFugueur" type="checkbox" />
+                <span>Fugueur</span>
+              </label>
+              <label class="check-row" for="petTresEnergetique">
+                <input id="petTresEnergetique" type="checkbox" />
+                <span>Très énergique</span>
+              </label>
+              <label class="check-row" for="petProtecteurRessources">
+                <input id="petProtecteurRessources" type="checkbox" />
+                <span>Protecteur de ressources</span>
+              </label>
+              <label class="check-row" for="petAboiementsFrequents">
+                <input id="petAboiementsFrequents" type="checkbox" />
+                <span>Aboiements fréquents</span>
+              </label>
+            </div>
+
+            <label for="petCommentairesComportement">Commentaires comportement</label>
+            <textarea id="petCommentairesComportement" rows="4" maxlength="1200"></textarea>
+          </section>
+
+          <section class="pet-step" data-pet-step="4" hidden>
+            <label for="petAllergies">Allergies</label>
+            <textarea id="petAllergies" rows="3" maxlength="1200"></textarea>
+
+            <label for="petTraitementMedical">Traitement médical</label>
+            <textarea id="petTraitementMedical" rows="3" maxlength="1200"></textarea>
+
+            <label for="petRegimeAlimentaire">Régime alimentaire</label>
+            <textarea id="petRegimeAlimentaire" rows="3" maxlength="1200"></textarea>
+
+            <label for="petCommentaires">Commentaires complémentaires</label>
+            <textarea id="petCommentaires" rows="4" maxlength="2000"></textarea>
+          </section>
+
           <p class="inline-message" id="petMessage"></p>
-          <div class="form-actions split-actions">
-            <button class="btn btn-primary btn-sm" type="submit">Enregistrer</button>
+          <div class="form-actions split-actions pet-wizard-actions">
+            <button class="btn btn-secondary btn-sm" id="petPrevBtn" type="button" hidden>Précédent</button>
+            <button class="btn btn-primary btn-sm" id="petNextBtn" type="button">Suivant</button>
+            <button class="btn btn-primary btn-sm" id="petSaveBtn" type="submit" hidden>Enregistrer</button>
             <button class="btn btn-secondary btn-sm" id="petResetBtn" type="button">Annuler</button>
           </div>
         </form>
@@ -699,45 +810,184 @@ $user = currentUser();
     <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="manageEditModalTitle">
       <div class="modal-head">
         <div>
-          <h3 id="manageEditModalTitle">Modifier un membre</h3>
-          <p class="modal-copy">Mettez à jour les informations du compte sélectionné.</p>
+          <h3 id="manageEditModalTitle">Profil du membre</h3>
+          <p class="modal-copy">Consultez le compte client et ses profils animaux.</p>
         </div>
-        <button class="icon-btn" id="closeManageEditBtn" type="button" aria-label="Fermer">×</button>
+        <button class="icon-btn" id="closeManageEditBtn" type="button" aria-label="Fermer">&times;</button>
       </div>
 
-      <form id="manageEditForm" class="stack-form">
-        <input id="manageId" type="hidden" />
+      <div class="admin-tabs profile-tabs" id="manageEditTabs" role="tablist" aria-label="Edition du membre">
+        <button class="admin-tab is-active" id="manageMemberTab" type="button" role="tab" aria-selected="true"
+          aria-controls="manageMemberPanel" data-manage-edit-tab="member">Compte</button>
+        <button class="admin-tab" id="managePetsTab" type="button" role="tab" aria-selected="false"
+          aria-controls="managePetsPanel" data-manage-edit-tab="pets">Animaux</button>
+      </div>
 
-        <label for="manageFullName">Nom complet</label>
-        <input id="manageFullName" type="text" required />
+      <section class="profile-tab-panel" id="manageMemberPanel" role="tabpanel" aria-labelledby="manageMemberTab">
+        <form id="manageEditForm" class="stack-form">
+          <input id="manageId" type="hidden" />
 
-        <label for="manageEmail">E-mail</label>
-        <input id="manageEmail" type="email" required />
+          <div class="inline-fields">
+            <div>
+              <label for="manageFirstName">Pr&eacute;nom</label>
+              <input id="manageFirstName" type="text" required />
+            </div>
+            <div>
+              <label for="manageLastName">Nom</label>
+              <input id="manageLastName" type="text" required />
+            </div>
+          </div>
 
-        <label for="managePhone">Téléphone</label>
-        <input id="managePhone" type="tel" inputmode="tel" />
+          <label for="manageEmail">E-mail</label>
+          <input id="manageEmail" type="email" required />
 
-        <label for="manageRole">Rôle</label>
-        <select id="manageRole">
-          <option value="client">Client</option>
-          <option value="admin">Admin</option>
-        </select>
+          <label for="managePhone">T&eacute;l&eacute;phone</label>
+          <input id="managePhone" type="tel" inputmode="tel" />
 
-        <label for="manageAnimalType">Type d’animal</label>
-        <select id="manageAnimalType">
-          <option value="">Non renseigné</option>
-          <option value="chien">Chien</option>
-          <option value="chat">Chat</option>
-        </select>
+          <label for="manageRole">R&ocirc;le</label>
+          <select id="manageRole">
+            <option value="client">Client</option>
+            <option value="admin">Admin</option>
+          </select>
 
-        <label for="manageAnimalName">Nom de l’animal</label>
-        <input id="manageAnimalName" type="text" />
+          <p class="inline-message" id="manageEditMessage"></p>
 
-        <p class="inline-message" id="manageEditMessage"></p>
+          <div class="form-actions split-actions">
+            <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
+            <button class="btn btn-secondary btn-sm" id="manageResetBtn" type="button">Effacer</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-pet-editor profile-tab-panel" id="managePetsPanel" role="tabpanel" aria-labelledby="managePetsTab" hidden>
+        <div class="panel-card-top">
+          <div>
+            <h4>Animaux du membre</h4>
+            <p class="modal-copy">Consultez et modifiez les profils animaux rattaches a ce compte.</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="managePetAddBtn" type="button">Ajouter un animal</button>
+        </div>
+
+        <p class="inline-message" id="managePetsMessage"></p>
+        <div class="pet-list" id="managePetsList"></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="modal-backdrop nested-modal" id="managePetModal" hidden>
+    <div class="modal-card modal-wide" role="dialog" aria-modal="true" aria-labelledby="managePetModalTitle">
+      <div class="modal-head">
+        <div>
+          <h3 id="managePetModalTitle">Modifier un animal</h3>
+          <p class="modal-copy" id="managePetModalText">Renseignez les informations utiles pour les gardes.</p>
+        </div>
+        <button class="icon-btn" id="closeManagePetBtn" type="button" aria-label="Fermer">&times;</button>
+      </div>
+
+      <form id="managePetForm" class="stack-form compact-form admin-pet-form">
+        <input id="managePetId" type="hidden" />
+
+        <div class="inline-fields">
+          <div>
+            <label for="managePetName">Nom</label>
+            <input id="managePetName" type="text" maxlength="100" required />
+          </div>
+          <div>
+            <label for="managePetSpecies">Esp&egrave;ce</label>
+            <select id="managePetSpecies" required>
+              <option value="">Choisir</option>
+              <option value="chien">Chien</option>
+              <option value="chat">Chat</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="inline-fields">
+          <div>
+            <label for="managePetRace">Race</label>
+            <input id="managePetRace" type="text" maxlength="100" />
+          </div>
+          <div>
+            <label for="managePetSexe">Sexe</label>
+            <select id="managePetSexe">
+              <option value="">Non renseign&eacute;</option>
+              <option value="male">M&acirc;le</option>
+              <option value="femelle">Femelle</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="inline-fields">
+          <div>
+            <label for="managePetBirthDate">Date de naissance</label>
+            <input id="managePetBirthDate" type="date" />
+          </div>
+          <div>
+            <label for="managePetWeight">Poids</label>
+            <input id="managePetWeight" type="number" min="0.1" step="0.1" inputmode="decimal" />
+          </div>
+        </div>
+
+        <label class="check-row">
+          <input id="managePetSterilise" type="checkbox" />
+          St&eacute;rilis&eacute; / Castr&eacute;
+        </label>
+
+        <div class="compatibility-grid">
+          <div>
+            <label for="managePetCompatibleChiens">Compatible chiens</label>
+            <select id="managePetCompatibleChiens">
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+              <option value="a_tester">&Agrave; tester</option>
+            </select>
+          </div>
+          <div>
+            <label for="managePetCompatibleChats">Compatible chats</label>
+            <select id="managePetCompatibleChats">
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+              <option value="a_tester">&Agrave; tester</option>
+            </select>
+          </div>
+          <div>
+            <label for="managePetCompatibleEnfants">Compatible enfants</label>
+            <select id="managePetCompatibleEnfants">
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+              <option value="a_tester">&Agrave; tester</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pet-checkbox-grid">
+          <label class="check-row"><input id="managePetCraintif" type="checkbox" />Craintif</label>
+          <label class="check-row"><input id="managePetFugueur" type="checkbox" />Fugueur</label>
+          <label class="check-row"><input id="managePetTresEnergetique" type="checkbox" />Tr&egrave;s &eacute;nergique</label>
+          <label class="check-row"><input id="managePetProtecteurRessources" type="checkbox" />Protecteur de ressources</label>
+          <label class="check-row"><input id="managePetAboiementsFrequents" type="checkbox" />Aboiements fr&eacute;quents</label>
+        </div>
+
+        <label for="managePetCommentairesComportement">Commentaires comportement</label>
+        <textarea id="managePetCommentairesComportement" rows="3" maxlength="1200"></textarea>
+
+        <label for="managePetAllergies">Allergies</label>
+        <textarea id="managePetAllergies" rows="2" maxlength="1200"></textarea>
+
+        <label for="managePetTraitementMedical">Traitement m&eacute;dical</label>
+        <textarea id="managePetTraitementMedical" rows="2" maxlength="1200"></textarea>
+
+        <label for="managePetRegimeAlimentaire">R&eacute;gime alimentaire</label>
+        <textarea id="managePetRegimeAlimentaire" rows="2" maxlength="1200"></textarea>
+
+        <label for="managePetCommentaires">Commentaires compl&eacute;mentaires</label>
+        <textarea id="managePetCommentaires" rows="3" maxlength="2000"></textarea>
+
+        <p class="inline-message" id="managePetMessage"></p>
 
         <div class="form-actions split-actions">
-          <button class="btn btn-primary btn-sm" type="submit">Sauvegarder</button>
-          <button class="btn btn-secondary btn-sm" id="manageResetBtn" type="button">Effacer</button>
+          <button class="btn btn-secondary btn-sm" id="managePetCancelBtn" type="button">Annuler</button>
+          <button class="btn btn-primary btn-sm" type="submit">Enregistrer l&rsquo;animal</button>
         </div>
       </form>
     </div>

@@ -6,12 +6,15 @@ const state = {
   myBookings: [],
   myContacts: [],
   pets: [],
+  managePets: [],
   selectedUserId: null,
   activeModal: null,
+  petStep: 1,
   bookingTimeTarget: null,
   editingBookingId: null,
   editingProfile: false,
   profileTab: "pets",
+  manageEditTab: "member",
   adminTab: "dashboard",
   selectedContactId: null,
   selectedArchiveContactId: null,
@@ -86,8 +89,6 @@ function bindDom() {
     "registerEmail",
     "registerPassword",
     "registerPhone",
-    "registerAnimalType",
-    "registerAnimalName",
     "registerMessage",
     "registerSuccess",
     "registerSuccessPanel",
@@ -116,7 +117,30 @@ function bindDom() {
     "petId",
     "petName",
     "petSpecies",
-    "petNotes",
+    "petRace",
+    "petSexe",
+    "petBirthDate",
+    "petWeight",
+    "petSterilise",
+    "petCompatibleChiens",
+    "petCompatibleChats",
+    "petCompatibleEnfants",
+    "petCraintif",
+    "petFugueur",
+    "petTresEnergetique",
+    "petProtecteurRessources",
+    "petAboiementsFrequents",
+    "petCommentairesComportement",
+    "petAllergies",
+    "petTraitementMedical",
+    "petRegimeAlimentaire",
+    "petCommentaires",
+    "petStepText",
+    "petStepTitle",
+    "petProgressBar",
+    "petPrevBtn",
+    "petNextBtn",
+    "petSaveBtn",
     "petMessage",
     "petResetBtn",
     "openPetFormBtn",
@@ -165,16 +189,51 @@ function bindDom() {
     "manageSearch",
     "manageTableBody",
     "manageListMessage",
+    "manageEditTabs",
+    "manageMemberTab",
+    "managePetsTab",
+    "manageMemberPanel",
+    "managePetsPanel",
     "manageEditForm",
     "manageId",
-    "manageFullName",
+    "manageFirstName",
+    "manageLastName",
     "manageEmail",
     "managePhone",
     "manageRole",
-    "manageAnimalType",
-    "manageAnimalName",
     "manageEditMessage",
     "manageResetBtn",
+    "managePetModal",
+    "managePetModalTitle",
+    "managePetModalText",
+    "closeManagePetBtn",
+    "managePetsMessage",
+    "managePetsList",
+    "managePetAddBtn",
+    "managePetForm",
+    "managePetId",
+    "managePetName",
+    "managePetSpecies",
+    "managePetRace",
+    "managePetSexe",
+    "managePetBirthDate",
+    "managePetWeight",
+    "managePetSterilise",
+    "managePetCompatibleChiens",
+    "managePetCompatibleChats",
+    "managePetCompatibleEnfants",
+    "managePetCraintif",
+    "managePetFugueur",
+    "managePetTresEnergetique",
+    "managePetProtecteurRessources",
+    "managePetAboiementsFrequents",
+    "managePetCommentairesComportement",
+    "managePetAllergies",
+    "managePetTraitementMedical",
+    "managePetRegimeAlimentaire",
+    "managePetCommentaires",
+    "managePetMessage",
+    "managePetCancelBtn",
     "manageBookingsMessage",
     "manageBookingsList",
     "manageContactsMessage",
@@ -205,6 +264,7 @@ function bindEvents() {
   onClick(dom.closeContactBtn, () => closeModal(dom.contactModal));
   onClick(dom.closeContactSuccessBtn, () => closeModal(dom.contactModal));
   onClick(dom.closeManageEditBtn, () => closeModal(dom.manageEditModal));
+  onClick(dom.closeManagePetBtn, closeManagePetModal);
   onClick(dom.openProfileBtn, openProfile);
   onClick(dom.openBookingBtn, openBooking);
   onClick(dom.profileBookingBtn, openBooking);
@@ -212,8 +272,12 @@ function bindEvents() {
   onClick(dom.backHomeBtn, showHome);
   onClick(dom.homeLink, showHome);
   onClick(dom.manageResetBtn, resetManageForm);
+  onClick(dom.managePetAddBtn, () => openManagePetForm());
+  onClick(dom.managePetCancelBtn, closeManagePetModal);
   onClick(dom.petResetBtn, resetPetForm);
   onClick(dom.openPetFormBtn, () => openPetForm());
+  onClick(dom.petPrevBtn, () => setPetStep(state.petStep - 1));
+  onClick(dom.petNextBtn, handlePetNextStep);
   onClick(dom.editProfileBtn, () => setProfileEditMode(true));
   onClick(dom.cancelProfileEditBtn, () => setProfileEditMode(false));
 
@@ -230,6 +294,12 @@ function bindEvents() {
     });
   }
 
+  if (dom.managePetModal) {
+    dom.managePetModal.addEventListener("click", (event) => {
+      if (event.target === dom.managePetModal) closeManagePetModal();
+    });
+  }
+
   onSubmit(dom.loginForm, handleLogin);
   onSubmit(dom.registerForm, handleRegister);
   onSubmit(dom.profileForm, handleProfileSave);
@@ -238,10 +308,13 @@ function bindEvents() {
   onSubmit(dom.bookingTimeForm, handleBookingTimeSubmit);
   onSubmit(dom.contactForm, handleContactSubmit);
   onSubmit(dom.manageEditForm, handleManageSave);
+  onSubmit(dom.managePetForm, handleManagePetSave);
   onEvent(dom.manageSearch, "input", renderUsersTable);
+  onEvent(dom.manageEditTabs, "click", handleManageEditTabsClick);
   onEvent(dom.manageTabs, "click", handleManageTabsClick);
   onEvent(dom.profileTabs, "click", handleProfileTabsClick);
   onEvent(dom.manageTableBody, "click", handleManageTableClick);
+  onEvent(dom.managePetsList, "click", handleManagePetsListClick);
   onEvent(dom.manageContactsList, "click", handleManageContactsClick);
   onEvent(dom.manageArchivesList, "click", handleManageContactsClick);
   onEvent(dom.petsList, "click", handlePetsListClick);
@@ -255,6 +328,10 @@ function bindEvents() {
 
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
+    if (dom.managePetModal && !dom.managePetModal.hidden) {
+      closeManagePetModal();
+      return;
+    }
     if (dom.bookingTimeModal && !dom.bookingTimeModal.hidden) {
       closeBookingTimeModal();
       return;
@@ -384,8 +461,6 @@ async function handleRegister(event) {
         email: dom.registerEmail.value,
         password: dom.registerPassword.value,
         phone: dom.registerPhone.value,
-        animal_type: dom.registerAnimalType.value,
-        animal_name: dom.registerAnimalName.value,
       },
     });
 
@@ -513,38 +588,120 @@ function renderPets() {
   }
 
   dom.petsList.innerHTML = state.pets
-    .map(
-      (pet) => `
-        <article class="pet-item">
-          <div>
-            <h5>${escapeHtml(pet.name)}</h5>
-            <p>${escapeHtml(animalLabel(pet.species))}${pet.notes ? ` - ${escapeHtml(pet.notes)}` : ""}</p>
-          </div>
-          <div class="table-actions">
-            <button class="btn btn-secondary btn-sm" data-action="edit-pet" data-id="${pet.id}" type="button">Modifier</button>
-            <button class="btn btn-danger btn-sm" data-action="delete-pet" data-id="${pet.id}" type="button">Supprimer</button>
-          </div>
-        </article>
-      `
-    )
+    .map((pet) => {
+      const dogCompatibility = compatibilityBadge("chiens", pet.compatibleChiens || pet.compatible_chiens);
+      const catCompatibility = compatibilityBadge("chats", pet.compatibleChats || pet.compatible_chats);
+      const childCompatibility = compatibilityBadge("enfants", pet.compatibleEnfants || pet.compatible_enfants);
+
+      return "" +
+        "<article class=\"pet-item pet-card\">" +
+          "<div class=\"pet-card-main\">" +
+            "<div class=\"pet-card-head\">" +
+              "<div>" +
+                "<h5>" + escapeHtml(pet.name) + "</h5>" +
+                "<p>" + escapeHtml(petDetailSummary(pet)) + "</p>" +
+              "</div>" +
+            "</div>" +
+            "<div class=\"compatibility-badges\">" + dogCompatibility + catCompatibility + childCompatibility + "</div>" +
+          "</div>" +
+          "<div class=\"table-actions\">" +
+            "<button class=\"btn btn-secondary btn-sm\" data-action=\"edit-pet\" data-id=\"" + pet.id + "\" type=\"button\">Modifier</button>" +
+            "<button class=\"btn btn-danger btn-sm\" data-action=\"delete-pet\" data-id=\"" + pet.id + "\" type=\"button\">Supprimer</button>" +
+          "</div>" +
+        "</article>";
+    })
     .join("");
+}
+
+function handlePetNextStep() {
+  if (!validatePetCurrentStep()) return;
+  setPetStep(state.petStep + 1);
+}
+
+function validatePetCurrentStep() {
+  const activeStep = dom.petForm?.querySelector('[data-pet-step="' + state.petStep + '"]');
+  const invalidField = activeStep?.querySelector("input:invalid, select:invalid, textarea:invalid");
+
+  if (invalidField) {
+    invalidField.reportValidity();
+    return false;
+  }
+
+  if (state.petStep === 1 && dom.petWeight.value !== "" && Number(dom.petWeight.value) <= 0) {
+    setMessage(dom.petMessage, "Le poids doit être positif.", "error");
+    return false;
+  }
+
+  setMessage(dom.petMessage, "");
+  return true;
+}
+
+function setPetStep(step) {
+  const nextStep = Math.min(4, Math.max(1, Number(step) || 1));
+  state.petStep = nextStep;
+
+  dom.petForm?.querySelectorAll("[data-pet-step]").forEach((panel) => {
+    panel.hidden = Number(panel.dataset.petStep) !== nextStep;
+  });
+
+  const titles = {
+    1: "Informations générales",
+    2: "Compatibilité",
+    3: "Comportement",
+    4: "Santé et informations complémentaires",
+  };
+
+  if (dom.petStepText) dom.petStepText.textContent = "Étape " + nextStep + "/4";
+  if (dom.petStepTitle) dom.petStepTitle.textContent = titles[nextStep];
+  if (dom.petProgressBar) dom.petProgressBar.style.width = (nextStep * 25) + "%";
+  if (dom.petPrevBtn) dom.petPrevBtn.hidden = nextStep === 1;
+  if (dom.petNextBtn) dom.petNextBtn.hidden = nextStep === 4;
+  if (dom.petSaveBtn) dom.petSaveBtn.hidden = nextStep !== 4;
+
+  dom.petForm?.querySelectorAll(".pet-step-dots span").forEach((dot, index) => {
+    dot.classList.toggle("is-active", index + 1 <= nextStep);
+  });
+}
+
+function petPayload() {
+  return {
+    id: Number(dom.petId.value || 0),
+    name: dom.petName.value,
+    species: dom.petSpecies.value,
+    race: dom.petRace.value,
+    sexe: dom.petSexe.value,
+    date_naissance: dom.petBirthDate.value,
+    poids: dom.petWeight.value,
+    sterilise: dom.petSterilise.checked,
+    compatible_chiens: dom.petCompatibleChiens.value,
+    compatible_chats: dom.petCompatibleChats.value,
+    compatible_enfants: dom.petCompatibleEnfants.value,
+    craintif: dom.petCraintif.checked,
+    fugueur: dom.petFugueur.checked,
+    tres_energetique: dom.petTresEnergetique.checked,
+    protecteur_ressources: dom.petProtecteurRessources.checked,
+    aboiements_frequents: dom.petAboiementsFrequents.checked,
+    commentaires_comportement: dom.petCommentairesComportement.value,
+    allergies: dom.petAllergies.value,
+    traitement_medical: dom.petTraitementMedical.value,
+    regime_alimentaire: dom.petRegimeAlimentaire.value,
+    commentaires: dom.petCommentaires.value,
+  };
 }
 
 async function handlePetSave(event) {
   event.preventDefault();
   setMessage(dom.petMessage, "");
 
-  const petId = Number(dom.petId.value || 0);
+  if (!validatePetCurrentStep()) return;
+
+  const payload = petPayload();
+  const petId = Number(payload.id || 0);
 
   try {
     await requestJson("/api/pets.php", {
       method: petId ? "PUT" : "POST",
-      body: {
-        id: petId,
-        name: dom.petName.value,
-        species: dom.petSpecies.value,
-        notes: dom.petNotes.value,
-      },
+      body: payload,
     });
 
     resetPetForm();
@@ -575,17 +732,42 @@ function editPet(petId) {
   const pet = state.pets.find((item) => Number(item.id) === Number(petId));
   if (!pet) return;
 
-  openPetForm();
+  openPetForm({ reset: false });
   dom.petId.value = pet.id;
   dom.petName.value = pet.name || "";
   dom.petSpecies.value = pet.species || "";
-  dom.petNotes.value = pet.notes || "";
+  dom.petRace.value = pet.race || "";
+  dom.petSexe.value = pet.sexe || "";
+  dom.petBirthDate.value = pet.dateNaissance || pet.date_naissance || "";
+  dom.petWeight.value = pet.poids || "";
+  dom.petSterilise.checked = Boolean(pet.sterilise);
+  dom.petCompatibleChiens.value = pet.compatibleChiens || pet.compatible_chiens || "a_tester";
+  dom.petCompatibleChats.value = pet.compatibleChats || pet.compatible_chats || "a_tester";
+  dom.petCompatibleEnfants.value = pet.compatibleEnfants || pet.compatible_enfants || "a_tester";
+  dom.petCraintif.checked = Boolean(pet.craintif);
+  dom.petFugueur.checked = Boolean(pet.fugueur);
+  dom.petTresEnergetique.checked = Boolean(pet.tresEnergetique || pet.tres_energetique);
+  dom.petProtecteurRessources.checked = Boolean(pet.protecteurRessources || pet.protecteur_ressources);
+  dom.petAboiementsFrequents.checked = Boolean(pet.aboiementsFrequents || pet.aboiements_frequents);
+  dom.petCommentairesComportement.value = pet.commentairesComportement || pet.commentaires_comportement || "";
+  dom.petAllergies.value = pet.allergies || "";
+  dom.petTraitementMedical.value = pet.traitementMedical || pet.traitement_medical || "";
+  dom.petRegimeAlimentaire.value = pet.regimeAlimentaire || pet.regime_alimentaire || "";
+  dom.petCommentaires.value = pet.commentaires || "";
+  setPetStep(1);
   setMessage(dom.petMessage, "");
 }
 
-function openPetForm() {
+function openPetForm(options = {}) {
+  if (options.reset !== false) {
+    dom.petForm.reset();
+    dom.petId.value = "";
+  }
+
   dom.petForm.hidden = false;
   if (dom.openPetFormBtn) dom.openPetFormBtn.hidden = true;
+  if (dom.petBirthDate) dom.petBirthDate.max = new Date().toISOString().slice(0, 10);
+  setPetStep(1);
   window.setTimeout(() => dom.petName?.focus(), 0);
 }
 
@@ -609,8 +791,10 @@ function resetPetForm() {
   dom.petId.value = "";
   dom.petForm.hidden = true;
   if (dom.openPetFormBtn) dom.openPetFormBtn.hidden = false;
+  setPetStep(1);
   setMessage(dom.petMessage, "");
 }
+
 
 async function openBooking() {
   if (!state.user) {
@@ -643,16 +827,6 @@ function resetBookingModal() {
 
 function prefillBookingForm() {
   syncBookingAnimalFields();
-
-  if (state.pets.length) {
-    return;
-  }
-
-  const animalType = state.user.animalType || state.user.animal_type || "";
-  const animalName = state.user.animalName || state.user.animal_name || "";
-
-  if (animalType) dom.bookingAnimalType.value = animalType;
-  if (animalName) dom.bookingAnimalName.value = animalName;
 }
 
 function syncBookingAnimalFields() {
@@ -670,18 +844,17 @@ function syncBookingAnimalFields() {
   }
 
   dom.bookingPetsList.innerHTML = state.pets
-    .map(
-      (pet) => `
-        <label class="pet-choice">
-          <input type="checkbox" value="${pet.id}" data-role="booking-pet" />
-          <span>
-            <strong>${escapeHtml(pet.name)}</strong>
-            <small>${escapeHtml(animalLabel(pet.species))}${pet.notes ? ` - ${escapeHtml(pet.notes)}` : ""}</small>
-          </span>
-        </label>
-      `
+    .map((pet) => "" +
+      "<label class=\"pet-choice\">" +
+        "<input type=\"checkbox\" value=\"" + pet.id + "\" data-role=\"booking-pet\" />" +
+        "<span>" +
+          "<strong>" + escapeHtml(pet.name) + "</strong>" +
+          "<small>" + escapeHtml(petDetailSummary(pet)) + "</small>" +
+        "</span>" +
+      "</label>"
     )
     .join("");
+
 }
 
 function setMinBookingDateTimes() {
@@ -1211,8 +1384,6 @@ async function handleProfileSave(event) {
         full_name: dom.profileFullName.value,
         email: dom.profileEmail.value,
         phone: dom.profilePhone.value,
-        animal_type: state.user.animalType || state.user.animal_type || "",
-        animal_name: state.user.animalName || state.user.animal_name || "",
         role: state.user.role,
       },
     });
@@ -1699,6 +1870,7 @@ function renderAdminBookings() {
             <span class="status-pill status-${escapeHtml(booking.status)}">${escapeHtml(statusLabel(booking.status))}</span>
           </div>
           <p><strong>${escapeHtml(bookingPetSummary(booking))}</strong></p>
+          ${bookingCompatibilityBadges(booking)}
           <p>${escapeHtml(formatBookingPeriod(booking))}</p>
           ${booking.notes ? `<p>${escapeHtml(booking.notes)}</p>` : ""}
           ${booking.adminNote || booking.admin_note ? `<p class="admin-note">Note admin : ${escapeHtml(booking.adminNote || booking.admin_note)}</p>` : ""}
@@ -1789,7 +1961,7 @@ function renderUsersTable() {
   });
 
   if (!users.length) {
-    dom.manageTableBody.innerHTML = "<tr><td colspan='6'>Aucun membre trouvé.</td></tr>";
+    dom.manageTableBody.innerHTML = "<tr><td colspan='5'>Aucun membre trouvé.</td></tr>";
     return;
   }
 
@@ -1798,15 +1970,13 @@ function renderUsersTable() {
       const isCurrentUser = state.user && Number(state.user.id) === Number(user.id);
 
       return `
-        <tr class="${state.selectedUserId === user.id ? "is-selected" : ""}">
+        <tr class="${Number(state.selectedUserId) === Number(user.id) ? "is-selected" : ""}" data-user-id="${user.id}">
           <td>${escapeHtml(user.fullName || user.full_name)}</td>
           <td>${escapeHtml(user.email)}</td>
-          <td>${escapeHtml(animalLabel(user.animalType || user.animal_type) || "Non renseigné")}</td>
-          <td>${escapeHtml(user.animalName || user.animal_name || "Non renseigné")}</td>
+          <td>${escapeHtml(adminPetsSummary(user))}</td>
           <td>${escapeHtml(user.role)}</td>
           <td>
             <div class="table-actions">
-              <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${user.id}" type="button">Modifier</button>
               ${
                 isCurrentUser
                   ? ""
@@ -1820,19 +1990,283 @@ function renderUsersTable() {
     .join("");
 }
 
-function handleManageTableClick(event) {
-  const button = event.target.closest("button[data-action][data-id]");
-  if (!button) return;
+function adminPetsSummary(user) {
+  const pets = Array.isArray(user.pets) ? user.pets : [];
 
-  const id = Number(button.dataset.id);
-  if (button.dataset.action === "edit") {
-    selectManagedUser(id);
+  if (!pets.length) {
+    return "Aucun animal";
+  }
+
+  return pets
+    .map((pet) => pet.name + " (" + animalLabel(pet.species) + ")")
+    .join(", ");
+}
+
+function handleManageEditTabsClick(event) {
+  const tabButton = event.target.closest("button[data-manage-edit-tab]");
+  if (!tabButton) return;
+  setManageEditTab(tabButton.dataset.manageEditTab);
+}
+
+function setManageEditTab(tabName) {
+  const nextTab = ["member", "pets"].includes(tabName) ? tabName : "member";
+  state.manageEditTab = nextTab;
+
+  const panels = {
+    member: dom.manageMemberPanel,
+    pets: dom.managePetsPanel,
+  };
+
+  const tabs = {
+    member: dom.manageMemberTab,
+    pets: dom.managePetsTab,
+  };
+
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (panel) panel.hidden = name !== nextTab;
+  });
+
+  Object.entries(tabs).forEach(([name, button]) => {
+    updateAdminTabButton(button, name === nextTab);
+  });
+}
+
+async function loadManagePets(userId = Number(dom.manageId?.value || 0)) {
+  if (!userId) {
+    state.managePets = [];
+    renderManagePets();
     return;
   }
 
-  if (button.dataset.action === "delete") {
-    deleteManagedUser(id);
+  setMessage(dom.managePetsMessage, "Chargement...");
+
+  try {
+    const data = await requestJson("/api/pets.php?user_id=" + encodeURIComponent(userId));
+    state.managePets = data.pets || [];
+    setMessage(dom.managePetsMessage, "");
+    renderManagePets();
+  } catch (error) {
+    state.managePets = [];
+    renderManagePets();
+    setMessage(dom.managePetsMessage, error.message, "error");
   }
+}
+
+function renderManagePets() {
+  if (!dom.managePetsList) return;
+
+  if (!state.managePets.length) {
+    dom.managePetsList.innerHTML = "<div class='pet-item'><p>Aucun animal enregistre pour ce membre.</p></div>";
+    return;
+  }
+
+  dom.managePetsList.innerHTML = state.managePets
+    .map((pet) => {
+      const dogCompatibility = compatibilityBadge("chiens", pet.compatibleChiens || pet.compatible_chiens);
+      const catCompatibility = compatibilityBadge("chats", pet.compatibleChats || pet.compatible_chats);
+      const childCompatibility = compatibilityBadge("enfants", pet.compatibleEnfants || pet.compatible_enfants);
+
+      return "" +
+        "<article class=\"pet-item pet-card\">" +
+          "<div class=\"pet-card-main\">" +
+            "<div class=\"pet-card-head\">" +
+              "<div>" +
+                "<h5>" + escapeHtml(pet.name) + "</h5>" +
+                "<p>" + escapeHtml(petDetailSummary(pet)) + "</p>" +
+              "</div>" +
+            "</div>" +
+            "<div class=\"compatibility-badges\">" + dogCompatibility + catCompatibility + childCompatibility + "</div>" +
+          "</div>" +
+          "<div class=\"table-actions\">" +
+            "<button class=\"btn btn-secondary btn-sm\" data-action=\"edit-manage-pet\" data-id=\"" + pet.id + "\" type=\"button\">Modifier</button>" +
+            "<button class=\"btn btn-danger btn-sm\" data-action=\"delete-manage-pet\" data-id=\"" + pet.id + "\" type=\"button\">Supprimer</button>" +
+          "</div>" +
+        "</article>";
+    })
+    .join("");
+}
+
+function handleManagePetsListClick(event) {
+  const button = event.target.closest("button[data-action][data-id]");
+  if (!button) return;
+
+  const petId = Number(button.dataset.id);
+
+  if (button.dataset.action === "edit-manage-pet") {
+    editManagePet(petId);
+    return;
+  }
+
+  if (button.dataset.action === "delete-manage-pet") {
+    deleteManagePet(petId);
+  }
+}
+
+function editManagePet(petId) {
+  const pet = state.managePets.find((item) => Number(item.id) === Number(petId));
+  if (!pet) return;
+
+  openManagePetForm(pet);
+}
+
+function openManagePetForm(pet = null) {
+  if (!dom.managePetForm || !dom.managePetModal) return;
+
+  dom.managePetForm.reset();
+  dom.managePetId.value = "";
+  if (dom.managePetBirthDate) dom.managePetBirthDate.max = new Date().toISOString().slice(0, 10);
+
+  if (pet) {
+    dom.managePetId.value = pet.id || "";
+    dom.managePetName.value = pet.name || "";
+    dom.managePetSpecies.value = pet.species || "";
+    dom.managePetRace.value = pet.race || "";
+    dom.managePetSexe.value = pet.sexe || "";
+    dom.managePetBirthDate.value = pet.dateNaissance || pet.date_naissance || "";
+    dom.managePetWeight.value = pet.poids || "";
+    dom.managePetSterilise.checked = Boolean(pet.sterilise);
+    dom.managePetCompatibleChiens.value = pet.compatibleChiens || pet.compatible_chiens || "a_tester";
+    dom.managePetCompatibleChats.value = pet.compatibleChats || pet.compatible_chats || "a_tester";
+    dom.managePetCompatibleEnfants.value = pet.compatibleEnfants || pet.compatible_enfants || "a_tester";
+    dom.managePetCraintif.checked = Boolean(pet.craintif);
+    dom.managePetFugueur.checked = Boolean(pet.fugueur);
+    dom.managePetTresEnergetique.checked = Boolean(pet.tresEnergetique || pet.tres_energetique);
+    dom.managePetProtecteurRessources.checked = Boolean(pet.protecteurRessources || pet.protecteur_ressources);
+    dom.managePetAboiementsFrequents.checked = Boolean(pet.aboiementsFrequents || pet.aboiements_frequents);
+    dom.managePetCommentairesComportement.value = pet.commentairesComportement || pet.commentaires_comportement || "";
+    dom.managePetAllergies.value = pet.allergies || "";
+    dom.managePetTraitementMedical.value = pet.traitementMedical || pet.traitement_medical || "";
+    dom.managePetRegimeAlimentaire.value = pet.regimeAlimentaire || pet.regime_alimentaire || "";
+    dom.managePetCommentaires.value = pet.commentaires || "";
+  } else {
+    dom.managePetCompatibleChiens.value = "a_tester";
+    dom.managePetCompatibleChats.value = "a_tester";
+    dom.managePetCompatibleEnfants.value = "a_tester";
+  }
+
+  if (dom.managePetModalTitle) dom.managePetModalTitle.textContent = pet ? "Modifier un animal" : "Ajouter un animal";
+  if (dom.managePetModalText) {
+    dom.managePetModalText.textContent = pet
+      ? "Mettez a jour les informations utiles pour les gardes."
+      : "Renseignez les informations utiles pour les gardes.";
+  }
+  dom.managePetModal.hidden = false;
+  document.body.classList.add("modal-open");
+  setMessage(dom.managePetsMessage, "");
+  setMessage(dom.managePetMessage, "");
+  window.setTimeout(() => dom.managePetName?.focus(), 0);
+}
+
+function resetManagePetForm() {
+  if (!dom.managePetForm) return;
+  dom.managePetForm.reset();
+  dom.managePetId.value = "";
+  setMessage(dom.managePetsMessage, "");
+  setMessage(dom.managePetMessage, "");
+}
+
+function closeManagePetModal() {
+  if (!dom.managePetModal) return;
+  dom.managePetModal.hidden = true;
+  resetManagePetForm();
+
+  if (!document.querySelector(".modal-backdrop:not([hidden])")) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function managePetPayload() {
+  return {
+    id: Number(dom.managePetId.value || 0),
+    user_id: Number(dom.manageId.value || 0),
+    name: dom.managePetName.value,
+    species: dom.managePetSpecies.value,
+    race: dom.managePetRace.value,
+    sexe: dom.managePetSexe.value,
+    date_naissance: dom.managePetBirthDate.value,
+    poids: dom.managePetWeight.value,
+    sterilise: dom.managePetSterilise.checked,
+    compatible_chiens: dom.managePetCompatibleChiens.value,
+    compatible_chats: dom.managePetCompatibleChats.value,
+    compatible_enfants: dom.managePetCompatibleEnfants.value,
+    craintif: dom.managePetCraintif.checked,
+    fugueur: dom.managePetFugueur.checked,
+    tres_energetique: dom.managePetTresEnergetique.checked,
+    protecteur_ressources: dom.managePetProtecteurRessources.checked,
+    aboiements_frequents: dom.managePetAboiementsFrequents.checked,
+    commentaires_comportement: dom.managePetCommentairesComportement.value,
+    allergies: dom.managePetAllergies.value,
+    traitement_medical: dom.managePetTraitementMedical.value,
+    regime_alimentaire: dom.managePetRegimeAlimentaire.value,
+    commentaires: dom.managePetCommentaires.value,
+  };
+}
+
+async function handleManagePetSave(event) {
+  event.preventDefault();
+  setMessage(dom.managePetMessage, "");
+
+  const userId = Number(dom.manageId.value || 0);
+  if (!userId) {
+    setMessage(dom.managePetMessage, "Selectionnez un membre.", "error");
+    return;
+  }
+
+  if (!dom.managePetForm.reportValidity()) return;
+
+  if (dom.managePetWeight.value !== "" && Number(dom.managePetWeight.value) <= 0) {
+    setMessage(dom.managePetMessage, "Le poids doit etre positif.", "error");
+    return;
+  }
+
+  const payload = managePetPayload();
+  const petId = Number(payload.id || 0);
+
+  try {
+    await requestJson("/api/pets.php", {
+      method: petId ? "PUT" : "POST",
+      body: payload,
+    });
+
+    closeManagePetModal();
+    await loadManagePets(userId);
+    await loadUsers();
+    setMessage(dom.managePetsMessage, petId ? "Animal mis a jour." : "Animal ajoute.", "success");
+  } catch (error) {
+    setMessage(dom.managePetMessage, error.message, "error");
+  }
+}
+
+async function deleteManagePet(petId) {
+  const userId = Number(dom.manageId.value || 0);
+  if (!userId || !window.confirm("Supprimer cet animal ?")) return;
+
+  try {
+    await requestJson("/api/pets.php", {
+      method: "DELETE",
+      body: { id: petId, user_id: userId },
+    });
+    resetManagePetForm();
+    await loadManagePets(userId);
+    await loadUsers();
+    setMessage(dom.managePetsMessage, "Animal supprime.", "success");
+  } catch (error) {
+    setMessage(dom.managePetsMessage, error.message, "error");
+  }
+}
+
+function handleManageTableClick(event) {
+  const button = event.target.closest("button[data-action][data-id]");
+
+  if (button?.dataset.action === "delete") {
+    deleteManagedUser(Number(button.dataset.id));
+    return;
+  }
+
+  const row = event.target.closest("tr[data-user-id]");
+  if (!row || !dom.manageTableBody.contains(row)) return;
+
+  selectManagedUser(Number(row.dataset.userId));
 }
 
 function selectManagedUser(id) {
@@ -1841,15 +2275,20 @@ function selectManagedUser(id) {
 
   state.selectedUserId = id;
   dom.manageId.value = user.id;
-  dom.manageFullName.value = user.fullName || user.full_name || "";
+  const nameParts = splitFullName(user.fullName || user.full_name || "");
+  dom.manageFirstName.value = nameParts.firstName;
+  dom.manageLastName.value = nameParts.lastName;
   dom.manageEmail.value = user.email || "";
   dom.managePhone.value = user.phone || "";
   dom.manageRole.value = user.role || "client";
-  dom.manageAnimalType.value = user.animalType || user.animal_type || "";
-  dom.manageAnimalName.value = user.animalName || user.animal_name || "";
   setMessage(dom.manageEditMessage, "");
+  state.managePets = [];
+  resetManagePetForm();
+  setManageEditTab("member");
   renderUsersTable();
+  renderManagePets();
   openModal(dom.manageEditModal);
+  loadManagePets(id);
 }
 
 async function handleManageSave(event) {
@@ -1871,12 +2310,10 @@ async function handleManageSave(event) {
       method: "PUT",
       body: {
         id: Number(dom.manageId.value),
-        full_name: dom.manageFullName.value,
+        full_name: `${dom.manageFirstName.value} ${dom.manageLastName.value}`.trim(),
         email: dom.manageEmail.value,
         phone: dom.managePhone.value,
         role: dom.manageRole.value,
-        animal_type: dom.manageAnimalType.value,
-        animal_name: dom.manageAnimalName.value,
       },
     });
 
@@ -1906,9 +2343,15 @@ async function deleteManagedUser(id) {
 
 function resetManageForm() {
   state.selectedUserId = null;
+  state.managePets = [];
   dom.manageEditForm.reset();
   dom.manageId.value = "";
+  closeManagePetModal();
+  setManageEditTab("member");
+  resetManagePetForm();
+  renderManagePets();
   setMessage(dom.manageEditMessage, "");
+  setMessage(dom.managePetsMessage, "");
   renderUsersTable();
 }
 
@@ -1965,6 +2408,54 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+function petDetailSummary(pet) {
+  const details = [animalLabel(pet.species)];
+
+  if (pet.race) details.push(pet.race);
+
+  const age = petAgeLabel(pet.dateNaissance || pet.date_naissance);
+  if (age) details.push(age);
+
+  return details.filter(Boolean).join(" - ");
+}
+
+function petAgeLabel(value) {
+  if (!value) return "";
+
+  const birthDate = new Date(value + "T12:00:00");
+  if (Number.isNaN(birthDate.getTime())) return "";
+
+  const today = new Date();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
+
+  if (today.getDate() < birthDate.getDate()) months -= 1;
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+
+  if (years > 0) return years + " an" + (years > 1 ? "s" : "");
+  if (months > 0) return months + " mois";
+  return "Moins d’un mois";
+}
+
+function compatibilityLabel(value, target) {
+  const labels = {
+    oui: "Compatible " + target,
+    non: "Non compatible " + target,
+    a_tester: "À tester " + target,
+  };
+
+  return labels[value] || labels.a_tester;
+}
+
+function compatibilityBadge(target, value = "a_tester") {
+  const normalized = ["oui", "non", "a_tester"].includes(value) ? value : "a_tester";
+  return "<span class=\"compatibility-badge compatibility-" + normalized + "\">" + escapeHtml(compatibilityLabel(normalized, target)) + "</span>";
+}
+
 
 function statusLabel(status) {
   return {
@@ -2030,15 +2521,30 @@ function bookingPetSummary(booking) {
 
   if (pets.length) {
     return pets
-      .map((pet) => `${pet.name} (${animalLabel(pet.species)})`)
+      .map((pet) => pet.name + " (" + petDetailSummary(pet) + ")")
       .join(", ");
   }
 
   const name = booking.animalName || booking.animal_name || "";
   const type = booking.animalType || booking.animal_type || "";
-  return `${name}${type ? ` (${animalLabel(type)})` : ""}`.trim() || "Animal";
+  return (name + (type ? " (" + animalLabel(type) + ")" : "")).trim() || "Animal";
 }
 
+function bookingCompatibilityBadges(booking) {
+  const pets = booking.pets || [];
+
+  if (!pets.length) return "";
+
+  return "<div class=\"compatibility-badges booking-compatibility-badges\">" +
+    pets
+      .map((pet) =>
+        compatibilityBadge("chiens", pet.compatibleChiens || pet.compatible_chiens) +
+        compatibilityBadge("chats", pet.compatibleChats || pet.compatible_chats) +
+        compatibilityBadge("enfants", pet.compatibleEnfants || pet.compatible_enfants)
+      )
+      .join("") +
+    "</div>";
+}
 function formatBookingPeriod(booking) {
   const start = booking.startDateTime || booking.start_datetime || "";
   const end = booking.endDateTime || booking.end_datetime || "";

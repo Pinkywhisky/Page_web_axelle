@@ -673,7 +673,8 @@ main {
 
 .profile-pets,
 .profile-bookings,
-.profile-details {
+.profile-details,
+.admin-pet-editor {
     margin-bottom: 24px;
     padding: 22px;
     border: 1px solid rgba(77, 55, 40, 0.10);
@@ -684,6 +685,7 @@ main {
 .profile-pets h4,
 .profile-bookings h4,
 .profile-details h4,
+.admin-pet-editor h4,
 .booking-item h5,
 .pet-item h5 {
     margin: 0 0 6px;
@@ -719,6 +721,175 @@ main {
 
 .compact-form {
     margin: 16px 0;
+}
+
+.admin-pet-editor {
+    margin-top: 24px;
+}
+
+.admin-pet-form {
+    padding: 18px;
+    border: 1px solid rgba(138, 101, 74, 0.16);
+    border-radius: 20px;
+    background: rgba(255, 253, 248, 0.78);
+}
+
+.admin-pet-editor .pet-list {
+    margin-top: 12px;
+}
+
+
+.pet-wizard {
+    padding: 18px;
+    border: 1px solid rgba(138, 101, 74, 0.16);
+    border-radius: 20px;
+    background: rgba(255, 253, 248, 0.78);
+}
+
+.pet-progress {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.pet-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--brown-dark);
+}
+
+.pet-progress-head strong,
+.pet-progress-head span {
+    line-height: 1.25;
+}
+
+.pet-progress-head span {
+    color: var(--text-soft);
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-align: right;
+}
+
+.pet-progress-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(138, 101, 74, 0.14);
+}
+
+.pet-progress-track span {
+    display: block;
+    width: 25%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--brown-soft), var(--brown-dark));
+    transition: width 180ms ease;
+}
+
+.pet-step-dots {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.pet-step-dots span {
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(138, 101, 74, 0.16);
+}
+
+.pet-step-dots span.is-active {
+    background: var(--brown-soft);
+}
+
+.pet-step {
+    display: grid;
+    gap: 14px;
+}
+
+.pet-step[hidden] {
+    display: none;
+}
+
+.compatibility-grid,
+.pet-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.pet-checkbox-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 12px 14px;
+    border: 1px solid rgba(77, 55, 40, 0.10);
+    border-radius: 16px;
+    background: var(--off-white);
+    color: var(--brown-dark);
+    font-weight: 900;
+}
+
+.check-row input {
+    width: auto;
+    min-width: 18px;
+}
+
+.pet-wizard-actions {
+    align-items: center;
+}
+
+.pet-card-main {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.pet-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.compatibility-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.compatibility-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 900;
+    line-height: 1.2;
+}
+
+.compatibility-oui {
+    background: rgba(83, 126, 82, 0.14);
+    color: #426a41;
+}
+
+.compatibility-non {
+    background: rgba(154, 72, 57, 0.14);
+    color: #8f3f32;
+}
+
+.compatibility-a_tester {
+    background: rgba(176, 128, 64, 0.18);
+    color: #7a5527;
 }
 
 .booking-list,
@@ -1059,7 +1230,7 @@ main {
 }
 
 .nested-modal {
-    z-index: 140;
+    z-index: 260;
 }
 
 .modal-compact {
@@ -1151,6 +1322,10 @@ td {
 tbody tr:hover,
 tbody tr.is-selected {
     background: rgba(234, 223, 204, 0.45);
+}
+
+tbody tr[data-user-id] {
+    cursor: pointer;
 }
 
 .table-actions {
@@ -1389,6 +1564,20 @@ textarea:focus-visible {
     .pet-item {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .compatibility-grid,
+    .pet-checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pet-progress-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pet-progress-head span {
+        text-align: left;
     }
 
     .inline-fields {

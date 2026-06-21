@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/pets_schema.php';
 
 function findUserById(int $id): ?array
 {
@@ -29,37 +30,7 @@ function tableExists(string $tableName): bool
 
 function ensurePetTables(): void
 {
-    db()->exec(
-        "CREATE TABLE IF NOT EXISTS pets (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            name VARCHAR(100) NOT NULL,
-            species ENUM('chien', 'chat') NOT NULL,
-            notes TEXT DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT fk_pet_user
-                FOREIGN KEY (user_id) REFERENCES users(id)
-                ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
-
-    if (!tableExists('booking_requests')) {
-        return;
-    }
-
-    db()->exec(
-        "CREATE TABLE IF NOT EXISTS booking_request_pets (
-            booking_request_id INT NOT NULL,
-            pet_id INT NOT NULL,
-            PRIMARY KEY (booking_request_id, pet_id),
-            CONSTRAINT fk_booking_request_pet_booking
-                FOREIGN KEY (booking_request_id) REFERENCES booking_requests(id)
-                ON DELETE CASCADE,
-            CONSTRAINT fk_booking_request_pet_pet
-                FOREIGN KEY (pet_id) REFERENCES pets(id)
-                ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
-    );
+    cdpEnsurePetTables();
 }
 
 function petsForUser(int $userId): array
@@ -82,18 +53,9 @@ function enrichUserWithPets(array $user): array
             'id' => (int) $pet['id'],
             'name' => $pet['name'],
             'species' => $pet['species'],
-            'notes' => $pet['notes'] ?? '',
         ],
         $pets
     );
-
-    if ($pets) {
-        $publicUser['animal_name'] = implode(', ', array_map(fn(array $pet): string => $pet['name'], $pets));
-        $publicUser['animalName'] = $publicUser['animal_name'];
-        $species = array_unique(array_map(fn(array $pet): string => $pet['species'], $pets));
-        $publicUser['animal_type'] = count($species) === 1 ? $species[0] : 'plusieurs';
-        $publicUser['animalType'] = $publicUser['animal_type'];
-    }
 
     return $publicUser;
 }
@@ -153,8 +115,6 @@ function validateUserPayload(array $data, bool $requirePassword = false): array
     $email = strtolower(cleanText($data['email'] ?? '', 190));
     $password = (string) ($data['password'] ?? '');
     $phone = cleanText($data['phone'] ?? '', 30);
-    $animalType = cleanText($data['animal_type'] ?? $data['animalType'] ?? '', 50);
-    $animalName = cleanText($data['animal_name'] ?? $data['animalName'] ?? '', 100);
     $role = cleanText($data['role'] ?? 'client', 20);
 
     if ($fullName === '') {
@@ -164,9 +124,7 @@ function validateUserPayload(array $data, bool $requirePassword = false): array
     if (
         strlen($fullName) > 150 ||
         strlen($email) > 190 ||
-        strlen($phone) > 30 ||
-        strlen($animalType) > 50 ||
-        strlen($animalName) > 100
+        strlen($phone) > 30
     ) {
         jsonResponse(['error' => 'Un des champs saisis est trop long.'], 400);
     }
@@ -187,10 +145,6 @@ function validateUserPayload(array $data, bool $requirePassword = false): array
         jsonResponse(['error' => 'Le mot de passe est trop long.'], 400);
     }
 
-    if ($animalType !== '' && !in_array($animalType, ['chien', 'chat'], true)) {
-        jsonResponse(['error' => 'Le type d’animal doit être chien ou chat.'], 400);
-    }
-
     if (!in_array($role, ['client', 'admin'], true)) {
         jsonResponse(['error' => 'Rôle invalide.'], 400);
     }
@@ -200,8 +154,6 @@ function validateUserPayload(array $data, bool $requirePassword = false): array
         'email' => $email,
         'password' => $password,
         'phone' => $phone,
-        'animal_type' => $animalType,
-        'animal_name' => $animalName,
         'role' => $role,
     ];
 }
@@ -219,7 +171,7 @@ try {
         requireAdmin();
 
         $statement = db()->query(
-            'SELECT id, full_name, email, phone, animal_type, animal_name, role, created_at
+            'SELECT id, full_name, email, phone, role, created_at
              FROM users
              ORDER BY created_at DESC, id DESC'
         );
@@ -240,39 +192,19 @@ try {
         }
 
         $insert = db()->prepare(
-            'INSERT INTO users (full_name, email, password_hash, phone, animal_type, animal_name, role)
-             VALUES (:full_name, :email, :password_hash, :phone, :animal_type, :animal_name, :role)'
+            'INSERT INTO users (full_name, email, password_hash, phone, role)
+             VALUES (:full_name, :email, :password_hash, :phone, :role)'
         );
-        $pdo = db();
-        $pdo->beginTransaction();
 
         $insert->execute([
             'full_name' => $payload['full_name'],
             'email' => $payload['email'],
             'password_hash' => password_hash($payload['password'], PASSWORD_DEFAULT),
             'phone' => $payload['phone'] ?: null,
-            'animal_type' => $payload['animal_type'] ?: null,
-            'animal_name' => $payload['animal_name'] ?: null,
             'role' => $payload['role'],
         ]);
 
-        $userId = (int) $pdo->lastInsertId();
-
-        if ($payload['animal_type'] !== '' && $payload['animal_name'] !== '') {
-            $petInsert = $pdo->prepare(
-                'INSERT INTO pets (user_id, name, species)
-                 VALUES (:user_id, :name, :species)'
-            );
-            $petInsert->execute([
-                'user_id' => $userId,
-                'name' => $payload['animal_name'],
-                'species' => $payload['animal_type'],
-            ]);
-        }
-
-        $pdo->commit();
-
-        $user = findUserById($userId);
+        $user = findUserById((int) db()->lastInsertId());
         jsonResponse(['message' => 'Votre espace a bien été créé.', 'user' => publicUser($user)], 201);
     }
 
@@ -312,8 +244,6 @@ try {
              SET full_name = :full_name,
                  email = :email,
                  phone = :phone,
-                 animal_type = :animal_type,
-                 animal_name = :animal_name,
                  role = :role
              WHERE id = :id'
         );
@@ -322,8 +252,6 @@ try {
             'full_name' => $payload['full_name'],
             'email' => $payload['email'],
             'phone' => $payload['phone'] ?: null,
-            'animal_type' => $payload['animal_type'] ?: null,
-            'animal_name' => $payload['animal_name'] ?: null,
             'role' => $nextRole,
         ]);
 
